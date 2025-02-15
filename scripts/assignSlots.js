@@ -153,19 +153,20 @@ async function updatePage(pageId, plane, row, column, capColor) {
 
     // 2) Fetch all pages from Notion
     const pages = await fetchAllNotionPages(databaseId);
-    console.log(`Fetched ${pages.length} bottles (pages) from Notion.`);
+    const filteredPages = pages.filter(p => !p.properties["Ignore?"]?.checkbox);
+    console.log(`Ignoring ${pages.length - filteredPages.length} bottles with "Ignore?"=true. Operating on ${filteredPages.length} bottles (pages) from Notion.`);
 
     // 3) If you want to shuffle pages or slots, do it here:
     // e.g. randomize slot assignment, but keep a stable page order
     // We'll keep it simple: first page -> first slot, etc.
 
     // 4) For each page, pick the next slot, pick a random cap color, update in Notion
-    const totalBottles = pages.length;
+    const totalBottles = filteredPages.length;
     const usableSlots = Math.min(allSlots.length, totalBottles);
     console.log(`Assigning slots to ${usableSlots} bottles. Any beyond that won't be assigned.`);
 
     for (let i = 0; i < usableSlots; i++) {
-      const page = pages[i];
+      const page = filteredPages[i];
       const slot = allSlots[i];
       const capColor = getRandomCapColor();
 
@@ -173,8 +174,8 @@ async function updatePage(pageId, plane, row, column, capColor) {
     }
 
     // if there are leftover pages with no slots, optionally warn
-    if (usableSlots < pages.length) {
-      console.log(`WARNING: Not enough slots. ${pages.length - usableSlots} bottles remain unassigned.`);
+    if (usableSlots < filteredPages.length) {
+      console.log(`WARNING: Not enough slots. ${filteredPages.length - usableSlots} bottles remain unassigned.`);
     }
 
     console.log("Reassignment complete.");

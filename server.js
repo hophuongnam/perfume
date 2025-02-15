@@ -45,7 +45,9 @@ app.get('/api/bottleCount', async (req, res) => {
         database_id: process.env.NOTION_DATABASE_ID,
         start_cursor: startCursor
       });
-      total += resp.results.length;
+      // filter out pages with "Ignore?" checkbox
+      const validPages = resp.results.filter(page => !page.properties["Ignore?"]?.checkbox);
+      total += validPages.length;
       hasMore = resp.has_more;
       startCursor = resp.next_cursor;
     }
