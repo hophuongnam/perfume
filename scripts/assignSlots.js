@@ -4,18 +4,38 @@ const { Client } = require('@notionhq/client');
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.NOTION_DATABASE_ID;
 
-// Parse environment variables for platoons (e.g. PLATOON_A1, PLATOON_A2, etc.)
-const platoonEnvVars = ["A1", "A2", "A3", "A4"];
-const platoons = {};
+/**
+ * Parse environment variables for RACK_R1..RACK_R4, each in the form "(4,6)" => { rows, columns }
+ */
+const rackEnvVars = ["R1","R2","R3","R4"];
+const racks = {};
 
-platoonEnvVars.forEach(key => {
-  const envName = `PLATOON_${key}`;
-  if (process.env[envName]) {
-    platoons[key] = parsePlatoonDefinition(process.env[envName]);
+rackEnvVars.forEach(key => {
+  const envKey = `RACK_${key}`;
+  if (process.env[envKey]) {
+    racks[key] = parseRackDefinition(process.env[envKey]);
   }
 });
 
-// Parse environment variables for planes (PLANE_P1, PLANE_P2, etc.)
+/**
+ * Utility function to parse e.g. "(4,6)" => { rows: 4, columns: 6 }
+ */
+function parseRackDefinition(str) {
+  const match = /^\((\d+),(\d+)\)$/.exec(str.trim());
+  if (!match) {
+    console.warn("Invalid rack definition:", str);
+    return { rows: 0, columns: 0 };
+  }
+  return {
+    rows: parseInt(match[1], 10),
+    columns: parseInt(match[2], 10)
+  };
+}
+
+/**
+ * Parse environment variables for planes: PLANE_P1..P4
+ * Each is e.g. "R1xR2" => means 2 racks side by side (along the row dimension).
+ */
 const planeConfigs = [];
 [1,2,3,4].forEach(num => {
   const envKey = `PLANE_P${num}`;
@@ -24,64 +44,51 @@ const planeConfigs = [];
   }
 });
 
-// Utility: parse e.g. "platoon(6(4,6))" => { racks:6, rows:4, slots:6 }
-function parsePlatoonDefinition(str) {
-  const match = /^platoon\((\d+)\((\d+),(\d+)\)\)$/.exec(str.trim());
-  if (!match) {
-    console.warn("Invalid platoon definition:", str);
-    return { racks: 0, rows: 0, slots: 0 };
-  }
-  return {
-    racks: parseInt(match[1]),
-    rows: parseInt(match[2]),
-    slots: parseInt(match[3])
-  };
-}
-
-// Utility: parse e.g. "A1xA2" => ["A1", "A2"]
+/**
+ * Utility: parse plane definition e.g. "R1xR2" => ["R1", "R2"]
+ */
 function parsePlaneDefinition(str) {
   return str.split('x').map(s => s.trim());
 }
 
 /**
- * Build a list of { plane, row, column } for a given planeDefinition (e.g. "A1xA2")
- * by enumerating each platoon, which may contain multiple racks, each with many rows/slots.
- * We'll unify them in the column dimension for simplicity.
- * If you wish to handle Z offset or advanced geometry, do so in your Three.js code later.
+ * Build a list of { plane, row, column } for a given planeDefinition ("R1xR2"),
+ * stacking racks by row dimension. If R1 has 4 rows, 6 columns, and R2 has 4 rows, 6 columns,
+ * then total rows = 4 + 4, columns = 6, plus optional row offset from OFFSET_RACK.
  */
 function buildSlotsForPlane(planeNumber, planeDefinition) {
-  const platoonIds = parsePlaneDefinition(planeDefinition);
+  const rackIds = parsePlaneDefinition(planeDefinition);
   const result = [];
-  let columnOffset = 0;
+  let rowOffset = 0;
+  const offsetRack = parseInt(process.env.OFFSET_RACK || "1", 10);
 
-  for (const platoonId of platoonIds) {
-    const p = platoons[platoonId];
-    if (!p) {
-      console.warn(`No definition found for platoon ${platoonId}. Skipping...`);
+  for (const rackId of rackIds) {
+    const rDef = racks[rackId];
+    if (!rDef) {
+      console.warn(`No rack definition found for ${rackId}. Skipping...`);
       continue;
     }
-    const { racks, rows, slots } = p;
-    // We'll map each rack/row/slot to a distinct column index
-    // e.g. total columns = racks * slots, row remains from 0..(rows-1).
-    for (let r = 0; r < racks; r++) {
-      for (let row = 0; row < rows; row++) {
-        for (let s = 0; s < slots; s++) {
-          const col = columnOffset + r * slots + s;
-          result.push({
-            plane: planeNumber,
-            row,
-            column: col
-          });
-        }
+    const { rows, columns } = rDef;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < columns; col++) {
+        result.push({
+          plane: planeNumber,
+          row: rowOffset + row,
+          column: col
+        });
       }
     }
-    columnOffset += racks * slots;
+    // Move rowOffset for the next rack in this plane (stack by row)
+    rowOffset += rows;
+    // Add extra spacing if desired
+    rowOffset += offsetRack;
   }
+
   return result;
 }
 
 /**
- * Master function to gather all possible slots across all plane definitions
+ * Gather all possible slots across all plane definitions
  */
 function buildAllSlots() {
   let all = [];
@@ -143,11 +150,9 @@ async function updatePage(pageId, plane, row, column) {
     const filteredPages = pages.filter(p => !p.properties["Ignore?"]?.checkbox);
     console.log(`Ignoring ${pages.length - filteredPages.length} bottles with "Ignore?"=true. Operating on ${filteredPages.length} bottles (pages) from Notion.`);
 
-    // 3) If you want to shuffle pages or slots, do it here:
-    // e.g. randomize slot assignment, but keep a stable page order
-    // We'll keep it simple: first page -> first slot, etc.
+    // 3) If you want to shuffle pages or slots, do it here. We'll keep it simple.
 
-    // 4) For each page, pick the next slot, pick a random cap color, update in Notion
+    // 4) For each page, pick the next slot
     const totalBottles = filteredPages.length;
     const usableSlots = Math.min(allSlots.length, totalBottles);
     console.log(`Assigning slots to ${usableSlots} bottles. Any beyond that won't be assigned.`);
@@ -158,7 +163,7 @@ async function updatePage(pageId, plane, row, column) {
       await updatePage(page.id, slot.plane, slot.row, slot.column);
     }
 
-    // if there are leftover pages with no slots, optionally warn
+    // If leftover
     if (usableSlots < filteredPages.length) {
       console.log(`WARNING: Not enough slots. ${filteredPages.length - usableSlots} bottles remain unassigned.`);
     }
@@ -170,7 +175,7 @@ async function updatePage(pageId, plane, row, column) {
 })();
 
 /**
- * Utility to fetch all pages from a given Notion database (handling pagination).
+ * Utility to fetch all pages from a Notion database (pagination)
  */
 async function fetchAllNotionPages(dbId) {
   let results = [];

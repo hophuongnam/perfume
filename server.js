@@ -9,17 +9,19 @@ const port = process.env.PORT || 3000;
 
 /**
  * Build a config object to send to the client
- * Only the environment variables that the front-end uses.
+ * Contains environment variables needed by the front-end
  */
 const config = {
-  platoonA1: process.env.PLATOON_A1 || "",
-  platoonA2: process.env.PLATOON_A2 || "",
-  platoonA3: process.env.PLATOON_A3 || "",
-  platoonA4: process.env.PLATOON_A4 || "",
+  rackR1: process.env.RACK_R1 || "",
+  rackR2: process.env.RACK_R2 || "",
+  rackR3: process.env.RACK_R3 || "",
+  rackR4: process.env.RACK_R4 || "",
   planeP1: process.env.PLANE_P1 || "",
   planeP2: process.env.PLANE_P2 || "",
+  planeP3: process.env.PLANE_P3 || "",
+  planeP4: process.env.PLANE_P4 || "",
   planeVerticalOffset: process.env.PLANE_VERTICAL_OFFSET || "2",
-  offsetPlatoon: process.env.OFFSET_PLATOON || "1",
+  offsetRack: process.env.OFFSET_RACK || "1",
   capColorDefault: "Gold"
 };
 
@@ -33,7 +35,7 @@ app.get('/api/config', (req, res) => {
   res.json(config);
 });
 
-// Serve any other static files in the directory as needed (CSS, JS, etc.)
+// Serve static files (CSS, JS, etc.) from the same directory
 app.use(express.static(path.join(__dirname)));
 
 app.get('/api/bottleCount', async (req, res) => {
@@ -59,7 +61,7 @@ app.get('/api/bottleCount', async (req, res) => {
   }
 });
 
-// STEP 5: Add an /api/bottles endpoint to retrieve detailed data
+// Endpoint to fetch all bottle data from Notion
 app.get('/api/bottles', async (req, res) => {
   try {
     let allBottles = [];
@@ -72,10 +74,10 @@ app.get('/api/bottles', async (req, res) => {
         start_cursor: startCursor
       });
       
-      // Filter out "Ignore?" if you want
+      // Filter out "Ignore?"
       const validPages = response.results.filter(page => !page.properties["Ignore?"]?.checkbox);
 
-      // Map to a simpler JSON
+      // Map to simpler JSON
       const mapped = validPages.map(page => {
         const nameProp      = page.properties["Name"];
         const capColorProp  = page.properties["Cap Color"];
@@ -84,14 +86,13 @@ app.get('/api/bottles', async (req, res) => {
         const rowProp       = page.properties["Row"];
         const columnProp    = page.properties["Column"];
 
-        // Parse the fields
-        const nameVal       = nameProp?.title?.[0]?.plain_text || "(No name)";
-        const capColorVal   = capColorProp?.select?.name || "Gold"; // fallback
-        const houseVal      = houseProp?.select?.name || "Unknown House";
-
-        const planeVal      = planeProp?.rich_text?.[0]?.plain_text || "";
-        const rowVal        = rowProp?.rich_text?.[0]?.plain_text || "";
-        const colVal        = columnProp?.rich_text?.[0]?.plain_text || "";
+        // Parse fields
+        const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
+        const capColorVal = capColorProp?.select?.name || "Gold";
+        const houseVal    = houseProp?.select?.name || "Unknown House";
+        const planeVal    = planeProp?.rich_text?.[0]?.plain_text || "";
+        const rowVal      = rowProp?.rich_text?.[0]?.plain_text || "";
+        const colVal      = columnProp?.rich_text?.[0]?.plain_text || "";
 
         return {
           id: page.id,

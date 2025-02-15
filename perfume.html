@@ -34,39 +34,37 @@
 
     // The config object from /api/config
     let config = {
-      platoonA1: "",
-      platoonA2: "",
-      platoonA3: "",
-      platoonA4: "",
-      planeP1:   "",
-      planeP2:   "",
+      rackR1: "",
+      rackR2: "",
+      rackR3: "",
+      rackR4: "",
+      planeP1: "",
+      planeP2: "",
       planeVerticalOffset: "2",
-      offsetPlatoon:       "1",
-      capColorDefault:     "Gold"
+      offsetRack: "1",
+      capColorDefault: "Gold"
     };
 
-    // We'll parse environment-based definitions the same as on the server
-    const platoons = {}; // e.g. platoons["A1"] = { racks, rows, slots }
+    // We'll store the parsed racks here, e.g. racks["R1"] = { rows, columns }
+    const racks = {};
 
     // A lookup: planeLayouts[planeNumber] = array of { plane, row, column, x, y, z }
     const planeLayouts = {};
 
     // -------------------------------------------
-    // 0) On window load, fetch config & data, build scene
+    // On window load, fetch config & data, then build scene
     // -------------------------------------------
     window.addEventListener('load', async () => {
       await fetchConfig();
-      parsePlatoonConfigs(); // fill "platoons" with data from config
+      parseRackConfigs();
 
       initScene();
-
-      // Build the racks visually (no bottles in them yet)
       buildAllPlanes();
 
-      // Now fetch the Notion data (including plane/row/col)
+      // Now fetch the Notion data
       const notionBottles = await fetchAllNotionBottles();
 
-      // For each bottle from Notion, place it in the correct slot
+      // Place each bottle
       notionBottles.forEach(bData => {
         createBottleFromNotion(bData);
       });
@@ -90,30 +88,33 @@
     }
 
     // -------------------------------------------
-    // 2) Parse environment-based platoon definitions
+    // 2) Parse environment-based rack definitions
+    // e.g. RACK_R1="(4,6)" => { rows:4, columns:6 }
+    // We'll store them in racks["R1"] = { rows, columns }
+    // Then the plane definitions: e.g. "R1xR2"
+    // We'll unify them in row dimension.
     // -------------------------------------------
-    function parsePlatoonConfigs() {
-      platoons.A1 = parsePlatoonDefinition(config.platoonA1);
-      platoons.A2 = parsePlatoonDefinition(config.platoonA2);
-      platoons.A3 = parsePlatoonDefinition(config.platoonA3);
-      platoons.A4 = parsePlatoonDefinition(config.platoonA4);
+    function parseRackConfigs() {
+      parseSingleRack("R1", config.rackR1);
+      parseSingleRack("R2", config.rackR2);
+      parseSingleRack("R3", config.rackR3);
+      parseSingleRack("R4", config.rackR4);
     }
 
-    // E.g. "platoon(6(4,6))" => { racks:6, rows:4, slots:6 }
-    function parsePlatoonDefinition(str) {
-      const match = /^platoon\((\d+)\((\d+),(\d+)\)\)$/.exec((str || "").trim());
+    function parseSingleRack(rackId, definition) {
+      // definition is something like "(4,6)"
+      const match = /^\((\d+),(\d+)\)$/.exec((definition || "").trim());
       if (!match) {
-        console.warn("Invalid platoon definition:", str);
-        return { racks: 0, rows: 0, slots: 0 };
+        racks[rackId] = { rows: 0, columns: 0 };
+      } else {
+        racks[rackId] = {
+          rows: parseInt(match[1], 10),
+          columns: parseInt(match[2], 10)
+        };
       }
-      return {
-        racks: parseInt(match[1]),
-        rows:  parseInt(match[2]),
-        slots: parseInt(match[3])
-      };
     }
 
-    // E.g. "A1xA2" => ["A1", "A2"]
+    // e.g. "R1xR2" => ["R1","R2"]
     function parsePlaneDefinition(str) {
       return (str || "").split('x').map(s => s.trim());
     }
@@ -156,128 +157,103 @@
 
     // -------------------------------------------
     // 4) Build planes & racks (just the shelves)
+    // We'll parse PLANE_P1..P4. Each plane can have multiple racks, stacked in row dimension.
+    // Then we place planes one after another in the negative Y direction using planeVerticalOffset.
+    // The row dimension is mapped to Z, the column dimension is mapped to X.
     // -------------------------------------------
     function buildAllPlanes() {
-      // We'll handle up to 4 planes, because your .env suggests PLANE_P1..PLANE_P4.
-      // For each plane X that exists, parse plane definition, build the geometry.
-      // Also store a "slot lookup" => exact X/Z offset for row, column.
+      const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
+      let currentPlaneY = 0; // downward offset for planes
 
-      // If planeVerticalOffset => how far down each plane sits from the previous
-      let currentPlaneY = 0; // y offset for plane #1
+      planeKeys.forEach((planeKey, index) => {
+        const definition = config[planeKey];
+        if (!definition) return;
 
-      for (let planeNumber = 1; planeNumber <= 4; planeNumber++) {
-        // E.g. "planeP1" from config
-        const planeKey = `planeP${planeNumber}`;
-        if (!config[planeKey]) {
-          continue; // skip if not defined
-        }
-        // Parse e.g. "A1xA2" => ["A1","A2"]
-        const platoonIds = parsePlaneDefinition(config[planeKey]);
-        if (!platoonIds.length) {
-          continue;
-        }
+        const planeNumber = index + 1;
+        const rackIds = parsePlaneDefinition(definition);
+        if (!rackIds || !rackIds.length) return;
 
-        // Make a group for the entire plane
         const planeGroup = new THREE.Group();
         planeGroup.position.set(0, currentPlaneY, 0);
         scene.add(planeGroup);
 
-        let platoonZ = 0;
         planeLayouts[planeNumber] = [];
 
-        // For each platoon ID in this plane
-        platoonIds.forEach(platoonId => {
-          const p = platoons[platoonId];
-          if (!p) {
-            console.warn("No definition found for platoon:", platoonId);
+        let rowStackOffset = 0;
+        const offsetRack = parseFloat(config.offsetRack) || 1;
+
+        rackIds.forEach(rackId => {
+          const rDef = racks[rackId] || { rows:0, columns:0 };
+          if (rDef.rows <= 0 || rDef.columns <= 0) {
+            console.warn("No valid definition for rackId =", rackId);
             return;
           }
-          const { racks, rows, slots } = p;
 
-          // Create a "platoonGroup" to hold the racks
-          const platoonGroup = new THREE.Group();
-          platoonGroup.position.set(0, 0, platoonZ);
-          planeGroup.add(platoonGroup);
+          // Create rack geometry
+          const rows    = rDef.rows;
+          const columns = rDef.columns;
+          const rackGroup = createSteppedRack(rows, columns);
 
-          // Build each rack side-by-side in X
-          for (let r = 0; r < racks; r++) {
-            const rackGroup = createSteppedRack(rows, slots);
-            // offset in X
-            const rackWidth = slots * SLOT_WIDTH_DEPTH;
-            rackGroup.position.x = r * rackWidth;
-            platoonGroup.add(rackGroup);
+          // We stack racks by row dimension => place them behind the previous in Z
+          const rackDepth = rows * SLOT_WIDTH_DEPTH;
+          rackGroup.position.z = -rowStackOffset;
+          planeGroup.add(rackGroup);
 
-            // For each row & column in this rack, store a slot => (x,y,z)
-            for (let row = 0; row < rows; row++) {
-              for (let col = 0; col < slots; col++) {
-                // compute the actual 3D position:
-                const slotCenterX = - (slots * SLOT_WIDTH_DEPTH) / 2
-                                    + col * SLOT_WIDTH_DEPTH
-                                    + SLOT_WIDTH_DEPTH / 2
-                                    + rackGroup.position.x; // offset by rack
+          // For each row & column in this rack, record the world coords
+          for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < columns; col++) {
+              // center X for column
+              const totalWidth = columns * SLOT_WIDTH_DEPTH;
+              const slotCenterX = - (totalWidth / 2)
+                                  + col * SLOT_WIDTH_DEPTH
+                                  + SLOT_WIDTH_DEPTH / 2;
 
-                // row centerZ
-                const totalDepth  = rows * SLOT_WIDTH_DEPTH;
-                const rowDepth    = totalDepth / rows;
-                const slotCenterZ = totalDepth / 2
-                                    - row * rowDepth
-                                    - rowDepth / 2
-                                    + platoonGroup.position.z; // offset by platoonZ
+              // center Z for row (in local coords of this rack)
+              const rowDepth   = rackDepth / rows; // e.g. 15
+              const slotCenterZ = (rackDepth / 2)
+                                  - row * rowDepth
+                                  - (rowDepth / 2);
 
-                // vertical shelf top
-                const wallThickness = 0.1;
-                const stepY         = (BOTTLE_HEIGHT / 2) * 0.3; // ~9.6
-                const shelfTop      = wallThickness + (stepY * row) + wallThickness;
+              // The entire rackGroup is offset by rackGroup.position.z
+              const worldX = slotCenterX;
+              const worldY = currentPlaneY + 0; // we place shelves at about y=0 inside the group
+              const worldZ = planeGroup.position.z + rackGroup.position.z + slotCenterZ;
 
-                // final world coords (planeGroup offset in Y not included yet)
-                const localX = slotCenterX;
-                const localY = shelfTop;
-                const localZ = slotCenterZ;
-
-                // But planeGroup’s position.y = currentPlaneY
-                const worldX = localX;
-                const worldY = currentPlaneY + localY;
-                const worldZ = localZ;
-
-                // Store this in planeLayouts for quick lookup
-                planeLayouts[planeNumber].push({
-                  plane: planeNumber,
-                  row,
-                  column: (r * slots) + col, // offset columns by rack index
-                  x: worldX,
-                  y: worldY,
-                  z: worldZ
-                });
-              }
+              planeLayouts[planeNumber].push({
+                plane: planeNumber,
+                row: rowStackOffset/ SLOT_WIDTH_DEPTH + row, // purely conceptual, not used for final assignment
+                column: col,
+                x: worldX,
+                y: worldY,
+                z: worldZ
+              });
             }
           }
 
-          // Move the next platoon behind in Z
-          const offsetCount      = parseFloat(config.offsetPlatoon) || 1;
-          const singleRackDepth  = rows * SLOT_WIDTH_DEPTH;
-          const platoonDepth     = singleRackDepth;
-          platoonZ -= offsetCount * 2 * platoonDepth;
+          // Move stack offset for the next rack
+          rowStackOffset += rackDepth;
+          rowStackOffset += offsetRack * rackDepth; // extra gap between racks
         });
 
-        // Move the next plane downward
+        // Next plane is offset downward in Y
         const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 2;
-        // We'll estimate one typical "rack depth" for the offset if needed
-        // but you can refine as you like:
-        currentPlaneY -= planeVerticalOffset * BOTTLE_HEIGHT; // some logic
-      }
+        // E.g. move the plane in negative Y by planeVerticalOffset * BOTTLE_HEIGHT
+        currentPlaneY -= planeVerticalOffset * BOTTLE_HEIGHT;
+      });
     }
 
     /**
-     * Create only the stepped geometry for a single rack,
-     * WITHOUT automatically placing any bottles.
+     * Create a single stepped rack geometry for (numRows, numColumns).
+     * We'll keep the logic similar to the old code, but ignoring platoons entirely.
+     * The row dimension is local Z, the column dimension is local X.
      */
-    function createSteppedRack(numRows, numSlots) {
+    function createSteppedRack(numRows, numColumns) {
       const group = new THREE.Group();
-      const totalWidth = numSlots * SLOT_WIDTH_DEPTH;
+      const totalWidth = numColumns * SLOT_WIDTH_DEPTH;
       const totalDepth = numRows * SLOT_WIDTH_DEPTH;
       const rowHeight  = BOTTLE_HEIGHT / 2; // 32
       const wallThickness = 0.1;
-      const stepY     = rowHeight * 0.3; // ~9.6
+      const stepY     = rowHeight * 0.3; // e.g. ~9.6
       const baseY     = wallThickness / 2;
 
       const mat = new THREE.MeshPhongMaterial({
@@ -290,7 +266,7 @@
       // Utility for row center
       const rowDepth = totalDepth / numRows;
       function rowCenterZ(i) {
-        return totalDepth/2 - rowDepth/2 - rowDepth*i;
+        return totalDepth / 2 - rowDepth / 2 - rowDepth * i;
       }
 
       // Build each row
@@ -304,11 +280,11 @@
         floorMesh.position.set(0, rowBaseY, centerZ);
         group.add(floorMesh);
 
-        // vertical dividers
-        for (let j = 1; j < numSlots; j++) {
+        // vertical dividers (columns)
+        for (let j = 1; j < numColumns; j++) {
           const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
           const divider     = new THREE.Mesh(dividerGeom, mat);
-          const xPos        = -totalWidth/2 + (totalWidth/numSlots)*j;
+          const xPos        = -totalWidth/2 + (totalWidth/numColumns)*j;
           divider.position.set(xPos, rowBaseY + wallThickness + rowHeight/2, centerZ);
           group.add(divider);
         }
@@ -401,28 +377,27 @@
 
     // -------------------------------------------
     // 6) Create Bottles in the Correct Position
+    // We'll use planeLayouts[plane] to find a slot with matching row & column.
+    // If not found, we skip. (Might happen if the Notion data is out of range.)
     // -------------------------------------------
     function createBottleFromNotion(bData) {
       const { plane, row, column, name, capColor } = bData;
 
-      // Find the matching slot in planeLayouts[plane]
       if (!planeLayouts[plane]) {
         console.warn(`No plane layout found for plane=${plane}`);
         return;
       }
 
-      // Find the matching (row, column) among the stored slot positions
+      // Find a matching row/column
       const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
       if (!slot) {
         console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
         return;
       }
 
-      // Now create the 3D geometry at slot.x, slot.y, slot.z
-      // (We can reuse your existing "bottle geometry" code)
+      // Create the 3D geometry
       const bottleGroup = new THREE.Group();
 
-      // Transparent bottle
       const bottleWidth  = 10;
       const bottleDepth  = 10;
       const bottleHeight = BOTTLE_HEIGHT;
@@ -464,30 +439,28 @@
         try {
           capMat.color.setStyle(capColor);
         } catch {
-          capMat.color.set(0xffd700); // fallback to gold
+          capMat.color.set(0xffd700); // fallback
         }
       }
       const capMesh = new THREE.Mesh(capGeo, capMat);
       capMesh.position.set(0, bottleHeight + capHeight/2, 0);
 
-      // Combine
       bottleGroup.add(bottleMesh);
       bottleGroup.add(capMesh);
 
-      // Place in final position
+      // Position in final coords
       bottleGroup.position.set(slot.x, slot.y, slot.z);
 
-      // Store some userData for fly-up effect
+      // userData for fly effect
       bottleGroup.userData.initialY = bottleGroup.position.y;
       bottleGroup.userData.flying   = false;
-      bottleGroup.userData.notionData = bData; // keep the full record
+      bottleGroup.userData.notionData = bData;
 
-      // Track as clickable
       clickableBottles.push(bottleGroup);
       scene.add(bottleGroup);
     }
 
-    // Utility: label texture
+    // Utility: create label texture
     function createLabelTexture(text) {
       const canvas  = document.createElement('canvas');
       canvas.width  = 256;
@@ -527,18 +500,15 @@
 
       if (intersects.length > 0) {
         let clickedGroup = intersects[0].object;
-        // bubble up to the bottleGroup
         while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
           clickedGroup = clickedGroup.parent;
         }
-        // If we have an active bottle, drop it first
         if (activeBottle && activeBottle !== clickedGroup) {
           activeBottle.userData.flying = false;
         }
         activeBottle = clickedGroup;
         activeBottle.userData.flying = true;
       } else {
-        // If we clicked empty space, drop the active bottle
         if (activeBottle) {
           activeBottle.userData.flying = false;
         }
