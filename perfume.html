@@ -13,134 +13,70 @@
   <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
   <script>
-    // Scene variables
+    // -------------------------------------------
+    // Global Scene Variables
+    // -------------------------------------------
     let scene, camera, renderer, controls;
+    const raycaster = new THREE.Raycaster();
+    const mouse     = new THREE.Vector2();
 
-    async function fetchAllNotionBottles() {
-      try {
-        const response = await fetch('/api/bottles');
-        if (!response.ok) {
-          throw new Error(`Failed to fetch /api/bottles. Status = ${response.status}`);
-        }
-        const data = await response.json();
-        return data; // array of { id, name, capColor, house, ... }
-      } catch (err) {
-        console.error("fetchAllNotionBottles error:", err);
-        return [];
-      }
-    }
+    // We'll store all clickable bottle meshes here:
+    const clickableBottles = [];
 
-    /**
-     * Step 6: Pair up each 3D bottle with one Notion record.
-     * We won't recreate them or reposition them, just reuse the existing geometry,
-     * and update label textures + cap color.
-     */
-    function assignNotionDataToModels(notionBottles) {
-      // If they differ in count, handle gracefully
-      if (notionBottles.length !== clickableBottles.length) {
-        console.warn("Notion bottles length doesn't match 3D bottles length. We'll match as many as we can.");
-      }
-      const length = Math.min(notionBottles.length, clickableBottles.length);
+    // If we want a bottle to “fly” up on click:
+    const MOVE_SPEED  = 2;
+    const FLY_OFFSET  = 32;  // how far bottle flies up
+    let activeBottle  = null;
 
-      for (let i = 0; i < length; i++) {
-        const notionData = notionBottles[i];
-        const threeBottle = clickableBottles[i];
+    // Dimensions
+    const SLOT_WIDTH_DEPTH = 15;   // each slot cell width & depth
+    const BOTTLE_HEIGHT    = 64;
 
-        // Store the notion data in userData for reference
-        threeBottle.userData.notionData = notionData;
-
-        // Update the label
-        const labelMesh = findLabelMesh(threeBottle);
-        if (labelMesh) {
-          labelMesh.material.map = createLabelTexture(notionData.name);
-          labelMesh.material.needsUpdate = true;
-        }
-
-        // Update the cap color
-        const capMesh = findCapMesh(threeBottle);
-        if (capMesh) {
-          // If the user uses color names or hex codes, we can parse them
-          // e.g. black / "Black" / #000000 – might require some mapping.
-          // We'll assume standard CSS color name or hex code is fine:
-          try {
-            capMesh.material.color.setStyle(notionData.capColor);
-          } catch {
-            capMesh.material.color.set(0xffd700); // fallback to Gold
-          }
-        }
-      }
-    }
-
-    function findLabelMesh(group) {
-      let label;
-      group.traverse((obj) => {
-        if (obj.isMesh && obj.geometry && obj.geometry.type === "PlaneGeometry") {
-          label = obj;
-        }
-      });
-      return label;
-    }
-
-    function findCapMesh(group) {
-      let cap;
-      group.traverse((obj) => {
-        if (obj.isMesh && obj.geometry && obj.geometry.type === "CylinderGeometry") {
-          cap = obj;
-        }
-      });
-      return cap;
-    }
-
-    // Non-hardcoded or derived constants
-    const BOTTLE_HEIGHT = 64;    // bottle geometry fixed
-    const SLOT_WIDTH_DEPTH = 15; // dimension of each slot
-    const MOVE_SPEED = 2;        // for flying effect
-    const FLY_OFFSET = BOTTLE_HEIGHT / 2; // how far bottle flies up
-
-    // Variables loaded from API:
-    // We'll parse them after fetching /api/config
+    // The config object from /api/config
     let config = {
-      platoonA1: "",      // e.g. "platoon(6(4,6))"
-      platoonA2: "",      // e.g. "platoon(6(4,6))"
-      platoonA3: "",      // e.g. "platoon(6(4,6))"
-      platoonA4: "",      // e.g. "platoon(6(4,6))"
-      planeP1: "",        // e.g. "A1xA2"
-      offsetPlatoon: "1"  // e.g. "1" means offset is 1 platoon depth
+      platoonA1: "",
+      platoonA2: "",
+      platoonA3: "",
+      platoonA4: "",
+      planeP1:   "",
+      planeP2:   "",
+      planeVerticalOffset: "2",
+      offsetPlatoon:       "1",
+      capColorDefault:     "Gold"
     };
 
-    // We'll store definitions in memory:
-    // e.g. platoons.A1 => { racks:6, rows:4, slots:6 }
-    //      platoons.A2 => { racks:6, rows:4, slots:6 }
-    let platoons = {};
+    // We'll parse environment-based definitions the same as on the server
+    const platoons = {}; // e.g. platoons["A1"] = { racks, rows, slots }
 
-    // Raycasting / interaction
-    const raycaster        = new THREE.Raycaster();
-    const mouse            = new THREE.Vector2();
-    const clickableBottles = [];
-    let activeBottle = null; // currently "flying" bottle
+    // A lookup: planeLayouts[planeNumber] = array of { plane, row, column, x, y, z }
+    const planeLayouts = {};
 
-    // ---------------------------------
-    // 0) On window load, fetch config, then init scene
-    // ---------------------------------
+    // -------------------------------------------
+    // 0) On window load, fetch config & data, build scene
+    // -------------------------------------------
     window.addEventListener('load', async () => {
-await fetchConfig();
-const notionCount = await fetchBottleCount();
-parsePlatoonConfigs();
+      await fetchConfig();
+      parsePlatoonConfigs(); // fill "platoons" with data from config
 
-// Step 5: fetch all data from Notion
-const notionBottles = await fetchAllNotionBottles();
+      initScene();
 
-initScene();
-// Step 4 is done, so we have random bottles. We'll remove extra to match notionCount
-removeExtraBottlesIfNeeded(notionCount);
+      // Build the racks visually (no bottles in them yet)
+      buildAllPlanes();
 
-// Step 6: link the existing models to the actual Notion data
-assignNotionDataToModels(notionBottles);
+      // Now fetch the Notion data (including plane/row/col)
+      const notionBottles = await fetchAllNotionBottles();
 
-animate();
+      // For each bottle from Notion, place it in the correct slot
+      notionBottles.forEach(bData => {
+        createBottleFromNotion(bData);
+      });
+
+      animate();
     });
 
-    // Fetch config from server
+    // -------------------------------------------
+    // 1) Fetch config from server
+    // -------------------------------------------
     async function fetchConfig() {
       try {
         const response = await fetch('/api/config');
@@ -153,85 +89,59 @@ animate();
       }
     }
 
-    /**
-     * Fetch the total count of bottles from Notion
-     */
-    async function fetchBottleCount() {
-      try {
-        const response = await fetch('/api/bottleCount');
-        if (!response.ok) {
-          throw new Error('Failed to get bottle count');
-        }
-        const data = await response.json();
-        return data.total;
-      } catch (err) {
-        console.error('Error fetching bottle count:', err);
-        return 0;
-      }
-    }
-
-    // Parse environment-based strings, e.g. "platoon(6(4,6))" => { racks:6, rows:4, slots:6 }
-    function parsePlatoonDefinition(str) {
-      // Simple pattern match: "platoon(6(4,6))" => platoon(\d+\(\d+,\d+\))
-      // We'll parse with a regex.
-      // Example match for "platoon(6(4,6))":
-      //  group1 = 6
-      //  group2 = 4
-      //  group3 = 6
-      const match = /^platoon\((\d+)\((\d+),(\d+)\)\)$/.exec(str.trim());
-      if (!match) {
-        console.warn('Invalid platoon definition:', str);
-        return { racks: 0, rows: 0, slots: 0 };
-      }
-      const racks = parseInt(match[1]);
-      const rows  = parseInt(match[2]);
-      const slots = parseInt(match[3]);
-      return { racks, rows, slots };
-    }
-
-    // parse e.g. "A1xA2" => ["A1", "A2"]
-    function parsePlaneDefinition(str) {
-      // In .env: PLANE_P1="A1xA2"
-      // We'll split by 'x' => ["A1", "A2"]
-      return str.split('x').map(item => item.trim());
-    }
-
-    // Parse environment-based platoon definitions:
+    // -------------------------------------------
+    // 2) Parse environment-based platoon definitions
+    // -------------------------------------------
     function parsePlatoonConfigs() {
-      // If config.platoonA1 is e.g. "platoon(6(4,6))"
       platoons.A1 = parsePlatoonDefinition(config.platoonA1);
       platoons.A2 = parsePlatoonDefinition(config.platoonA2);
       platoons.A3 = parsePlatoonDefinition(config.platoonA3);
       platoons.A4 = parsePlatoonDefinition(config.platoonA4);
     }
 
-    // ---------------------------------
-    // 1) Scene initialization
-    // ---------------------------------
+    // E.g. "platoon(6(4,6))" => { racks:6, rows:4, slots:6 }
+    function parsePlatoonDefinition(str) {
+      const match = /^platoon\((\d+)\((\d+),(\d+)\)\)$/.exec((str || "").trim());
+      if (!match) {
+        console.warn("Invalid platoon definition:", str);
+        return { racks: 0, rows: 0, slots: 0 };
+      }
+      return {
+        racks: parseInt(match[1]),
+        rows:  parseInt(match[2]),
+        slots: parseInt(match[3])
+      };
+    }
+
+    // E.g. "A1xA2" => ["A1", "A2"]
+    function parsePlaneDefinition(str) {
+      return (str || "").split('x').map(s => s.trim());
+    }
+
+    // -------------------------------------------
+    // 3) Initialize Scene, Camera, Controls
+    // -------------------------------------------
     function initScene() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xffffff);
 
-      // Camera
       camera = new THREE.PerspectiveCamera(
         60,
         window.innerWidth / window.innerHeight,
         0.1,
-        1000
+        2000
       );
       camera.position.set(150, 100, 200);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Controls
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 50, 0);
       controls.update();
 
-      // Lights
+      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
 
@@ -239,209 +149,227 @@ animate();
       directionalLight.position.set(10, 20, 10);
       scene.add(directionalLight);
 
-      // Build PLANE P1
-      const plane1Def = parsePlaneDefinition(config.planeP1); // e.g. ["A1","A2"]
-      let currentZ = 0;
-      const plane1Group = new THREE.Group(); // group for plane #1
-      for (let i = 0; i < plane1Def.length; i++) {
-        const platoonId = plane1Def[i];
-        const { racks, rows, slots } = platoons[platoonId];
-        const platoonGroup = createPlatoon(racks, rows, slots);
-        platoonGroup.position.set(0, 0, currentZ);
-        plane1Group.add(platoonGroup);
-
-        // offset behind
-        const offsetCount = parseFloat(config.offsetPlatoon) || 1;
-        const singleRackDepth = rows * SLOT_WIDTH_DEPTH;
-        const platoonDepth = singleRackDepth;
-        currentZ -= offsetCount * 2 * platoonDepth;
-      }
-      scene.add(plane1Group);
-
-      // Build PLANE P2 (placed below plane1Group)
-      if (config.planeP2) {
-        const plane2Def = parsePlaneDefinition(config.planeP2); // e.g. ["A1","A2"]
-        let plane2Group = new THREE.Group();
-        let plane2Z = 0; // start at 0 in Z
-        for (let i = 0; i < plane2Def.length; i++) {
-          const platoonId = plane2Def[i];
-          const { racks, rows, slots } = platoons[platoonId];
-          const platoonGroup = createPlatoon(racks, rows, slots);
-          platoonGroup.position.set(0, 0, plane2Z);
-          plane2Group.add(platoonGroup);
-
-          // offset behind
-          const offsetCount = parseFloat(config.offsetPlatoon) || 1;
-          const singleRackDepth = rows * SLOT_WIDTH_DEPTH;
-          const platoonDepth = singleRackDepth;
-          plane2Z -= offsetCount * 2 * platoonDepth;
-        }
-
-        // Move plane2Group "below" plane1 by 3 × offsetPlatoon × 2 × RACK_DEPTH
-        // We'll use the same logic from plane1's largest RACK_DEPTH (assuming same row/slot dimensions).
-        // E.g. planeVerticalOffset = 3 means the next plane is below by 3 × offsetPlatoon × 2 × RACK_DEPTH.
-        const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 3;
-        // We'll estimate RACK_DEPTH from the first platoon in plane2:
-        // but if plane2 is the same structure as plane1, we can just re-use singleRackDepth from above.
-        // Or to be safe, we can pick the first definition from plane2 or plane1. Here we pick plane1's first platoon.
-        if (plane1Def.length > 0) {
-          const firstPlatoon = platoons[plane1Def[0]];
-          if (firstPlatoon) {
-            const firstRackDepth = firstPlatoon.rows * SLOT_WIDTH_DEPTH;
-            const offsetY = - planeVerticalOffset * (parseFloat(config.offsetPlatoon) || 1) * 2 * firstRackDepth;
-            plane2Group.position.y = offsetY;
-          }
-        }
-        scene.add(plane2Group);
-      }
-
-      // Event listeners
+      // Event Listeners
       renderer.domElement.addEventListener('mousedown', onDocumentMouseDown);
-      window.addEventListener('resize', onWindowResize, false);
+      window.addEventListener('resize', onWindowResize);
     }
 
-    // ---------------------------------
-    // 2) Platoon / Rack creation
-    // ---------------------------------
-    /**
-     * Creates a group of racks in a row (side-by-side).
-     * @param {number} numRacks  e.g. 6
-     * @param {number} numRows   e.g. 4
-     * @param {number} numSlots  e.g. 6
-     */
-    function createPlatoon(numRacks, numRows, numSlots) {
-      const platoonGroup = new THREE.Group();
-      for (let i = 0; i < numRacks; i++) {
-        const rackGroup = createRackWithBottles(numRows, numSlots);
-        // Offset each rack by i * rack width along X
-        const rackWidth = numSlots * SLOT_WIDTH_DEPTH;
-        rackGroup.position.set(i * rackWidth, 0, 0);
-        platoonGroup.add(rackGroup);
+    // -------------------------------------------
+    // 4) Build planes & racks (just the shelves)
+    // -------------------------------------------
+    function buildAllPlanes() {
+      // We'll handle up to 4 planes, because your .env suggests PLANE_P1..PLANE_P4.
+      // For each plane X that exists, parse plane definition, build the geometry.
+      // Also store a "slot lookup" => exact X/Z offset for row, column.
+
+      // If planeVerticalOffset => how far down each plane sits from the previous
+      let currentPlaneY = 0; // y offset for plane #1
+
+      for (let planeNumber = 1; planeNumber <= 4; planeNumber++) {
+        // E.g. "planeP1" from config
+        const planeKey = `planeP${planeNumber}`;
+        if (!config[planeKey]) {
+          continue; // skip if not defined
+        }
+        // Parse e.g. "A1xA2" => ["A1","A2"]
+        const platoonIds = parsePlaneDefinition(config[planeKey]);
+        if (!platoonIds.length) {
+          continue;
+        }
+
+        // Make a group for the entire plane
+        const planeGroup = new THREE.Group();
+        planeGroup.position.set(0, currentPlaneY, 0);
+        scene.add(planeGroup);
+
+        let platoonZ = 0;
+        planeLayouts[planeNumber] = [];
+
+        // For each platoon ID in this plane
+        platoonIds.forEach(platoonId => {
+          const p = platoons[platoonId];
+          if (!p) {
+            console.warn("No definition found for platoon:", platoonId);
+            return;
+          }
+          const { racks, rows, slots } = p;
+
+          // Create a "platoonGroup" to hold the racks
+          const platoonGroup = new THREE.Group();
+          platoonGroup.position.set(0, 0, platoonZ);
+          planeGroup.add(platoonGroup);
+
+          // Build each rack side-by-side in X
+          for (let r = 0; r < racks; r++) {
+            const rackGroup = createSteppedRack(rows, slots);
+            // offset in X
+            const rackWidth = slots * SLOT_WIDTH_DEPTH;
+            rackGroup.position.x = r * rackWidth;
+            platoonGroup.add(rackGroup);
+
+            // For each row & column in this rack, store a slot => (x,y,z)
+            for (let row = 0; row < rows; row++) {
+              for (let col = 0; col < slots; col++) {
+                // compute the actual 3D position:
+                const slotCenterX = - (slots * SLOT_WIDTH_DEPTH) / 2
+                                    + col * SLOT_WIDTH_DEPTH
+                                    + SLOT_WIDTH_DEPTH / 2
+                                    + rackGroup.position.x; // offset by rack
+
+                // row centerZ
+                const totalDepth  = rows * SLOT_WIDTH_DEPTH;
+                const rowDepth    = totalDepth / rows;
+                const slotCenterZ = totalDepth / 2
+                                    - row * rowDepth
+                                    - rowDepth / 2
+                                    + platoonGroup.position.z; // offset by platoonZ
+
+                // vertical shelf top
+                const wallThickness = 0.1;
+                const stepY         = (BOTTLE_HEIGHT / 2) * 0.3; // ~9.6
+                const shelfTop      = wallThickness + (stepY * row) + wallThickness;
+
+                // final world coords (planeGroup offset in Y not included yet)
+                const localX = slotCenterX;
+                const localY = shelfTop;
+                const localZ = slotCenterZ;
+
+                // But planeGroup’s position.y = currentPlaneY
+                const worldX = localX;
+                const worldY = currentPlaneY + localY;
+                const worldZ = localZ;
+
+                // Store this in planeLayouts for quick lookup
+                planeLayouts[planeNumber].push({
+                  plane: planeNumber,
+                  row,
+                  column: (r * slots) + col, // offset columns by rack index
+                  x: worldX,
+                  y: worldY,
+                  z: worldZ
+                });
+              }
+            }
+          }
+
+          // Move the next platoon behind in Z
+          const offsetCount      = parseFloat(config.offsetPlatoon) || 1;
+          const singleRackDepth  = rows * SLOT_WIDTH_DEPTH;
+          const platoonDepth     = singleRackDepth;
+          platoonZ -= offsetCount * 2 * platoonDepth;
+        });
+
+        // Move the next plane downward
+        const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 2;
+        // We'll estimate one typical "rack depth" for the offset if needed
+        // but you can refine as you like:
+        currentPlaneY -= planeVerticalOffset * BOTTLE_HEIGHT; // some logic
       }
-      return platoonGroup;
     }
 
     /**
-     * Creates a single stepped rack with random bottles
+     * Create only the stepped geometry for a single rack,
+     * WITHOUT automatically placing any bottles.
      */
-    function createRackWithBottles(numRows, numSlots) {
-      const singleRackGroup = createSteppedRack(numRows, numSlots);
-      placeBottles(singleRackGroup, numRows, numSlots);
-      return singleRackGroup;
-    }
-
-    // Creates stepped geometry for a single rack
     function createSteppedRack(numRows, numSlots) {
-      const totalWidth  = numSlots * SLOT_WIDTH_DEPTH;
-      const totalDepth  = numRows * SLOT_WIDTH_DEPTH;
-      const rowHeight   = BOTTLE_HEIGHT / 2; // 32
+      const group = new THREE.Group();
+      const totalWidth = numSlots * SLOT_WIDTH_DEPTH;
+      const totalDepth = numRows * SLOT_WIDTH_DEPTH;
+      const rowHeight  = BOTTLE_HEIGHT / 2; // 32
       const wallThickness = 0.1;
-      const stepY = rowHeight * 0.3; // ~9.6
-      const baseY = wallThickness / 2;
+      const stepY     = rowHeight * 0.3; // ~9.6
+      const baseY     = wallThickness / 2;
 
-      const rackMaterial = new THREE.MeshPhongMaterial({
+      const mat = new THREE.MeshPhongMaterial({
         color: 0xcccccc,
         transparent: true,
         opacity: 0.3,
         side: THREE.DoubleSide
       });
 
-      const rackGroup = new THREE.Group();
-
-      // utility function to find center Z for row i
+      // Utility for row center
       const rowDepth = totalDepth / numRows;
       function rowCenterZ(i) {
-        return totalDepth / 2 - rowDepth / 2 - rowDepth * i;
+        return totalDepth/2 - rowDepth/2 - rowDepth*i;
       }
 
+      // Build each row
       for (let i = 0; i < numRows; i++) {
-        const rowGroup = new THREE.Group();
         const rowBaseY = baseY + stepY * i;
         const centerZ  = rowCenterZ(i);
 
         // floor
-        const baseGeom = new THREE.BoxGeometry(totalWidth, wallThickness, rowDepth);
-        const baseMesh = new THREE.Mesh(baseGeom, rackMaterial);
-        baseMesh.position.set(0, rowBaseY, centerZ);
-        rowGroup.add(baseMesh);
+        const floorGeom = new THREE.BoxGeometry(totalWidth, wallThickness, rowDepth);
+        const floorMesh = new THREE.Mesh(floorGeom, mat);
+        floorMesh.position.set(0, rowBaseY, centerZ);
+        group.add(floorMesh);
 
         // vertical dividers
         for (let j = 1; j < numSlots; j++) {
-          const dividerGeom = new THREE.BoxGeometry(
-            wallThickness,
-            rowHeight,
-            rowDepth - 2 * wallThickness
-          );
-          const divider = new THREE.Mesh(dividerGeom, rackMaterial);
-          const xPos = -totalWidth / 2 + (totalWidth / numSlots) * j;
-          divider.position.set(
-            xPos,
-            rowBaseY + wallThickness + rowHeight / 2,
-            centerZ
-          );
-          rowGroup.add(divider);
+          const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
+          const divider     = new THREE.Mesh(dividerGeom, mat);
+          const xPos        = -totalWidth/2 + (totalWidth/numSlots)*j;
+          divider.position.set(xPos, rowBaseY + wallThickness + rowHeight/2, centerZ);
+          group.add(divider);
         }
 
         // side walls
-        const sideGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth);
-        const leftWall = new THREE.Mesh(sideGeom, rackMaterial);
+        const sideGeom   = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth);
+        const leftWall   = new THREE.Mesh(sideGeom, mat);
         leftWall.position.set(
-          -totalWidth / 2 + wallThickness / 2,
-          rowBaseY + wallThickness + rowHeight / 2,
+          -totalWidth/2 + wallThickness/2,
+          rowBaseY + wallThickness + rowHeight/2,
           centerZ
         );
-        rowGroup.add(leftWall);
+        group.add(leftWall);
 
-        const rightWall = new THREE.Mesh(sideGeom, rackMaterial);
+        const rightWall  = new THREE.Mesh(sideGeom, mat);
         rightWall.position.set(
-          totalWidth / 2 - wallThickness / 2,
-          rowBaseY + wallThickness + rowHeight / 2,
+          totalWidth/2 - wallThickness/2,
+          rowBaseY + wallThickness + rowHeight/2,
           centerZ
         );
-        rowGroup.add(rightWall);
-
-        rackGroup.add(rowGroup);
+        group.add(rightWall);
       }
 
       // front wall (beveled)
       const frontWallGeom = createBeveledWall(totalWidth, rowHeight, wallThickness, 0.2, 0.05);
-      const frontWall = new THREE.Mesh(frontWallGeom, rackMaterial);
+      const frontWall     = new THREE.Mesh(frontWallGeom, mat);
       frontWall.rotation.y = Math.PI;
-      frontWall.position.set(0, baseY, totalDepth / 2);
-      rackGroup.add(frontWall);
+      frontWall.position.set(0, baseY, totalDepth/2);
+      group.add(frontWall);
 
-      // back wall (beveled) - taller
-      const extraHeight = (numRows - 1) * stepY;
+      // back wall (beveled, taller if multiple rows)
+      const extraHeight  = (numRows - 1) * stepY;
       const backWallGeom = createBeveledWall(totalWidth, rowHeight + extraHeight, wallThickness, 0.2, 0.05);
-      const backWall = new THREE.Mesh(backWallGeom, rackMaterial);
-      backWall.position.set(0, baseY, -totalDepth / 2);
-      rackGroup.add(backWall);
+      const backWall     = new THREE.Mesh(backWallGeom, mat);
+      backWall.position.set(0, baseY, -totalDepth/2);
+      group.add(backWall);
 
-      // Shared walls between rows
+      // shared walls between row steps
       for (let i = 0; i < numRows - 1; i++) {
-        const lowerRowBase = baseY + stepY * (i + 1);
-        const upperRowTop  = baseY + stepY * i + rowHeight;
-        const overlapHeight = upperRowTop - lowerRowBase;
-        const sharedWallCenterY = lowerRowBase + overlapHeight / 2;
-        const boundaryZ = rowCenterZ(i) - rowDepth / 2 + wallThickness / 2;
+        const lowerY = baseY + stepY*(i+1);
+        const upperY = baseY + stepY*i + rowHeight;
+        const overlapHeight = upperY - lowerY;
+        const boundaryZ = rowCenterZ(i) - rowDepth/2 + wallThickness/2;
 
         const sharedGeom = new THREE.BoxGeometry(totalWidth, overlapHeight, wallThickness);
-        const sharedWall = new THREE.Mesh(sharedGeom, rackMaterial);
-        sharedWall.position.set(0, sharedWallCenterY, boundaryZ);
-        rackGroup.add(sharedWall);
+        const sharedWall = new THREE.Mesh(sharedGeom, mat);
+        sharedWall.position.set(0, lowerY + overlapHeight/2, boundaryZ);
+        group.add(sharedWall);
       }
 
-      return rackGroup;
+      return group;
     }
 
-    // utility function to create beveled wall
+    // Utility: create beveled wall geometry
     function createBeveledWall(width, height, depth, bevelSize, bevelThickness) {
       const shape = new THREE.Shape();
-      shape.moveTo(-width / 2, 0);
-      shape.lineTo(width / 2, 0);
-      shape.lineTo(width / 2, height);
-      shape.lineTo(-width / 2, height);
-      shape.lineTo(-width / 2, 0);
+      shape.moveTo(-width/2, 0);
+      shape.lineTo(width/2, 0);
+      shape.lineTo(width/2, height);
+      shape.lineTo(-width/2, height);
+      shape.lineTo(-width/2, 0);
 
       const extrudeSettings = {
         steps: 1,
@@ -454,50 +382,54 @@ animate();
       return new THREE.ExtrudeGeometry(shape, extrudeSettings);
     }
 
-    // ---------------------------------
-    // 3) Bottle creation + placement
-    // ---------------------------------
-    /**
-     * Places a bottle in every available row & slot of the rack
-     */
-    function placeBottles(rackGroup, numRows, numSlots) {
-      const capColors = [0x000000, 0xC0C0C0, 0xFFD700];
-      let index = 0;
-      for (let row = 0; row < numRows; row++) {
-        for (let col = 0; col < numSlots; col++) {
-          const color = capColors[index % capColors.length];
-          createBottleAtSlot(row, col, color, rackGroup, numRows, numSlots);
-          index++;
+    // -------------------------------------------
+    // 5) Fetch the Notion Bottles (plane/row/col)
+    // -------------------------------------------
+    async function fetchAllNotionBottles() {
+      try {
+        const response = await fetch('/api/bottles');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch /api/bottles. Status = ${response.status}`);
         }
+        const data = await response.json(); // array of { id, name, plane, row, column, ... }
+        return data;
+      } catch (err) {
+        console.error('fetchAllNotionBottles error:', err);
+        return [];
       }
     }
 
-    function createBottleAtSlot(row, col, capColor, rackGroup, numRows, numSlots) {
-      const totalDepth = numRows * SLOT_WIDTH_DEPTH;
-      const rowDepth   = totalDepth / numRows;
-      const slotCenterX = - (numSlots * SLOT_WIDTH_DEPTH) / 2
-                          + col * SLOT_WIDTH_DEPTH
-                          + SLOT_WIDTH_DEPTH / 2;
-      const slotCenterZ = totalDepth / 2
-                          - row * rowDepth
-                          - rowDepth / 2;
+    // -------------------------------------------
+    // 6) Create Bottles in the Correct Position
+    // -------------------------------------------
+    function createBottleFromNotion(bData) {
+      const { plane, row, column, name, capColor } = bData;
 
-      // row geometry
-      const wallThickness = 0.1;
-      const rowHeight     = BOTTLE_HEIGHT / 2; // 32
-      const stepY         = rowHeight * 0.3;   // ~9.6
-      const shelfTop      = wallThickness / 2 + stepY * row + wallThickness;
+      // Find the matching slot in planeLayouts[plane]
+      if (!planeLayouts[plane]) {
+        console.warn(`No plane layout found for plane=${plane}`);
+        return;
+      }
 
-      // Bottle geometry
+      // Find the matching (row, column) among the stored slot positions
+      const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
+      if (!slot) {
+        console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
+        return;
+      }
+
+      // Now create the 3D geometry at slot.x, slot.y, slot.z
+      // (We can reuse your existing "bottle geometry" code)
+      const bottleGroup = new THREE.Group();
+
+      // Transparent bottle
       const bottleWidth  = 10;
       const bottleDepth  = 10;
       const bottleHeight = BOTTLE_HEIGHT;
       const capHeight    = 15;
       const capRadius    = 5;
 
-      const bottleGroup = new THREE.Group();
-
-      // Transparent bottle
+      // Bottle body
       const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
       const bottleMat = new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
@@ -509,69 +441,82 @@ animate();
         opacity: 0.5
       });
       const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
-      bottleMesh.position.set(0, bottleHeight / 2, 0);
-
-      // Cap
-      const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
-      const capMat = new THREE.MeshStandardMaterial({ color: capColor });
-      const capMesh = new THREE.Mesh(capGeo, capMat);
-      capMesh.position.set(0, bottleHeight + capHeight / 2, 0);
+      bottleMesh.position.set(0, bottleHeight/2, 0);
 
       // Label
       const labelWidth  = bottleWidth;
       const labelHeight = bottleHeight / 2;
       const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
-      const labelTexture = createLabelTexture("perfume name");
+      const labelTexture = createLabelTexture(name || "(No Name)");
       const labelMat = new THREE.MeshBasicMaterial({
         map: labelTexture,
         side: THREE.DoubleSide,
         transparent: true
       });
       const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-      labelMesh.position.set(0, 0, bottleDepth / 2 + 0.01);
+      labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
       bottleMesh.add(labelMesh);
 
+      // Cap
+      const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
+      const capMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+      if (capColor) {
+        try {
+          capMat.color.setStyle(capColor);
+        } catch {
+          capMat.color.set(0xffd700); // fallback to gold
+        }
+      }
+      const capMesh = new THREE.Mesh(capGeo, capMat);
+      capMesh.position.set(0, bottleHeight + capHeight/2, 0);
+
+      // Combine
       bottleGroup.add(bottleMesh);
       bottleGroup.add(capMesh);
 
-      bottleGroup.position.set(slotCenterX, shelfTop, slotCenterZ);
+      // Place in final position
+      bottleGroup.position.set(slot.x, slot.y, slot.z);
+
+      // Store some userData for fly-up effect
       bottleGroup.userData.initialY = bottleGroup.position.y;
       bottleGroup.userData.flying   = false;
+      bottleGroup.userData.notionData = bData; // keep the full record
 
+      // Track as clickable
       clickableBottles.push(bottleGroup);
-      rackGroup.add(bottleGroup);
+      scene.add(bottleGroup);
     }
 
-    // utility: create label texture with text
+    // Utility: label texture
     function createLabelTexture(text) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
+      const canvas  = document.createElement('canvas');
+      canvas.width  = 256;
       canvas.height = 819;
-      const context = canvas.getContext('2d');
+      const ctx     = canvas.getContext('2d');
 
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      context.font = "60px Arial";
-      context.fillStyle = "#000000";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
+      ctx.font         = "60px Arial";
+      ctx.fillStyle    = "#000000";
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
 
-      // rotate text -90 degrees
-      context.save();
-      context.translate(0, canvas.height);
-      context.rotate(-Math.PI / 2);
-      context.fillText(text, canvas.height / 2, canvas.width / 2);
-      context.restore();
+      // rotate -90 degrees
+      ctx.save();
+      ctx.translate(0, canvas.height);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(text, canvas.height / 2, canvas.width / 2);
+      ctx.restore();
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.needsUpdate = true;
       return texture;
     }
 
-    // ---------------------------------
-    // 4) Mouse Interaction
-    // ---------------------------------
+    // -------------------------------------------
+    // 7) Interaction (fly up on click)
+    // -------------------------------------------
     function onDocumentMouseDown(event) {
       event.preventDefault();
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -582,36 +527,33 @@ animate();
 
       if (intersects.length > 0) {
         let clickedGroup = intersects[0].object;
-        while (
-          clickedGroup.parent &&
-          clickableBottles.indexOf(clickedGroup) === -1
-        ) {
+        // bubble up to the bottleGroup
+        while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
           clickedGroup = clickedGroup.parent;
         }
+        // If we have an active bottle, drop it first
         if (activeBottle && activeBottle !== clickedGroup) {
-          // drop previously active
           activeBottle.userData.flying = false;
         }
         activeBottle = clickedGroup;
         activeBottle.userData.flying = true;
       } else {
+        // If we clicked empty space, drop the active bottle
         if (activeBottle) {
           activeBottle.userData.flying = false;
         }
       }
     }
 
-    // ---------------------------------
-    // 5) Main Loop
-    // ---------------------------------
+    // -------------------------------------------
+    // 8) Main animation loop
+    // -------------------------------------------
     function animate() {
       requestAnimationFrame(animate);
 
-      // If bottle is "active," handle flying up/down
       if (activeBottle) {
         const initialY = activeBottle.userData.initialY;
         const targetY  = initialY + FLY_OFFSET;
-
         if (activeBottle.userData.flying) {
           // fly up
           if (activeBottle.position.y < targetY) {
@@ -636,27 +578,7 @@ animate();
       renderer.render(scene, camera);
     }
 
-/**
- * Randomly remove bottles from the scene if the Notion count is smaller
- * than the total geometry slots (clickableBottles).
- */
-function removeExtraBottlesIfNeeded(notionBottleCount) {
-  const totalSlots = clickableBottles.length;
-  if (notionBottleCount < totalSlots) {
-    const difference = totalSlots - notionBottleCount;
-    for (let i = 0; i < difference; i++) {
-      const randomIndex = Math.floor(Math.random() * clickableBottles.length);
-      const bottleToRemove = clickableBottles[randomIndex];
-      // remove from parent group
-      bottleToRemove.parent.remove(bottleToRemove);
-      // remove from clickable array
-      clickableBottles.splice(randomIndex, 1);
-    }
-  }
-}
-
-// handle window resizing
-function onWindowResize() {
+    function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
