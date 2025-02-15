@@ -164,6 +164,7 @@
     function buildAllPlanes() {
       const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
       let currentPlaneY = 0; // downward offset for planes
+      console.log("[DEBUG] config:", config);
 
       planeKeys.forEach((planeKey, index) => {
         const definition = config[planeKey];
@@ -179,6 +180,7 @@
 
         planeLayouts[planeNumber] = [];
 
+        let rowIndexBase = 0;
         let rowStackOffset = 0;
         const offsetRack = parseFloat(config.offsetRack) || 1;
 
@@ -221,7 +223,7 @@
 
               planeLayouts[planeNumber].push({
                 plane: planeNumber,
-                row: rowStackOffset/ SLOT_WIDTH_DEPTH + row, // purely conceptual, not used for final assignment
+                row: rowIndexBase + row,
                 column: col,
                 x: worldX,
                 y: worldY,
@@ -230,10 +232,17 @@
             }
           }
 
+          // Move rowIndexBase for the next rack
+          rowIndexBase += rDef.rows;
+
           // Move stack offset for the next rack
           rowStackOffset += rackDepth;
           rowStackOffset += offsetRack * rackDepth; // extra gap between racks
         });
+
+        const maxRow = Math.max(...planeLayouts[planeNumber].map(s => s.row));
+        const maxCol = Math.max(...planeLayouts[planeNumber].map(s => s.column));
+        console.log(`[DEBUG] Plane #${planeNumber} has maxRow=${maxRow}, maxCol=${maxCol}`);
 
         // Next plane is offset downward in Y
         const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 2;
