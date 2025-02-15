@@ -6,6 +6,22 @@
   <style>
     body { margin: 0; }
     canvas { display: block; }
+
+    #toolbox {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      bottom: 0;
+      right: 0;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: none;
+      border: 1px solid #ccc;
+      padding: 8px;
+      box-sizing: border-box;
+      overflow: auto;
+      pointer-events: auto;
+      z-index: 9999;
+    }
   </style>
 </head>
 <body>
@@ -500,6 +516,10 @@
     // 7) Interaction (fly up on click)
     // -------------------------------------------
     function onDocumentMouseDown(event) {
+      if (toolboxVisible) {
+        // Toolbox is open, ignore scene clicks
+        return;
+      }
       event.preventDefault();
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -562,6 +582,29 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
+
+    let toolboxVisible = false;
+    function toggleToolbox() {
+      toolboxVisible = !toolboxVisible;
+      const toolbox = document.getElementById('toolbox');
+      if (toolboxVisible) {
+        toolbox.style.display = 'block';
+        controls.enabled = false;
+      } else {
+        toolbox.style.display = 'none';
+        controls.enabled = true;
+      }
+    }
+
+    // Listen for T key
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 't') {
+        toggleToolbox();
+      }
+    });
   </script>
+  <div id="toolbox">
+    <h3>Toolbox</h3>
+  </div>
 </body>
 </html>
