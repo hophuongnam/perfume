@@ -355,31 +355,18 @@
     // 3) Bottle creation + placement
     // ---------------------------------
     /**
-     * Places 7 random bottles onto the given rackGroup with (numRows, numSlots)
+     * Places a bottle in every available row & slot of the rack
      */
     function placeBottles(rackGroup, numRows, numSlots) {
-      const totalBottles = 7;
-      const usedSlots = [];
-
-      // Ensure each row gets at least one
+      const capColors = [0x000000, 0xC0C0C0, 0xFFD700];
+      let index = 0;
       for (let row = 0; row < numRows; row++) {
-        const col = Math.floor(Math.random() * numSlots);
-        usedSlots.push({ row, col });
-      }
-      // Fill up to totalBottles
-      while (usedSlots.length < totalBottles) {
-        const row = Math.floor(Math.random() * numRows);
-        const col = Math.floor(Math.random() * numSlots);
-        if (!usedSlots.some(slot => slot.row === row && slot.col === col)) {
-          usedSlots.push({ row, col });
+        for (let col = 0; col < numSlots; col++) {
+          const color = capColors[index % capColors.length];
+          createBottleAtSlot(row, col, color, rackGroup, numRows, numSlots);
+          index++;
         }
       }
-
-      // cycle through cap colors
-      const capColors = [0x000000, 0xC0C0C0, 0xFFD700];
-      usedSlots.forEach((slot, index) => {
-        createBottleAtSlot(slot.row, slot.col, capColors[index % capColors.length], rackGroup, numRows, numSlots);
-      });
     }
 
     function createBottleAtSlot(row, col, capColor, rackGroup, numRows, numSlots) {
