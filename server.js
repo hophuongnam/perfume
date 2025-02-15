@@ -59,6 +59,54 @@ app.get('/api/bottleCount', async (req, res) => {
   }
 });
 
+// STEP 5: Add an /api/bottles endpoint to retrieve detailed data
+app.get('/api/bottles', async (req, res) => {
+  try {
+    let allBottles = [];
+    let hasMore = true;
+    let startCursor = undefined;
+
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID,
+        start_cursor: startCursor
+      });
+      
+      // Filter out "Ignore?" if you want
+      const validPages = response.results.filter(page => !page.properties["Ignore?"]?.checkbox);
+
+      // Map to a simpler JSON
+      const mapped = validPages.map(page => {
+        const nameProp    = page.properties["Name"];
+        const capColorProp= page.properties["Cap Color"];
+        // e.g. name, house, or any other fields
+        const houseProp   = page.properties["House"];
+
+        // Parse the fields
+        const nameVal = nameProp?.title?.[0]?.plain_text || "(No name)";
+        const capColorVal = capColorProp?.select?.name || "Gold"; // fallback
+        const houseVal = houseProp?.select?.name || "Unknown House";
+
+        return {
+          id: page.id,
+          name: nameVal,
+          capColor: capColorVal,
+          house: houseVal
+        };
+      });
+
+      allBottles.push(...mapped);
+      hasMore = response.has_more;
+      startCursor = response.next_cursor;
+    }
+
+    res.json(allBottles);
+  } catch (err) {
+    console.error('/api/bottles error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

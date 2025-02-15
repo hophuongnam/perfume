@@ -16,6 +16,81 @@
     // Scene variables
     let scene, camera, renderer, controls;
 
+    async function fetchAllNotionBottles() {
+      try {
+        const response = await fetch('/api/bottles');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch /api/bottles. Status = ${response.status}`);
+        }
+        const data = await response.json();
+        return data; // array of { id, name, capColor, house, ... }
+      } catch (err) {
+        console.error("fetchAllNotionBottles error:", err);
+        return [];
+      }
+    }
+
+    /**
+     * Step 6: Pair up each 3D bottle with one Notion record.
+     * We won't recreate them or reposition them, just reuse the existing geometry,
+     * and update label textures + cap color.
+     */
+    function assignNotionDataToModels(notionBottles) {
+      // If they differ in count, handle gracefully
+      if (notionBottles.length !== clickableBottles.length) {
+        console.warn("Notion bottles length doesn't match 3D bottles length. We'll match as many as we can.");
+      }
+      const length = Math.min(notionBottles.length, clickableBottles.length);
+
+      for (let i = 0; i < length; i++) {
+        const notionData = notionBottles[i];
+        const threeBottle = clickableBottles[i];
+
+        // Store the notion data in userData for reference
+        threeBottle.userData.notionData = notionData;
+
+        // Update the label
+        const labelMesh = findLabelMesh(threeBottle);
+        if (labelMesh) {
+          labelMesh.material.map = createLabelTexture(notionData.name);
+          labelMesh.material.needsUpdate = true;
+        }
+
+        // Update the cap color
+        const capMesh = findCapMesh(threeBottle);
+        if (capMesh) {
+          // If the user uses color names or hex codes, we can parse them
+          // e.g. black / "Black" / #000000 – might require some mapping.
+          // We'll assume standard CSS color name or hex code is fine:
+          try {
+            capMesh.material.color.setStyle(notionData.capColor);
+          } catch {
+            capMesh.material.color.set(0xffd700); // fallback to Gold
+          }
+        }
+      }
+    }
+
+    function findLabelMesh(group) {
+      let label;
+      group.traverse((obj) => {
+        if (obj.isMesh && obj.geometry && obj.geometry.type === "PlaneGeometry") {
+          label = obj;
+        }
+      });
+      return label;
+    }
+
+    function findCapMesh(group) {
+      let cap;
+      group.traverse((obj) => {
+        if (obj.isMesh && obj.geometry && obj.geometry.type === "CylinderGeometry") {
+          cap = obj;
+        }
+      });
+      return cap;
+    }
+
     // Non-hardcoded or derived constants
     const BOTTLE_HEIGHT = 64;    // bottle geometry fixed
     const SLOT_WIDTH_DEPTH = 15; // dimension of each slot
@@ -48,12 +123,21 @@
     // 0) On window load, fetch config, then init scene
     // ---------------------------------
     window.addEventListener('load', async () => {
-      await fetchConfig();
-      const notionCount = await fetchBottleCount();
-      parsePlatoonConfigs();
-      initScene();
-      removeExtraBottlesIfNeeded(notionCount);
-      animate();
+await fetchConfig();
+const notionCount = await fetchBottleCount();
+parsePlatoonConfigs();
+
+// Step 5: fetch all data from Notion
+const notionBottles = await fetchAllNotionBottles();
+
+initScene();
+// Step 4 is done, so we have random bottles. We'll remove extra to match notionCount
+removeExtraBottlesIfNeeded(notionCount);
+
+// Step 6: link the existing models to the actual Notion data
+assignNotionDataToModels(notionBottles);
+
+animate();
     });
 
     // Fetch config from server
