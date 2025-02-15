@@ -19,7 +19,8 @@ const config = {
   planeP1: process.env.PLANE_P1 || "",
   planeP2: process.env.PLANE_P2 || "",
   planeVerticalOffset: process.env.PLANE_VERTICAL_OFFSET || "2",
-  offsetPlatoon: process.env.OFFSET_PLATOON || "1"
+  offsetPlatoon: process.env.OFFSET_PLATOON || "1",
+  capColorDefault: "Gold"
 };
 
 // Serve perfume.html at root

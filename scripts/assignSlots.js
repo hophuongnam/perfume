@@ -92,17 +92,10 @@ function buildAllSlots() {
   return all;
 }
 
-// Utility: picks one of the 3 cap colors at random
-function getRandomCapColor() {
-  const colors = ["Black", "Gold", "Silver"];
-  const idx = Math.floor(Math.random() * colors.length);
-  return colors[idx];
-}
-
 /**
- * Update a Notion page with row, column, plane, and random cap color
+ * Update a Notion page with row, column, and plane
  */
-async function updatePage(pageId, plane, row, column, capColor) {
+async function updatePage(pageId, plane, row, column) {
   try {
     await notion.pages.update({
       page_id: pageId,
@@ -130,16 +123,10 @@ async function updatePage(pageId, plane, row, column, capColor) {
               text: { content: String(column) }
             }
           ]
-        },
-        // "Cap Color" is a select property
-        "Cap Color": {
-          select: {
-            name: capColor
-          }
         }
       }
     });
-    console.log(`Assigned slot to page ${pageId} -> Plane=${plane}, Row=${row}, Column=${column}, Cap=${capColor}`);
+    console.log(`Assigned slot to page ${pageId} -> Plane=${plane}, Row=${row}, Column=${column}`);
   } catch (error) {
     console.error(`Failed to update page ${pageId}: ${error.message}`);
   }
@@ -168,9 +155,7 @@ async function updatePage(pageId, plane, row, column, capColor) {
     for (let i = 0; i < usableSlots; i++) {
       const page = filteredPages[i];
       const slot = allSlots[i];
-      const capColor = getRandomCapColor();
-
-      await updatePage(page.id, slot.plane, slot.row, slot.column, capColor);
+      await updatePage(page.id, slot.plane, slot.row, slot.column);
     }
 
     // if there are leftover pages with no slots, optionally warn
