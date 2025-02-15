@@ -49,8 +49,10 @@
     // ---------------------------------
     window.addEventListener('load', async () => {
       await fetchConfig();
+      const notionCount = await fetchBottleCount();
       parsePlatoonConfigs();
       initScene();
+      removeExtraBottlesIfNeeded(notionCount);
       animate();
     });
 
@@ -64,6 +66,23 @@
         config = await response.json();
       } catch (err) {
         console.error('Error fetching config:', err);
+      }
+    }
+
+    /**
+     * Fetch the total count of bottles from Notion
+     */
+    async function fetchBottleCount() {
+      try {
+        const response = await fetch('/api/bottleCount');
+        if (!response.ok) {
+          throw new Error('Failed to get bottle count');
+        }
+        const data = await response.json();
+        return data.total;
+      } catch (err) {
+        console.error('Error fetching bottle count:', err);
+        return 0;
       }
     }
 
@@ -533,8 +552,27 @@
       renderer.render(scene, camera);
     }
 
-    // handle window resizing
-    function onWindowResize() {
+/**
+ * Randomly remove bottles from the scene if the Notion count is smaller
+ * than the total geometry slots (clickableBottles).
+ */
+function removeExtraBottlesIfNeeded(notionBottleCount) {
+  const totalSlots = clickableBottles.length;
+  if (notionBottleCount < totalSlots) {
+    const difference = totalSlots - notionBottleCount;
+    for (let i = 0; i < difference; i++) {
+      const randomIndex = Math.floor(Math.random() * clickableBottles.length);
+      const bottleToRemove = clickableBottles[randomIndex];
+      // remove from parent group
+      bottleToRemove.parent.remove(bottleToRemove);
+      // remove from clickable array
+      clickableBottles.splice(randomIndex, 1);
+    }
+  }
+}
+
+// handle window resizing
+function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);

@@ -1,7 +1,9 @@
 const express = require('express');
 const path = require('path');
 require('dotenv').config();
+const { Client } = require('@notionhq/client');
 
+const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -32,6 +34,27 @@ app.get('/api/config', (req, res) => {
 
 // Serve any other static files in the directory as needed (CSS, JS, etc.)
 app.use(express.static(path.join(__dirname)));
+
+app.get('/api/bottleCount', async (req, res) => {
+  try {
+    let total = 0;
+    let hasMore = true;
+    let startCursor = undefined;
+    while (hasMore) {
+      const resp = await notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID,
+        start_cursor: startCursor
+      });
+      total += resp.results.length;
+      hasMore = resp.has_more;
+      startCursor = resp.next_cursor;
+    }
+    res.json({ total });
+  } catch (err) {
+    console.error('/api/bottleCount error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Start the server
 app.listen(port, () => {
