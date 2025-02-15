@@ -73,13 +73,13 @@ function buildSlotsForPlane(planeNumber, planeDefinition) {
       for (let col = 0; col < columns; col++) {
         result.push({
           plane: planeNumber,
-          row: rowOffset + row,
-          column: col
+          row: rowOffset + row + 1,
+          column: col + 1
         });
       }
     }
-    // Move rowOffset for the next rack in this plane (stack by row)
     rowOffset += rows;
+    rowOffset += offsetRack;
     // Add extra spacing if desired
     rowOffset += offsetRack;
   }
