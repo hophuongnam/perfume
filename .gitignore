@@ -1,0 +1,63 @@
+# General
+.DS_Store
+Thumbs.db
+.idea/        # JetBrains IDEs (IntelliJ, PyCharm, WebStorm, etc.)
+*.swp         # Vim swap files
+*~            # Backup files (often created by text editors)
+*.log         # Log files
+.vscode/      # VS Code settings (optional, but good to ignore if not shared)
+.sync         # Resilio Sync
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/  # If you use pnpm
+
+# Build output (adjust these based on your project)
+dist/
+build/
+out/
+target/      # Common for Java projects
+
+# OS-generated files
+._*           # macOS "._" files (resource forks)
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example  # Keep .env.example, but ignore other .env files
+secrets.yml
+
+# IDE/Editor-specific (consider adding only those you use)
+# .vscode/  (Already listed above)
+# .idea/   (Already listed above)
+
+# Python (if you use Python)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Ruby (if you use Ruby)
+*.gem
+.bundle/
+vendor/bundle/
+
+# Java/Kotlin/Gradle
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+build/  (already listed in general build outputs)
+
+# macOS
+.Spotlight-V100
+.Trashes
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
