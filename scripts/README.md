@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-02-15T00:28:44.119Z
+Retrieved at: 2025-02-15T01:13:57.163Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 

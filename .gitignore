@@ -1,4 +1,5 @@
 # General
+.sync/
 .DS_Store
 Thumbs.db
 .idea/        # JetBrains IDEs (IntelliJ, PyCharm, WebStorm, etc.)
@@ -6,7 +7,6 @@ Thumbs.db
 *~            # Backup files (often created by text editors)
 *.log         # Log files
 .vscode/      # VS Code settings (optional, but good to ignore if not shared)
-.sync         # Resilio Sync
 
 # Node.js
 node_modules/
