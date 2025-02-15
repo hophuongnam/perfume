@@ -77,21 +77,30 @@ app.get('/api/bottles', async (req, res) => {
 
       // Map to a simpler JSON
       const mapped = validPages.map(page => {
-        const nameProp    = page.properties["Name"];
-        const capColorProp= page.properties["Cap Color"];
-        // e.g. name, house, or any other fields
-        const houseProp   = page.properties["House"];
+        const nameProp      = page.properties["Name"];
+        const capColorProp  = page.properties["Cap Color"];
+        const houseProp     = page.properties["House"];
+        const planeProp     = page.properties["Plane"];
+        const rowProp       = page.properties["Row"];
+        const columnProp    = page.properties["Column"];
 
         // Parse the fields
-        const nameVal = nameProp?.title?.[0]?.plain_text || "(No name)";
-        const capColorVal = capColorProp?.select?.name || "Gold"; // fallback
-        const houseVal = houseProp?.select?.name || "Unknown House";
+        const nameVal       = nameProp?.title?.[0]?.plain_text || "(No name)";
+        const capColorVal   = capColorProp?.select?.name || "Gold"; // fallback
+        const houseVal      = houseProp?.select?.name || "Unknown House";
+
+        const planeVal      = planeProp?.rich_text?.[0]?.plain_text || "";
+        const rowVal        = rowProp?.rich_text?.[0]?.plain_text || "";
+        const colVal        = columnProp?.rich_text?.[0]?.plain_text || "";
 
         return {
           id: page.id,
           name: nameVal,
           capColor: capColorVal,
-          house: houseVal
+          house: houseVal,
+          plane: parseInt(planeVal, 10) || 0,
+          row: parseInt(rowVal, 10) || 0,
+          column: parseInt(colVal, 10) || 0
         };
       });
 
