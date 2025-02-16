@@ -22,6 +22,18 @@
       pointer-events: auto;
       z-index: 9999;
     }
+
+    #dragIndicator {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      color: white;
+      background-color: rgba(0,0,0,0.5);
+      padding: 4px 8px;
+      display: none;
+      border-radius: 4px;
+      font-family: sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -39,13 +51,13 @@
     // We'll store all clickable bottle meshes here:
     const clickableBottles = [];
 
-    // If we want a bottle to “fly” up on click:
+    // For the "fly" effect (the old approach):
     const MOVE_SPEED  = 2;
-    const FLY_OFFSET  = 32;  // how far bottle flies up
+    const FLY_OFFSET  = 32;
     let activeBottle  = null;
 
-    // Dimensions
-    const SLOT_WIDTH_DEPTH = 15;   // each slot cell width & depth
+    // Dimensions for racks/slots
+    const SLOT_WIDTH_DEPTH = 15;
     const BOTTLE_HEIGHT    = 64;
 
     // The config object from /api/config
@@ -56,20 +68,33 @@
       rackR4: "",
       planeP1: "",
       planeP2: "",
+      planeP3: "",
+      planeP4: "",
       planeVerticalOffset: "2",
       offsetRack: "1",
       capColorDefault: "Gold"
     };
 
-    // We'll store the parsed racks here, e.g. racks["R1"] = { rows, columns }
+    // We'll store the parsed rack definitions here:
     const racks = {};
 
-    // A lookup: planeLayouts[planeNumber] = array of { plane, row, column, x, y, z }
+    // planeLayouts[planeNumber] = array of { plane, row, column, x, y, z }
     const planeLayouts = {};
 
-    // -------------------------------------------
-    // On window load, fetch config & data, then build scene
-    // -------------------------------------------
+    // Occupancy map: "plane-row-col" => bottleGroup
+    const slotOccupants = {};
+
+    // Drag mode toggles
+    let dragMode = false;
+    let draggingBottle = null;
+
+    // We'll track the plane used during drag to set (x,z)
+    let dragPlane = null;
+    let dragPlaneIntersect = new THREE.Vector3();
+
+    // GUI states
+    let toolboxVisible = false;
+
     window.addEventListener('load', async () => {
       await fetchConfig();
       parseRackConfigs();
@@ -105,10 +130,6 @@
 
     // -------------------------------------------
     // 2) Parse environment-based rack definitions
-    // e.g. RACK_R1="(4,6)" => { rows:4, columns:6 }
-    // We'll store them in racks["R1"] = { rows, columns }
-    // Then the plane definitions: e.g. "R1xR2"
-    // We'll unify them in row dimension.
     // -------------------------------------------
     function parseRackConfigs() {
       parseSingleRack("R1", config.rackR1);
@@ -118,7 +139,6 @@
     }
 
     function parseSingleRack(rackId, definition) {
-      // definition is something like "(4,6)"
       const match = /^\((\d+),(\d+)\)$/.exec((definition || "").trim());
       if (!match) {
         racks[rackId] = { rows: 0, columns: 0 };
@@ -130,7 +150,6 @@
       }
     }
 
-    // e.g. "R1xR2" => ["R1","R2"]
     function parsePlaneDefinition(str) {
       return (str || "").split('x').map(s => s.trim());
     }
@@ -158,7 +177,6 @@
       controls.target.set(0, 50, 0);
       controls.update();
 
-      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
 
@@ -168,20 +186,24 @@
 
       // Event Listeners
       renderer.domElement.addEventListener('mousedown', onDocumentMouseDown);
+      renderer.domElement.addEventListener('mousemove', onDocumentMouseMove);
+      renderer.domElement.addEventListener('mouseup', onDocumentMouseUp);
+
       window.addEventListener('resize', onWindowResize);
+
+      // Create a small overlay to indicate drag mode
+      const dragIndicator = document.createElement('div');
+      dragIndicator.id = 'dragIndicator';
+      dragIndicator.innerText = 'Drag Mode ON';
+      document.body.appendChild(dragIndicator);
     }
 
     // -------------------------------------------
     // 4) Build planes & racks (just the shelves)
-    // We'll parse PLANE_P1..P4. Each plane can have multiple racks, stacked in row dimension.
-    // Then we place planes one after another in the negative Y direction using planeVerticalOffset.
-    // The row dimension is mapped to Z, the column dimension is mapped to X.
     // -------------------------------------------
     function buildAllPlanes() {
       const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
-      let currentPlaneY = 0; // downward offset for planes
-      console.log("[DEBUG] config:", config);
-
+      let currentPlaneY = 0;
       planeKeys.forEach((planeKey, index) => {
         const definition = config[planeKey];
         if (!definition) return;
@@ -207,34 +229,21 @@
             return;
           }
 
-          // Create rack geometry
           const rows    = rDef.rows;
           const columns = rDef.columns;
           const rackGroup = createSteppedRack(rows, columns);
-
-          // We stack racks by row dimension => place them behind the previous in Z
           const rackDepth = rows * SLOT_WIDTH_DEPTH;
+
           rackGroup.position.z = -rowStackOffset;
           planeGroup.add(rackGroup);
 
-          // For each row & column in this rack, record the world coords
           for (let row = 0; row < rows; row++) {
             for (let col = 0; col < columns; col++) {
-              // center X for column
               const totalWidth = columns * SLOT_WIDTH_DEPTH;
-              const slotCenterX = - (totalWidth / 2)
-                                  + col * SLOT_WIDTH_DEPTH
-                                  + SLOT_WIDTH_DEPTH / 2;
-
-              // center Z for row (in local coords of this rack)
-              const rowDepth   = rackDepth / rows; // e.g. 15
-              const slotCenterZ = (rackDepth / 2)
-                                  - row * rowDepth
-                                  - (rowDepth / 2);
-
-              // The entire rackGroup is offset by rackGroup.position.z
+              const slotCenterX = -(totalWidth / 2) + col*SLOT_WIDTH_DEPTH + SLOT_WIDTH_DEPTH/2;
+              const slotCenterZ = (rackDepth / 2) - row*SLOT_WIDTH_DEPTH - (SLOT_WIDTH_DEPTH / 2);
               const worldX = slotCenterX;
-              const worldY = currentPlaneY + 0; // we place shelves at about y=0 inside the group
+              const worldY = currentPlaneY;
               const worldZ = planeGroup.position.z + rackGroup.position.z + slotCenterZ;
 
               planeLayouts[planeNumber].push({
@@ -248,37 +257,23 @@
             }
           }
 
-          // Move rowIndexBase for the next rack
-          rowIndexBase += rDef.rows;
-
-          // Move stack offset for the next rack
+          rowIndexBase += rows;
           rowStackOffset += rackDepth;
-          rowStackOffset += offsetRack * rackDepth; // extra gap between racks
+          rowStackOffset += offsetRack * rackDepth;
         });
 
-        const maxRow = Math.max(...planeLayouts[planeNumber].map(s => s.row));
-        const maxCol = Math.max(...planeLayouts[planeNumber].map(s => s.column));
-        console.log(`[DEBUG] Plane #${planeNumber} has maxRow=${maxRow}, maxCol=${maxCol}`);
-
-        // Next plane is offset downward in Y
         const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 2;
-        // E.g. move the plane in negative Y by planeVerticalOffset * BOTTLE_HEIGHT
         currentPlaneY -= planeVerticalOffset * BOTTLE_HEIGHT;
       });
     }
 
-    /**
-     * Create a single stepped rack geometry for (numRows, numColumns).
-     * We'll keep the logic similar to the old code, but ignoring platoons entirely.
-     * The row dimension is local Z, the column dimension is local X.
-     */
     function createSteppedRack(numRows, numColumns) {
       const group = new THREE.Group();
       const totalWidth = numColumns * SLOT_WIDTH_DEPTH;
       const totalDepth = numRows * SLOT_WIDTH_DEPTH;
       const rowHeight  = BOTTLE_HEIGHT / 2; // 32
       const wallThickness = 0.1;
-      const stepY     = rowHeight * 0.3; // e.g. ~9.6
+      const stepY     = rowHeight * 0.3;
       const baseY     = wallThickness / 2;
 
       const mat = new THREE.MeshPhongMaterial({
@@ -288,15 +283,13 @@
         side: THREE.DoubleSide
       });
 
-      // Utility for row center
       const rowDepth = totalDepth / numRows;
       function rowCenterZ(i) {
-        return totalDepth / 2 - rowDepth / 2 - rowDepth * i;
+        return totalDepth / 2 - rowDepth / 2 - rowDepth*i;
       }
 
-      // Build each row
       for (let i = 0; i < numRows; i++) {
-        const rowBaseY = baseY + stepY * i;
+        const rowBaseY = baseY + stepY*i;
         const centerZ  = rowCenterZ(i);
 
         // floor
@@ -305,12 +298,16 @@
         floorMesh.position.set(0, rowBaseY, centerZ);
         group.add(floorMesh);
 
-        // vertical dividers (columns)
+        // vertical dividers
         for (let j = 1; j < numColumns; j++) {
           const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
           const divider     = new THREE.Mesh(dividerGeom, mat);
           const xPos        = -totalWidth/2 + (totalWidth/numColumns)*j;
-          divider.position.set(xPos, rowBaseY + wallThickness + rowHeight/2, centerZ);
+          divider.position.set(
+            xPos,
+            rowBaseY + wallThickness + rowHeight/2,
+            centerZ
+          );
           group.add(divider);
         }
 
@@ -333,21 +330,21 @@
         group.add(rightWall);
       }
 
-      // front wall (beveled)
+      // front wall
       const frontWallGeom = createBeveledWall(totalWidth, rowHeight, wallThickness, 0.2, 0.05);
       const frontWall     = new THREE.Mesh(frontWallGeom, mat);
       frontWall.rotation.y = Math.PI;
       frontWall.position.set(0, baseY, totalDepth/2);
       group.add(frontWall);
 
-      // back wall (beveled, taller if multiple rows)
+      // back wall
       const extraHeight  = (numRows - 1) * stepY;
       const backWallGeom = createBeveledWall(totalWidth, rowHeight + extraHeight, wallThickness, 0.2, 0.05);
       const backWall     = new THREE.Mesh(backWallGeom, mat);
       backWall.position.set(0, baseY, -totalDepth/2);
       group.add(backWall);
 
-      // shared walls between row steps
+      // internal walls between steps
       for (let i = 0; i < numRows - 1; i++) {
         const lowerY = baseY + stepY*(i+1);
         const upperY = baseY + stepY*i + rowHeight;
@@ -363,7 +360,6 @@
       return group;
     }
 
-    // Utility: create beveled wall geometry
     function createBeveledWall(width, height, depth, bevelSize, bevelThickness) {
       const shape = new THREE.Shape();
       shape.moveTo(-width/2, 0);
@@ -384,7 +380,7 @@
     }
 
     // -------------------------------------------
-    // 5) Fetch the Notion Bottles (plane/row/col)
+    // 5) Fetch the Notion Bottles
     // -------------------------------------------
     async function fetchAllNotionBottles() {
       try {
@@ -392,7 +388,7 @@
         if (!response.ok) {
           throw new Error(`Failed to fetch /api/bottles. Status = ${response.status}`);
         }
-        const data = await response.json(); // array of { id, name, plane, row, column, ... }
+        const data = await response.json();
         return data;
       } catch (err) {
         console.error('fetchAllNotionBottles error:', err);
@@ -402,27 +398,21 @@
 
     // -------------------------------------------
     // 6) Create Bottles in the Correct Position
-    // We'll use planeLayouts[plane] to find a slot with matching row & column.
-    // If not found, we skip. (Might happen if the Notion data is out of range.)
     // -------------------------------------------
     function createBottleFromNotion(bData) {
-      const { plane, row, column, name, capColor } = bData;
-
+      const { plane, row, column, name, capColor, id } = bData;
       if (!planeLayouts[plane]) {
         console.warn(`No plane layout found for plane=${plane}`);
         return;
       }
 
-      // Find a matching row/column
       const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
       if (!slot) {
         console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
         return;
       }
 
-      // Create the 3D geometry
       const bottleGroup = new THREE.Group();
-
       const bottleWidth  = 10;
       const bottleDepth  = 10;
       const bottleHeight = BOTTLE_HEIGHT;
@@ -473,23 +463,30 @@
       bottleGroup.add(bottleMesh);
       bottleGroup.add(capMesh);
 
-      // Position in final coords
       bottleGroup.position.set(slot.x, slot.y, slot.z);
 
-      // userData for fly effect
-      bottleGroup.userData.initialY = bottleGroup.position.y;
-      bottleGroup.userData.flying   = false;
-      bottleGroup.userData.notionData = bData;
+      // Store custom data
+      bottleGroup.userData = {
+        initialY: slot.y,
+        flying: false,
+        notionData: bData,
+        plane: plane,
+        row: row,
+        column: column
+      };
 
       clickableBottles.push(bottleGroup);
       scene.add(bottleGroup);
+
+      // Mark this slot occupant
+      const key = `${plane}-${row}-${column}`;
+      slotOccupants[key] = bottleGroup;
     }
 
-    // Utility: create label texture
     function createLabelTexture(text) {
       const canvas  = document.createElement('canvas');
       canvas.width  = 256;
-      canvas.height = 819;
+      canvas.height = 819; // tall for vertical text
       const ctx     = canvas.getContext('2d');
 
       ctx.fillStyle = "#ffffff";
@@ -500,7 +497,6 @@
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
 
-      // rotate -90 degrees
       ctx.save();
       ctx.translate(0, canvas.height);
       ctx.rotate(-Math.PI / 2);
@@ -513,20 +509,44 @@
     }
 
     // -------------------------------------------
-    // 7) Interaction (fly up on click)
+    // 7) Interaction
+    //    We now have two modes:
+    //    - Normal mode (toolbox / flying on click)
+    //    - Drag mode (activated by 'd'), can pick up & drag bottles
     // -------------------------------------------
     function onDocumentMouseDown(event) {
       if (toolboxVisible) {
-        // Toolbox is open, ignore scene clicks
         return;
       }
       event.preventDefault();
+
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(clickableBottles, true);
 
+      // If we are in drag mode, pick up a bottle if we click on it
+      if (dragMode) {
+        const intersects = raycaster.intersectObjects(clickableBottles, true);
+        if (intersects.length > 0) {
+          let clickedGroup = intersects[0].object;
+          while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
+            clickedGroup = clickedGroup.parent;
+          }
+          // Pick up
+          draggingBottle = clickedGroup;
+          // Remove from slotOccupants
+          const oldKey = `${draggingBottle.userData.plane}-${draggingBottle.userData.row}-${draggingBottle.userData.column}`;
+          if (slotOccupants[oldKey] === draggingBottle) {
+            delete slotOccupants[oldKey];
+          }
+          // Prepare a plane parallel to XZ at the bottle's current Y
+          dragPlane = new THREE.Plane(new THREE.Vector3(0,1,0), -draggingBottle.position.y);
+        }
+        return;
+      }
+
+      // Otherwise, normal "fly" logic
+      const intersects = raycaster.intersectObjects(clickableBottles, true);
       if (intersects.length > 0) {
         let clickedGroup = intersects[0].object;
         while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
@@ -544,17 +564,146 @@
       }
     }
 
+    function onDocumentMouseMove(event) {
+      if (!dragMode || !draggingBottle) return;
+
+      event.preventDefault();
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      // Intersect with dragPlane
+      if (dragPlane) {
+        if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
+          // Move the bottle in X,Z
+          draggingBottle.position.x = dragPlaneIntersect.x;
+          draggingBottle.position.z = dragPlaneIntersect.z;
+        }
+      }
+    }
+
+    async function onDocumentMouseUp(event) {
+      if (!dragMode || !draggingBottle) return;
+
+      event.preventDefault();
+
+      // We dropped the bottle. Find the nearest slot
+      const nearest = findNearestSlot(draggingBottle.position.x, draggingBottle.position.z);
+      if (nearest) {
+        // Check if there's an occupant
+        const newKey = `${nearest.plane}-${nearest.row}-${nearest.column}`;
+        const occupant = slotOccupants[newKey];
+
+        if (occupant && occupant !== draggingBottle) {
+          // Swap occupant
+          const occupantData = occupant.userData;
+          console.log(`Swapping occupant of slot ${newKey}`);
+          // occupant -> old slot
+          const oldPlane = draggingBottle.userData.plane;
+          const oldRow   = draggingBottle.userData.row;
+          const oldCol   = draggingBottle.userData.column;
+          const oldKey   = `${oldPlane}-${oldRow}-${oldCol}`;
+
+          // Place occupant in old slot
+          occupant.position.set(draggingBottle.position.x, occupantData.initialY, draggingBottle.position.z);
+          // But we want occupant to actually move to the old slot coords
+          // We'll look up that slot from planeLayouts
+          const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
+          if (oldSlot) {
+            occupant.position.set(oldSlot.x, oldSlot.y, oldSlot.z);
+            occupant.userData.plane = oldPlane;
+            occupant.userData.row   = oldRow;
+            occupant.userData.column= oldCol;
+            // occupant's initialY might be updated
+            occupant.userData.initialY = oldSlot.y;
+          }
+          slotOccupants[oldKey] = occupant;
+
+          // Move draggingBottle to the occupant's new slot
+          draggingBottle.position.set(nearest.x, nearest.y, nearest.z);
+          draggingBottle.userData.plane = nearest.plane;
+          draggingBottle.userData.row   = nearest.row;
+          draggingBottle.userData.column= nearest.column;
+          draggingBottle.userData.initialY = nearest.y;
+          slotOccupants[newKey] = draggingBottle;
+
+          // Update Notion
+          updateBottleSlotOnServer(draggingBottle.userData.notionData.id, nearest.plane, nearest.row, nearest.column);
+          updateBottleSlotOnServer(occupantData.notionData.id, oldPlane, oldRow, oldCol);
+
+        } else {
+          // No occupant -> just place draggingBottle
+          draggingBottle.position.set(nearest.x, nearest.y, nearest.z);
+          draggingBottle.userData.plane = nearest.plane;
+          draggingBottle.userData.row   = nearest.row;
+          draggingBottle.userData.column= nearest.column;
+          draggingBottle.userData.initialY = nearest.y;
+          slotOccupants[newKey] = draggingBottle;
+
+          // Update Notion
+          updateBottleSlotOnServer(draggingBottle.userData.notionData.id, nearest.plane, nearest.row, nearest.column);
+        }
+      } else {
+        // Revert to original (if no nearest found)
+        console.log("No suitable slot found. Reverting position.");
+        const p = draggingBottle.userData;
+        draggingBottle.position.set(
+          planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column).x,
+          p.initialY,
+          planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column).z
+        );
+      }
+
+      draggingBottle = null;
+    }
+
+    function findNearestSlot(x, z) {
+      let nearest = null;
+      let minDist = Infinity;
+      // Search all planes for the slot closest to (x,z)
+      for (const planeNum of Object.keys(planeLayouts)) {
+        const slots = planeLayouts[planeNum];
+        for (const s of slots) {
+          const dx = s.x - x;
+          const dz = s.z - z;
+          const distSq = dx*dx + dz*dz;
+          if (distSq < minDist) {
+            minDist = distSq;
+            nearest = s;
+          }
+        }
+      }
+      // Optionally impose a threshold if you only want to snap if close
+      return nearest;
+    }
+
+    async function updateBottleSlotOnServer(pageId, plane, row, column) {
+      try {
+        const resp = await fetch('/api/updateBottleSlot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pageId, plane, row, column })
+        });
+        if (!resp.ok) {
+          console.error("Failed to update Notion for bottle:", pageId, resp.status);
+        }
+      } catch (err) {
+        console.error("Error calling /api/updateBottleSlot:", err);
+      }
+    }
+
     // -------------------------------------------
     // 8) Main animation loop
     // -------------------------------------------
     function animate() {
       requestAnimationFrame(animate);
 
-      if (activeBottle) {
+      // "Fly" effect in normal mode
+      if (!dragMode && activeBottle) {
         const initialY = activeBottle.userData.initialY;
         const targetY  = initialY + FLY_OFFSET;
         if (activeBottle.userData.flying) {
-          // fly up
           if (activeBottle.position.y < targetY) {
             activeBottle.position.y += MOVE_SPEED;
             if (activeBottle.position.y > targetY) {
@@ -562,7 +711,6 @@
             }
           }
         } else {
-          // drop down
           if (activeBottle.position.y > initialY) {
             activeBottle.position.y -= MOVE_SPEED;
             if (activeBottle.position.y < initialY) {
@@ -583,7 +731,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    let toolboxVisible = false;
     function toggleToolbox() {
       toolboxVisible = !toolboxVisible;
       const toolbox = document.getElementById('toolbox');
@@ -596,15 +743,31 @@
       }
     }
 
-    // Listen for T key
+    // Listen for T key and D key
     window.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 't') {
+      const key = e.key.toLowerCase();
+      if (key === 't') {
         toggleToolbox();
+      } else if (key === 'd') {
+        dragMode = !dragMode;
+        const dragIndicator = document.getElementById('dragIndicator');
+        if (dragMode) {
+          dragIndicator.style.display = 'block';
+          controls.enabled = false;
+          console.log("Drag mode enabled");
+        } else {
+          dragIndicator.style.display = 'none';
+          controls.enabled = true;
+          console.log("Drag mode disabled");
+        }
       }
     });
   </script>
+
   <div id="toolbox">
     <h3>Toolbox</h3>
+    <p>Press [T] to toggle this toolbox.<br/>Press [D] to toggle drag mode.</p>
   </div>
+
 </body>
 </html>

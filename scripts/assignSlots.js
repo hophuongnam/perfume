@@ -1,27 +1,26 @@
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
 
+/**
+ * This script auto-assigns valid plane/row/column slots to Notion pages.
+ *
+ * 1) Parse environment variables for racks (RACK_R1..R4) => produce planeLayouts using PLANE_P1..P4
+ * 2) For each page in the Notion database (filter "Ignore?"):
+ *    - Grab existing plane, row, column.
+ *    - If valid and unoccupied => keep that.
+ *    - Else => find the first free valid slot in planeLayouts and use that.
+ * 3) Update Notion to reflect these final assignments.
+ *
+ * No more "No slot found" messages. All bottles get placed in some valid slot, unless
+ * we run out of total slots.
+ */
+
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.NOTION_DATABASE_ID;
 
-/**
- * Parse environment variables for RACK_R1..RACK_R4, each in the form "(4,6)" => { rows, columns }
- */
-const rackEnvVars = ["R1","R2","R3","R4"];
-const racks = {};
-
-rackEnvVars.forEach(key => {
-  const envKey = `RACK_${key}`;
-  if (process.env[envKey]) {
-    racks[key] = parseRackDefinition(process.env[envKey]);
-  }
-});
-
-/**
- * Utility function to parse e.g. "(4,6)" => { rows: 4, columns: 6 }
- */
+/** Parse environment variables for RACK_R1..R4 in the form "(4,30)" => { rows, columns } */
 function parseRackDefinition(str) {
-  const match = /^\((\d+),(\d+)\)$/.exec(str.trim());
+  const match = /^\((\d+),\s*(\d+)\)$/.exec((str || "").trim());
   if (!match) {
     console.warn("Invalid rack definition:", str);
     return { rows: 0, columns: 0 };
@@ -32,164 +31,224 @@ function parseRackDefinition(str) {
   };
 }
 
-/**
- * Parse environment variables for planes: PLANE_P1..P4
- * Each is e.g. "R1xR2" => means 2 racks side by side (along the row dimension).
- */
-const planeConfigs = [];
-[1,2,3,4].forEach(num => {
-  const envKey = `PLANE_P${num}`;
-  if (process.env[envKey]) {
-    planeConfigs.push({ planeNumber: num, definition: process.env[envKey] });
-  }
+const racks = {};
+["R1","R2","R3","R4"].forEach(key => {
+  const envKey = `RACK_${key}`;
+  racks[key] = process.env[envKey] ? parseRackDefinition(process.env[envKey]) : { rows:0, columns:0 };
 });
 
-/**
- * Utility: parse plane definition e.g. "R1xR2" => ["R1", "R2"]
- */
+/** parsePlaneDefinition e.g. "R1xR2" => ["R1","R2"] */
 function parsePlaneDefinition(str) {
-  return str.split('x').map(s => s.trim());
+  return (str || "").split('x').map(s => s.trim());
 }
 
 /**
- * Build a list of { plane, row, column } for a given planeDefinition ("R1xR2"),
- * stacking racks by row dimension. If R1 has 4 rows, 6 columns, and R2 has 4 rows, 6 columns,
- * then total rows = 4 + 4, columns = 6, plus optional row offset from OFFSET_RACK.
+ * planeLayouts[planeNumber] = array of { plane, row, column }
+ * We build these by stacking racks from PLANE_P1..P4 in the row dimension.
  */
-function buildSlotsForPlane(planeNumber, planeDefinition) {
-  const rackIds = parsePlaneDefinition(planeDefinition);
-  const result = [];
-  let rowOffset = 0;
-  const offsetRack = parseInt(process.env.OFFSET_RACK || "1", 10);
+const planeLayouts = {};
 
-  for (const rackId of rackIds) {
-    const rDef = racks[rackId];
-    if (!rDef) {
-      console.warn(`No rack definition found for ${rackId}. Skipping...`);
+function buildAllPlanesFromEnv() {
+  for (let planeNumber = 1; planeNumber <= 4; planeNumber++) {
+    const envKey = `PLANE_P${planeNumber}`;
+    const definition = process.env[envKey] || "";
+    if (!definition) {
+      planeLayouts[planeNumber] = [];
       continue;
     }
-    const { rows, columns } = rDef;
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < columns; col++) {
-        result.push({
-          plane: planeNumber,
-          row: rowOffset + row + 1,
-          column: col + 1
-        });
-      }
+    const rackIds = parsePlaneDefinition(definition);
+    if (!rackIds || !rackIds.length) {
+      planeLayouts[planeNumber] = [];
+      continue;
     }
-    rowOffset += rows;
-    rowOffset += offsetRack;
-    // Add extra spacing if desired
-    rowOffset += offsetRack;
-  }
 
-  return result;
+    const layout = [];
+    let rowIndexBase = 0;
+    const offsetRack = parseFloat(process.env.OFFSET_RACK || "1") || 1;
+
+    for (const rackId of rackIds) {
+      const rDef = racks[rackId] || { rows:0, columns:0 };
+      if (!rDef.rows || !rDef.columns) {
+        console.warn(`No valid definition for rackId=${rackId}`);
+        continue;
+      }
+      const { rows, columns } = rDef;
+      // Fill row+col
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < columns; c++) {
+          layout.push({
+            plane: planeNumber,
+            row: rowIndexBase + r + 1,
+            column: c + 1
+          });
+        }
+      }
+      rowIndexBase += rows;
+      // The front-end also offsets racks in the scene, but for the row count logic
+      // we only care about total rowIndexBase. The offsetRack doesn't matter for row numbering unless
+      // we truly want blank rows between racks. For now we'll skip adding extra blank rows, to keep it simpler.
+      // If you want to insert empty space for offsetRack, you could do e.g. rowIndexBase += offsetRack*X
+    }
+    planeLayouts[planeNumber] = layout;
+  }
 }
 
-/**
- * Gather all possible slots across all plane definitions
- */
-function buildAllSlots() {
-  let all = [];
-  for (const cfg of planeConfigs) {
-    const planeSlots = buildSlotsForPlane(cfg.planeNumber, cfg.definition);
-    all.push(...planeSlots);
-  }
-  return all;
-}
+/** occupantMap "plane-row-col" => pageId */
+const occupantMap = {};
 
 /**
- * Update a Notion page with row, column, and plane
+ * We'll store final assignment for each page in updatedPositions[pageId] = { plane, row, column }
  */
-async function updatePage(pageId, plane, row, column) {
+const updatedPositions = {};
+
+/** We'll build a global list of all possible slots across planes, sorted by plane->row->column. */
+let allSlots = [];
+
+/**
+ * Initialize the environment-based plane layouts, occupant map, etc.
+ * Then fetch pages, for each page fix assignment or pick next free slot,
+ * and update Notion.
+ */
+async function main() {
+  buildAllPlanesFromEnv();
+
+  // Build a single sorted array of all possible slots in ascending (plane, row, column).
+  // This helps us pick "the first free slot" easily.
+  allSlots = [];
+  Object.keys(planeLayouts).forEach(planeKey => {
+    const planeNum = parseInt(planeKey, 10);
+    const layout = planeLayouts[planeNum] || [];
+    allSlots.push(...layout);
+  });
+  // Sort by plane, then row, then column
+  allSlots.sort((a,b) => {
+    if (a.plane !== b.plane) return a.plane - b.plane;
+    if (a.row !== b.row) return a.row - b.row;
+    return a.column - b.column;
+  });
+
+  try {
+    // 1) Fetch all pages
+    const pages = await fetchAllNotionPages(databaseId);
+    const filtered = pages.filter(p => !p.properties["Ignore?"]?.checkbox);
+    console.log(`Ignoring ${pages.length - filtered.length} bottles with "Ignore?"=true. Assigning slots for ${filtered.length} pages.`);
+
+    // 2) For each page, read plane/row/col. If invalid or occupied => pick next free slot
+    for (const page of filtered) {
+      const pageId = page.id;
+
+      // parse plane, row, col from Notion
+      const planeVal = page.properties["Plane"]?.rich_text?.[0]?.plain_text || "";
+      const rowVal   = page.properties["Row"]?.rich_text?.[0]?.plain_text || "";
+      const colVal   = page.properties["Column"]?.rich_text?.[0]?.plain_text || "";
+      let plane = parseInt(planeVal, 10) || 0;
+      let row   = parseInt(rowVal, 10)   || 0;
+      let column= parseInt(colVal, 10)   || 0;
+
+      // check if (plane,row,col) is valid in planeLayouts
+      if (!isSlotValid(plane, row, column)) {
+        // pick next free slot
+        const slot = findFirstFreeSlot();
+        if (!slot) {
+          console.log(`WARNING: No more free slots. Page ${pageId} can't be assigned.`);
+          // We'll just set plane=row=column=0 to indicate unassigned
+          updatedPositions[pageId] = { plane:0, row:0, column:0 };
+          continue;
+        }
+        plane = slot.plane;
+        row   = slot.row;
+        column= slot.column;
+      } else {
+        // It's valid in the layout. Next, is it free or occupied?
+        const occKey = `${plane}-${row}-${column}`;
+        if (occupantMap[occKey]) {
+          // Occupied => pick next free slot
+          const slot = findFirstFreeSlot();
+          if (!slot) {
+            console.log(`WARNING: No more free slots. Page ${pageId} can't be assigned.`);
+            updatedPositions[pageId] = { plane:0, row:0, column:0 };
+            continue;
+          }
+          plane = slot.plane;
+          row   = slot.row;
+          column= slot.column;
+        }
+      }
+
+      // Now occupant is going to (plane, row, column)
+      const key = `${plane}-${row}-${column}`;
+      occupantMap[key] = pageId;
+      updatedPositions[pageId] = { plane, row, column };
+    }
+
+    // 3) Update each final assignment in Notion
+    for (const [pageId, pos] of Object.entries(updatedPositions)) {
+      await updateBottleSlotInNotion(pageId, pos.plane, pos.row, pos.column);
+    }
+
+    console.log("All assignments complete. 🎉");
+  } catch (err) {
+    console.error("Error in main assignSlots logic:", err);
+    process.exit(1);
+  }
+}
+
+/** Check if plane, row, col is valid in planeLayouts */
+function isSlotValid(plane, row, col) {
+  if (!planeLayouts[plane]) return false;
+  return planeLayouts[plane].some(s => s.row === row && s.column === col);
+}
+
+/** findFirstFreeSlot => scan allSlots in order, see if occupantMap[plane-row-col] is empty. Return that slot if found. */
+function findFirstFreeSlot() {
+  for (const slot of allSlots) {
+    const key = `${slot.plane}-${slot.row}-${slot.column}`;
+    if (!occupantMap[key]) {
+      return slot;  // occupantMap doesn't have an occupant => free
+    }
+  }
+  return null; // no free slot
+}
+
+/** Update the Notion page's plane, row, column fields */
+async function updateBottleSlotInNotion(pageId, plane, row, column) {
   try {
     await notion.pages.update({
       page_id: pageId,
       properties: {
         Plane: {
-          rich_text: [
-            {
-              type: 'text',
-              text: { content: String(plane) }
-            }
-          ]
+          rich_text: [{ type: 'text', text: { content: String(plane) } }]
         },
         Row: {
-          rich_text: [
-            {
-              type: 'text',
-              text: { content: String(row) }
-            }
-          ]
+          rich_text: [{ type: 'text', text: { content: String(row) } }]
         },
         Column: {
-          rich_text: [
-            {
-              type: 'text',
-              text: { content: String(column) }
-            }
-          ]
+          rich_text: [{ type: 'text', text: { content: String(column) } }]
         }
       }
     });
-    console.log(`Assigned slot to page ${pageId} -> Plane=${plane}, Row=${row}, Column=${column}`);
-  } catch (error) {
-    console.error(`Failed to update page ${pageId}: ${error.message}`);
+    console.log(`Page ${pageId} => plane=${plane}, row=${row}, column=${column}`);
+  } catch (err) {
+    console.error(`Failed to update Notion page ${pageId}: ${err.message}`);
   }
 }
 
-(async function main() {
-  try {
-    // 1) Build the total set of all possible slots
-    const allSlots = buildAllSlots();
-    console.log(`Total available slots: ${allSlots.length}`);
-
-    // 2) Fetch all pages from Notion
-    const pages = await fetchAllNotionPages(databaseId);
-    const filteredPages = pages.filter(p => !p.properties["Ignore?"]?.checkbox);
-    console.log(`Ignoring ${pages.length - filteredPages.length} bottles with "Ignore?"=true. Operating on ${filteredPages.length} bottles (pages) from Notion.`);
-
-    // 3) If you want to shuffle pages or slots, do it here. We'll keep it simple.
-
-    // 4) For each page, pick the next slot
-    const totalBottles = filteredPages.length;
-    const usableSlots = Math.min(allSlots.length, totalBottles);
-    console.log(`Assigning slots to ${usableSlots} bottles. Any beyond that won't be assigned.`);
-
-    for (let i = 0; i < usableSlots; i++) {
-      const page = filteredPages[i];
-      const slot = allSlots[i];
-      await updatePage(page.id, slot.plane, slot.row, slot.column);
-    }
-
-    // If leftover
-    if (usableSlots < filteredPages.length) {
-      console.log(`WARNING: Not enough slots. ${filteredPages.length - usableSlots} bottles remain unassigned.`);
-    }
-
-    console.log("Reassignment complete.");
-  } catch (err) {
-    console.error("Error in reassigning slots:", err.message);
-  }
-})();
-
-/**
- * Utility to fetch all pages from a Notion database (pagination)
- */
+/** Utility to fetch all pages in the Notion database */
 async function fetchAllNotionPages(dbId) {
   let results = [];
   let hasMore = true;
   let startCursor = undefined;
-
   while (hasMore) {
-    const response = await notion.databases.query({
+    const resp = await notion.databases.query({
       database_id: dbId,
       start_cursor: startCursor
     });
-    results = results.concat(response.results);
-    hasMore = response.has_more;
-    startCursor = response.next_cursor;
+    results = results.concat(resp.results);
+    hasMore = resp.has_more;
+    startCursor = resp.next_cursor;
   }
   return results;
 }
+
+// Kick it off
+main();
