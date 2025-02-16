@@ -51,7 +51,7 @@
     // We'll store all clickable bottle meshes here:
     const clickableBottles = [];
 
-    // For the "fly" effect (the old approach):
+    // For the "fly" effect:
     const MOVE_SPEED  = 2;
     const FLY_OFFSET  = 32;
     let activeBottle  = null;
@@ -509,10 +509,7 @@
     }
 
     // -------------------------------------------
-    // 7) Interaction
-    //    We now have two modes:
-    //    - Normal mode (toolbox / flying on click)
-    //    - Drag mode (activated by 'd'), can pick up & drag bottles
+    // 7) Interaction & Drag Logic
     // -------------------------------------------
     function onDocumentMouseDown(event) {
       if (toolboxVisible) {
@@ -588,8 +585,9 @@
 
       event.preventDefault();
 
-      // We dropped the bottle. Find the nearest slot
-      const nearest = findNearestSlot(draggingBottle.position.x, draggingBottle.position.z);
+      // We dropped the bottle. Only allow dropping in the same plane
+      const plane = draggingBottle.userData.plane;
+      const nearest = findNearestSlotInPlane(plane, draggingBottle.position.x, draggingBottle.position.z);
       if (nearest) {
         // Check if there's an occupant
         const newKey = `${nearest.plane}-${nearest.row}-${nearest.column}`;
@@ -607,7 +605,6 @@
 
           // Place occupant in old slot
           occupant.position.set(draggingBottle.position.x, occupantData.initialY, draggingBottle.position.z);
-          // But we want occupant to actually move to the old slot coords
           // We'll look up that slot from planeLayouts
           const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
           if (oldSlot) {
@@ -615,12 +612,11 @@
             occupant.userData.plane = oldPlane;
             occupant.userData.row   = oldRow;
             occupant.userData.column= oldCol;
-            // occupant's initialY might be updated
             occupant.userData.initialY = oldSlot.y;
           }
           slotOccupants[oldKey] = occupant;
 
-          // Move draggingBottle to the occupant's new slot
+          // Move draggingBottle to occupant's slot
           draggingBottle.position.set(nearest.x, nearest.y, nearest.z);
           draggingBottle.userData.plane = nearest.plane;
           draggingBottle.userData.row   = nearest.row;
@@ -645,19 +641,22 @@
           updateBottleSlotOnServer(draggingBottle.userData.notionData.id, nearest.plane, nearest.row, nearest.column);
         }
       } else {
-        // Revert to original (if no nearest found)
-        console.log("No suitable slot found. Reverting position.");
+        // Revert to original (if no nearest found in-plane)
+        console.log("No suitable slot found in-plane. Reverting position.");
         const p = draggingBottle.userData;
-        draggingBottle.position.set(
-          planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column).x,
-          p.initialY,
-          planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column).z
-        );
+        const oldSlot = planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column);
+        if (oldSlot) {
+          draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
+        }
       }
 
       draggingBottle = null;
     }
 
+    // -------------------------------------------
+    // Helper: findNearestSlot (all planes)
+    // (We keep this in case we need it later, but it's not used for in-plane dragging.)
+    // -------------------------------------------
     function findNearestSlot(x, z) {
       let nearest = null;
       let minDist = Infinity;
@@ -674,10 +673,32 @@
           }
         }
       }
-      // Optionally impose a threshold if you only want to snap if close
       return nearest;
     }
 
+    // -------------------------------------------
+    // Helper: findNearestSlotInPlane
+    // -------------------------------------------
+    function findNearestSlotInPlane(plane, x, z) {
+      let nearest = null;
+      let minDist = Infinity;
+      const slots = planeLayouts[plane];
+      if (!slots) return null;
+      for (const s of slots) {
+        const dx = s.x - x;
+        const dz = s.z - z;
+        const distSq = dx*dx + dz*dz;
+        if (distSq < minDist) {
+          minDist = distSq;
+          nearest = s;
+        }
+      }
+      return nearest;
+    }
+
+    // -------------------------------------------
+    // Update Notion field
+    // -------------------------------------------
     async function updateBottleSlotOnServer(pageId, plane, row, column) {
       try {
         const resp = await fetch('/api/updateBottleSlot', {

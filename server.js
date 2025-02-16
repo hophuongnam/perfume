@@ -5,6 +5,7 @@ const { Client } = require('@notionhq/client');
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const app = express();
+app.use(express.json());
 const port = process.env.PORT || 3000;
 
 /**
@@ -113,6 +114,33 @@ app.get('/api/bottles', async (req, res) => {
     res.json(allBottles);
   } catch (err) {
     console.error('/api/bottles error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/updateBottleSlot', async (req, res) => {
+  try {
+    const { pageId, plane, row, column } = req.body;
+    if (!pageId) {
+      return res.status(400).json({ error: 'Missing pageId' });
+    }
+    await notion.pages.update({
+      page_id: pageId,
+      properties: {
+        Plane: {
+          rich_text: [{ type: 'text', text: { content: String(plane || '') } }]
+        },
+        Row: {
+          rich_text: [{ type: 'text', text: { content: String(row || '') } }]
+        },
+        Column: {
+          rich_text: [{ type: 'text', text: { content: String(column || '') } }]
+        }
+      }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('/api/updateBottleSlot error:', err);
     res.status(500).json({ error: err.message });
   }
 });
