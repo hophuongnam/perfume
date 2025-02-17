@@ -577,26 +577,35 @@
 
       // Normal "fly" logic
       const intersects = raycaster.intersectObjects(clickableBottles, true);
+
       if (intersects.length > 0) {
-        if (!activeBottle) {
-          // No bottle is currently out, check if user clicked on a bottle
-          let clickedGroup = intersects[0].object;
-          while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
-            clickedGroup = clickedGroup.parent;
-          }
-          // Fly out the newly clicked bottle
-          activeBottle = clickedGroup;
-          activeBottle.userData.flying = true;
-        } else {
-          // If a bottle is out, any click brings it back in
+        // Get the clicked bottle group (handling nested meshes)
+        let clickedGroup = intersects[0].object;
+        while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
+          clickedGroup = clickedGroup.parent;
+        }
+
+        // If there's a currently active bottle, and it's *not* the one we just clicked, fly it in.
+        if (activeBottle && activeBottle !== clickedGroup) {
           activeBottle.userData.flying = false;
-          activeBottle = null;
+        }
+
+        // If we clicked a bottle and it was not previously active, fly it out.
+        // Otherwise (it *was* the active bottle), toggle its state.
+        if (clickedGroup) {
+          if (activeBottle !== clickedGroup) {
+            activeBottle = clickedGroup;
+            activeBottle.userData.flying = true;
+          } else {
+            // Toggle the flying state
+            activeBottle.userData.flying = !activeBottle.userData.flying;
+          }
         }
       } else {
-        // clicked empty space => if a bottle was active, fly it in
+        // Clicked empty space.  If a bottle was active, fly it in.
         if (activeBottle) {
           activeBottle.userData.flying = false;
-          activeBottle = null;
+          activeBottle = null; // Reset activeBottle when flying in
         }
       }
     }
@@ -760,27 +769,28 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // "Fly" effect in normal mode
-      if (!dragMode && activeBottle) {
-        const initialY = activeBottle.userData.initialY;
-        const targetY  = initialY + 32;
-        if (activeBottle.userData.flying) {
-          if (activeBottle.position.y < targetY) {
-            activeBottle.position.y += 2;
-            if (activeBottle.position.y > targetY) {
-              activeBottle.position.y = targetY;
+      // "Fly" effect in normal mode (iterate over ALL clickable bottles)
+      if (!dragMode) {
+        clickableBottles.forEach(bottle => {
+          if (bottle.userData.flying !== undefined) { // Make sure flying flag exists
+            const initialY = bottle.userData.initialY;
+            const targetY  = initialY + FLY_OFFSET;
+
+            if (bottle.userData.flying) {
+              // Fly up
+              if (bottle.position.y < targetY) {
+                bottle.position.y += MOVE_SPEED;
+              }
+              bottle.position.y = Math.min(bottle.position.y, targetY); // Clamp
+            } else {
+              // Fly down
+              if (bottle.position.y > initialY) {
+                bottle.position.y -= MOVE_SPEED;
+              }
+              bottle.position.y = Math.max(bottle.position.y, initialY); //Clamp
             }
           }
-        } else {
-          if (activeBottle.position.y > initialY) {
-            activeBottle.position.y -= 2;
-            if (activeBottle.position.y < initialY) {
-              activeBottle.position.y = initialY;
-            }
-          } else {
-            activeBottle = null;
-          }
-        }
+        });
       }
 
       renderer.render(scene, camera);
