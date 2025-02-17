@@ -167,7 +167,7 @@
         0.1,
         2000
       );
-      camera.position.set(150, 100, 200);
+      camera.position.set(3, 180, 220);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -176,6 +176,8 @@
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 50, 0);
       controls.update();
+
+
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
@@ -400,7 +402,7 @@
     // 6) Create Bottles in the Correct Position
     // -------------------------------------------
     function createBottleFromNotion(bData) {
-      const { plane, row, column, name, capColor, id } = bData;
+      const { plane, row, column, name, capColor, id, house, accords, type } = bData;
       if (!planeLayouts[plane]) {
         console.warn(`No plane layout found for plane=${plane}`);
         return;
@@ -472,7 +474,10 @@
         notionData: bData,
         plane: plane,
         row: row,
-        column: column
+        column: column,
+        house: house,
+        accords: accords,
+        type: type
       };
 
       clickableBottles.push(bottleGroup);

@@ -86,6 +86,8 @@ app.get('/api/bottles', async (req, res) => {
         const planeProp     = page.properties["Plane"];
         const rowProp       = page.properties["Row"];
         const columnProp    = page.properties["Column"];
+        const typeProp      = page.properties["Type"];
+        const accordsProp   = page.properties["Accords"];
 
         // Parse fields
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
@@ -94,6 +96,8 @@ app.get('/api/bottles', async (req, res) => {
         const planeVal    = planeProp?.rich_text?.[0]?.plain_text || "";
         const rowVal      = rowProp?.rich_text?.[0]?.plain_text || "";
         const colVal      = columnProp?.rich_text?.[0]?.plain_text || "";
+        const typeVal     = typeProp?.select?.name || "Unknown Type";
+        const accordsVal  = accordsProp?.multi_select?.map(opt => opt.name) || [];
 
         return {
           id: page.id,
@@ -102,7 +106,9 @@ app.get('/api/bottles', async (req, res) => {
           house: houseVal,
           plane: parseInt(planeVal, 10) || 0,
           row: parseInt(rowVal, 10) || 0,
-          column: parseInt(colVal, 10) || 0
+          column: parseInt(colVal, 10) || 0,
+          type: typeVal,
+          accords: accordsVal
         };
       });
 
