@@ -544,6 +544,7 @@
     // 7) Interaction & Drag Logic
     // -------------------------------------------
     function onDocumentMouseDown(event) {
+      // Removed the filterBox check so user can still click bottles while filtering
       if (toolboxVisible) {
         return;
       }
@@ -553,7 +554,7 @@
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
 
-      // If we are in drag mode, pick up a bottle if we click on it
+      // If we are in drag mode, attempt to pick up a bottle
       if (dragMode) {
         const intersects = raycaster.intersectObjects(clickableBottles, true);
         if (intersects.length > 0) {
@@ -574,21 +575,28 @@
         return;
       }
 
-      // Otherwise, normal "fly" logic
+      // Normal "fly" logic
       const intersects = raycaster.intersectObjects(clickableBottles, true);
       if (intersects.length > 0) {
-        let clickedGroup = intersects[0].object;
-        while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
-          clickedGroup = clickedGroup.parent;
-        }
-        if (activeBottle && activeBottle !== clickedGroup) {
+        if (!activeBottle) {
+          // No bottle is currently out, check if user clicked on a bottle
+          let clickedGroup = intersects[0].object;
+          while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
+            clickedGroup = clickedGroup.parent;
+          }
+          // Fly out the newly clicked bottle
+          activeBottle = clickedGroup;
+          activeBottle.userData.flying = true;
+        } else {
+          // If a bottle is out, any click brings it back in
           activeBottle.userData.flying = false;
+          activeBottle = null;
         }
-        activeBottle = clickedGroup;
-        activeBottle.userData.flying = true;
       } else {
+        // clicked empty space => if a bottle was active, fly it in
         if (activeBottle) {
           activeBottle.userData.flying = false;
+          activeBottle = null;
         }
       }
     }
@@ -640,7 +648,6 @@
           const oldKey   = `${oldPlane}-${oldRow}-${oldCol}`;
 
           // Place occupant in old slot
-          occupant.position.set(draggingBottle.position.x, occupantData.initialY, draggingBottle.position.z);
           const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
           if (oldSlot) {
             occupant.position.set(oldSlot.x, oldSlot.y, oldSlot.z);
