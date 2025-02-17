@@ -34,6 +34,26 @@
       border-radius: 4px;
       font-family: sans-serif;
     }
+
+    /* Ensure the filterBox is hidden by default */
+    #filterBox {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30%;
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      padding: 8px;
+      z-index: 9999;
+
+      display: none; /* hidden on load */
+    }
+
+    #filterInput {
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -92,7 +112,7 @@
     let dragPlane = null;
     let dragPlaneIntersect = new THREE.Vector3();
 
-    // GUI states
+    // Toolbox & Filter states
     let toolboxVisible = false;
 
     window.addEventListener('load', async () => {
@@ -177,8 +197,6 @@
       controls.target.set(0, 50, 0);
       controls.update();
 
-
-
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
 
@@ -198,6 +216,14 @@
       dragIndicator.id = 'dragIndicator';
       dragIndicator.innerText = 'Drag Mode ON';
       document.body.appendChild(dragIndicator);
+
+      // Listen for filter input
+      const filterInput = document.getElementById('filterInput');
+      if (filterInput) {
+        filterInput.addEventListener('input', (ev) => {
+          applyFilter(ev.target.value);
+        });
+      }
     }
 
     // -------------------------------------------
@@ -467,7 +493,7 @@
 
       bottleGroup.position.set(slot.x, slot.y, slot.z);
 
-      // Store custom data
+      // Store custom data, including references to meshes for highlight
       bottleGroup.userData = {
         initialY: slot.y,
         flying: false,
@@ -477,7 +503,8 @@
         column: column,
         house: house,
         accords: accords,
-        type: type
+        type: type,
+        meshesToHighlight: [bottleMesh, capMesh]
       };
 
       clickableBottles.push(bottleGroup);
@@ -567,6 +594,8 @@
     }
 
     function onDocumentMouseMove(event) {
+      // If filterBox is visible, do nothing
+      if (isFilterBoxVisible()) return;
       if (!dragMode || !draggingBottle) return;
 
       event.preventDefault();
@@ -586,6 +615,8 @@
     }
 
     async function onDocumentMouseUp(event) {
+      // If filterBox is visible, do nothing
+      if (isFilterBoxVisible()) return;
       if (!dragMode || !draggingBottle) return;
 
       event.preventDefault();
@@ -610,7 +641,6 @@
 
           // Place occupant in old slot
           occupant.position.set(draggingBottle.position.x, occupantData.initialY, draggingBottle.position.z);
-          // We'll look up that slot from planeLayouts
           const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
           if (oldSlot) {
             occupant.position.set(oldSlot.x, oldSlot.y, oldSlot.z);
@@ -660,12 +690,10 @@
 
     // -------------------------------------------
     // Helper: findNearestSlot (all planes)
-    // (We keep this in case we need it later, but it's not used for in-plane dragging.)
     // -------------------------------------------
     function findNearestSlot(x, z) {
       let nearest = null;
       let minDist = Infinity;
-      // Search all planes for the slot closest to (x,z)
       for (const planeNum of Object.keys(planeLayouts)) {
         const slots = planeLayouts[planeNum];
         for (const s of slots) {
@@ -728,17 +756,17 @@
       // "Fly" effect in normal mode
       if (!dragMode && activeBottle) {
         const initialY = activeBottle.userData.initialY;
-        const targetY  = initialY + FLY_OFFSET;
+        const targetY  = initialY + 32;
         if (activeBottle.userData.flying) {
           if (activeBottle.position.y < targetY) {
-            activeBottle.position.y += MOVE_SPEED;
+            activeBottle.position.y += 2;
             if (activeBottle.position.y > targetY) {
               activeBottle.position.y = targetY;
             }
           }
         } else {
           if (activeBottle.position.y > initialY) {
-            activeBottle.position.y -= MOVE_SPEED;
+            activeBottle.position.y -= 2;
             if (activeBottle.position.y < initialY) {
               activeBottle.position.y = initialY;
             }
@@ -757,6 +785,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    // Toggle the main Toolbox
     function toggleToolbox() {
       toolboxVisible = !toolboxVisible;
       const toolbox = document.getElementById('toolbox');
@@ -769,9 +798,102 @@
       }
     }
 
-    // Listen for T key and D key
+    // Check if filter box is visible
+    function isFilterBoxVisible() {
+      const filterBox = document.getElementById('filterBox');
+      if (!filterBox) return false;
+      // Use computedStyle to see if it's actually hidden or not
+      const computedDisplay = window.getComputedStyle(filterBox).display;
+      return computedDisplay !== 'none';
+    }
+
+    // Toggle the Filter Box (using computedStyle to detect hidden or not)
+    function toggleFilterBox() {
+      const filterBox = document.getElementById('filterBox');
+      if (!filterBox) return;
+      const computedDisplay = window.getComputedStyle(filterBox).display;
+      if (computedDisplay === 'none') {
+        filterBox.style.display = 'block';
+        // Clear and focus the filter input
+        const filterInput = document.getElementById('filterInput');
+        if (filterInput) {
+          filterInput.value = '';
+          filterInput.focus();
+        }
+      } else {
+        filterBox.style.display = 'none';
+      }
+    }
+
+    // Apply filter logic: highlight matching bottles (example simplified)
+    function applyFilter(searchText) {
+      // Trim and check empty
+      const trimmed = searchText.trim().toLowerCase();
+      if (!trimmed) {
+        // Clear highlights
+        clickableBottles.forEach(bg => {
+          if (!bg.userData.meshesToHighlight) return;
+          bg.userData.meshesToHighlight.forEach(mesh => {
+            if (mesh.material?.emissive) {
+              mesh.material.emissive.set(0x000000);
+            }
+          });
+        });
+        return;
+      }
+
+      // Split user input into tokens (by whitespace)
+      const searchTokens = trimmed.split(/\s+/);
+
+      clickableBottles.forEach(bg => {
+        const { notionData, meshesToHighlight } = bg.userData;
+        if (!meshesToHighlight) return;
+
+        // Collect all relevant tokens from the bottle: name, house, and each accord
+        const nameTokens = (notionData.name || "").toLowerCase().split(/\s+/);
+        const houseTokens = (notionData.house || "").toLowerCase().split(/\s+/);
+        const accordsTokens = (notionData.accords || [])
+          .map(a => a.toLowerCase().split(/\s+/))
+          .flat();
+
+        // Combine them into a single array for easier checking
+        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens];
+
+        // 'foundAll' => each search token must be found in bottleTokens
+        const foundAll = searchTokens.every(token => bottleTokens.includes(token));
+
+        // Apply highlight if foundAll
+        meshesToHighlight.forEach(mesh => {
+          if (mesh.material?.emissive) {
+            mesh.material.emissive.set(foundAll ? 0xff0000 : 0x000000);
+          }
+        });
+      });
+    }
+
+    // Key listeners
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
+
+      // If filter box is visible:
+      if (isFilterBoxVisible()) {
+        // The only allowed key is Escape => close filter box
+        if (key === 'escape') {
+          // Clear the filter input
+          const filterInput = document.getElementById('filterInput');
+          if (filterInput) {
+            filterInput.value = '';
+          }
+          // Clear highlights
+          applyFilter('');
+          // Now hide the filter box
+          toggleFilterBox();
+        }
+        // otherwise do nothing
+        return;
+      }
+
+      // Otherwise normal keys
       if (key === 't') {
         toggleToolbox();
       } else if (key === 'd') {
@@ -780,12 +902,14 @@
         if (dragMode) {
           dragIndicator.style.display = 'block';
           controls.enabled = false;
-          console.log("Drag mode enabled");
         } else {
           dragIndicator.style.display = 'none';
           controls.enabled = true;
-          console.log("Drag mode disabled");
         }
+      } else if (key === 'f') {
+        // Prevent 'f' from typing into input
+        e.preventDefault();
+        toggleFilterBox();
       }
     });
   </script>
@@ -793,6 +917,13 @@
   <div id="toolbox">
     <h3>Toolbox</h3>
     <p>Press [T] to toggle this toolbox.<br/>Press [D] to toggle drag mode.</p>
+  </div>
+
+  <!-- Hidden by default in CSS -->
+  <div id="filterBox">
+    <h3>Filter</h3>
+    <label for="filterInput">Filter text:</label>
+    <input id="filterInput" type="text" placeholder="Enter text to filter bottles..." />
   </div>
 
 </body>
