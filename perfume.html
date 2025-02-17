@@ -7,8 +7,6 @@
     body { margin: 0; }
     canvas { display: block; }
 
-
-
     #dragIndicator {
       position: absolute;
       top: 8px;
@@ -33,12 +31,25 @@
       box-sizing: border-box;
       padding: 8px;
       z-index: 9999;
-
-      display: none; /* hidden on load */
+      display: none;
     }
 
-    #filterInput {
-      width: 100%;
+    /* Help window style */
+    #helpWindow {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 25vw;
+      height: 25vh;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 16px;
+      border-radius: 8px 0 0 0;
+      display: none;
+      overflow: auto;
+      z-index: 9999;
+      font-family: sans-serif;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -100,7 +111,6 @@
 
     // Toolbox & Filter states
     
-
     window.addEventListener('load', async () => {
       await fetchConfig();
       parseRackConfigs();
@@ -285,7 +295,7 @@
       const group = new THREE.Group();
       const totalWidth = numColumns * SLOT_WIDTH_DEPTH;
       const totalDepth = numRows * SLOT_WIDTH_DEPTH;
-      const rowHeight  = BOTTLE_HEIGHT / 2; // 32
+      const rowHeight  = BOTTLE_HEIGHT / 2;
       const wallThickness = 0.1;
       const stepY     = rowHeight * 0.3;
       const baseY     = wallThickness / 2;
@@ -468,7 +478,7 @@
         try {
           capMat.color.setStyle(capColor);
         } catch {
-          capMat.color.set(0xffd700); // fallback
+          capMat.color.set(0xffd700);
         }
       }
       const capMesh = new THREE.Mesh(capGeo, capMat);
@@ -504,7 +514,7 @@
     function createLabelTexture(text) {
       const canvas  = document.createElement('canvas');
       canvas.width  = 256;
-      canvas.height = 819; // tall for vertical text
+      canvas.height = 819;
       const ctx     = canvas.getContext('2d');
 
       ctx.fillStyle = "#ffffff";
@@ -530,7 +540,6 @@
     // 7) Interaction & Drag Logic
     // -------------------------------------------
     function onDocumentMouseDown(event) {
-      // Removed the filterBox check so user can still click bottles while filtering
       event.preventDefault();
 
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -545,14 +554,11 @@
           while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
             clickedGroup = clickedGroup.parent;
           }
-          // Pick up
           draggingBottle = clickedGroup;
-          // Remove from slotOccupants
           const oldKey = `${draggingBottle.userData.plane}-${draggingBottle.userData.row}-${draggingBottle.userData.column}`;
           if (slotOccupants[oldKey] === draggingBottle) {
             delete slotOccupants[oldKey];
           }
-          // Prepare a plane parallel to XZ at the bottle's current Y
           dragPlane = new THREE.Plane(new THREE.Vector3(0,1,0), -draggingBottle.position.y);
         }
         return;
@@ -562,39 +568,30 @@
       const intersects = raycaster.intersectObjects(clickableBottles, true);
 
       if (intersects.length > 0) {
-        // Get the clicked bottle group (handling nested meshes)
         let clickedGroup = intersects[0].object;
         while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
           clickedGroup = clickedGroup.parent;
         }
-
-        // If there's a currently active bottle, and it's *not* the one we just clicked, fly it in.
         if (activeBottle && activeBottle !== clickedGroup) {
           activeBottle.userData.flying = false;
         }
-
-        // If we clicked a bottle and it was not previously active, fly it out.
-        // Otherwise (it *was* the active bottle), toggle its state.
         if (clickedGroup) {
           if (activeBottle !== clickedGroup) {
             activeBottle = clickedGroup;
             activeBottle.userData.flying = true;
           } else {
-            // Toggle the flying state
             activeBottle.userData.flying = !activeBottle.userData.flying;
           }
         }
       } else {
-        // Clicked empty space.  If a bottle was active, fly it in.
         if (activeBottle) {
           activeBottle.userData.flying = false;
-          activeBottle = null; // Reset activeBottle when flying in
+          activeBottle = null;
         }
       }
     }
 
     function onDocumentMouseMove(event) {
-      // If filterBox is visible, do nothing
       if (isFilterBoxVisible()) return;
       if (!dragMode || !draggingBottle) return;
 
@@ -604,10 +601,8 @@
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
 
-      // Intersect with dragPlane
       if (dragPlane) {
         if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
-          // Move the bottle in X,Z
           draggingBottle.position.x = dragPlaneIntersect.x;
           draggingBottle.position.z = dragPlaneIntersect.z;
         }
@@ -615,31 +610,25 @@
     }
 
     async function onDocumentMouseUp(event) {
-      // If filterBox is visible, do nothing
       if (isFilterBoxVisible()) return;
       if (!dragMode || !draggingBottle) return;
 
       event.preventDefault();
 
-      // We dropped the bottle. Only allow dropping in the same plane
       const plane = draggingBottle.userData.plane;
       const nearest = findNearestSlotInPlane(plane, draggingBottle.position.x, draggingBottle.position.z);
       if (nearest) {
-        // Check if there's an occupant
         const newKey = `${nearest.plane}-${nearest.row}-${nearest.column}`;
         const occupant = slotOccupants[newKey];
 
         if (occupant && occupant !== draggingBottle) {
-          // Swap occupant
           const occupantData = occupant.userData;
           console.log(`Swapping occupant of slot ${newKey}`);
-          // occupant -> old slot
           const oldPlane = draggingBottle.userData.plane;
           const oldRow   = draggingBottle.userData.row;
           const oldCol   = draggingBottle.userData.column;
           const oldKey   = `${oldPlane}-${oldRow}-${oldCol}`;
 
-          // Place occupant in old slot
           const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
           if (oldSlot) {
             occupant.position.set(oldSlot.x, oldSlot.y, oldSlot.z);
@@ -650,7 +639,6 @@
           }
           slotOccupants[oldKey] = occupant;
 
-          // Move draggingBottle to occupant's slot
           draggingBottle.position.set(nearest.x, nearest.y, nearest.z);
           draggingBottle.userData.plane = nearest.plane;
           draggingBottle.userData.row   = nearest.row;
@@ -658,12 +646,10 @@
           draggingBottle.userData.initialY = nearest.y;
           slotOccupants[newKey] = draggingBottle;
 
-          // Update Notion
           updateBottleSlotOnServer(draggingBottle.userData.notionData.id, nearest.plane, nearest.row, nearest.column);
           updateBottleSlotOnServer(occupantData.notionData.id, oldPlane, oldRow, oldCol);
 
         } else {
-          // No occupant -> just place draggingBottle
           draggingBottle.position.set(nearest.x, nearest.y, nearest.z);
           draggingBottle.userData.plane = nearest.plane;
           draggingBottle.userData.row   = nearest.row;
@@ -671,11 +657,9 @@
           draggingBottle.userData.initialY = nearest.y;
           slotOccupants[newKey] = draggingBottle;
 
-          // Update Notion
           updateBottleSlotOnServer(draggingBottle.userData.notionData.id, nearest.plane, nearest.row, nearest.column);
         }
       } else {
-        // Revert to original (if no nearest found in-plane)
         console.log("No suitable slot found in-plane. Reverting position.");
         const p = draggingBottle.userData;
         const oldSlot = planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column);
@@ -752,25 +736,22 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // "Fly" effect in normal mode (iterate over ALL clickable bottles)
       if (!dragMode) {
         clickableBottles.forEach(bottle => {
-          if (bottle.userData.flying !== undefined) { // Make sure flying flag exists
+          if (bottle.userData.flying !== undefined) {
             const initialY = bottle.userData.initialY;
-            const targetY  = initialY + FLY_OFFSET;
+            const targetY  = initialY + FLY_OFFSET;
 
             if (bottle.userData.flying) {
-              // Fly up
               if (bottle.position.y < targetY) {
                 bottle.position.y += MOVE_SPEED;
               }
-              bottle.position.y = Math.min(bottle.position.y, targetY); // Clamp
+              bottle.position.y = Math.min(bottle.position.y, targetY);
             } else {
-              // Fly down
               if (bottle.position.y > initialY) {
                 bottle.position.y -= MOVE_SPEED;
               }
-              bottle.position.y = Math.max(bottle.position.y, initialY); //Clamp
+              bottle.position.y = Math.max(bottle.position.y, initialY);
             }
           }
         });
@@ -785,25 +766,21 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    
-
     // Check if filter box is visible
     function isFilterBoxVisible() {
       const filterBox = document.getElementById('filterBox');
       if (!filterBox) return false;
-      // Use computedStyle to see if it's actually hidden or not
       const computedDisplay = window.getComputedStyle(filterBox).display;
       return computedDisplay !== 'none';
     }
 
-    // Toggle the Filter Box (using computedStyle to detect hidden or not)
+    // Toggle the Filter Box
     function toggleFilterBox() {
       const filterBox = document.getElementById('filterBox');
       if (!filterBox) return;
       const computedDisplay = window.getComputedStyle(filterBox).display;
       if (computedDisplay === 'none') {
         filterBox.style.display = 'block';
-        // Clear and focus the filter input
         const filterInput = document.getElementById('filterInput');
         if (filterInput) {
           filterInput.value = '';
@@ -814,12 +791,22 @@
       }
     }
 
-    // Apply filter logic: highlight matching bottles (example simplified)
+    // Toggle the Help Window
+    function toggleHelpWindow() {
+      const helpWindow = document.getElementById('helpWindow');
+      if (!helpWindow) return;
+      const computedDisplay = window.getComputedStyle(helpWindow).display;
+      if (computedDisplay === 'none' || computedDisplay === '') {
+        helpWindow.style.display = 'block';
+      } else {
+        helpWindow.style.display = 'none';
+      }
+    }
+
+    // Apply filter logic: highlight matching bottles
     function applyFilter(searchText) {
-      // Trim and check empty
       const trimmed = searchText.trim().toLowerCase();
       if (!trimmed) {
-        // Clear highlights
         clickableBottles.forEach(bg => {
           if (!bg.userData.meshesToHighlight) return;
           bg.userData.meshesToHighlight.forEach(mesh => {
@@ -831,27 +818,22 @@
         return;
       }
 
-      // Split user input into tokens (by whitespace)
       const searchTokens = trimmed.split(/\s+/);
 
       clickableBottles.forEach(bg => {
         const { notionData, meshesToHighlight } = bg.userData;
         if (!meshesToHighlight) return;
 
-        // Collect all relevant tokens from the bottle: name, house, and each accord
         const nameTokens = (notionData.name || "").toLowerCase().split(/\s+/);
         const houseTokens = (notionData.house || "").toLowerCase().split(/\s+/);
         const accordsTokens = (notionData.accords || [])
           .map(a => a.toLowerCase().split(/\s+/))
           .flat();
 
-        // Combine them into a single array for easier checking
         const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens];
 
-        // 'foundAll' => each search token must be found in bottleTokens
         const foundAll = searchTokens.every(token => bottleTokens.includes(token));
 
-        // Apply highlight if foundAll
         meshesToHighlight.forEach(mesh => {
           if (mesh.material?.emissive) {
             mesh.material.emissive.set(foundAll ? 0xff0000 : 0x000000);
@@ -864,25 +846,24 @@
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
 
-      // If filter box is visible:
+      // Toggle Help window with 'h' key regardless of filter box
+      if (key === 'h') {
+        toggleHelpWindow();
+        return;
+      }
+
       if (isFilterBoxVisible()) {
-        // The only allowed key is Escape => close filter box
         if (key === 'escape') {
-          // Clear the filter input
           const filterInput = document.getElementById('filterInput');
           if (filterInput) {
             filterInput.value = '';
           }
-          // Clear highlights
           applyFilter('');
-          // Now hide the filter box
           toggleFilterBox();
         }
-        // otherwise do nothing
         return;
       }
 
-      // Otherwise normal keys
       if (key === 'd') {
         dragMode = !dragMode;
         const dragIndicator = document.getElementById('dragIndicator');
@@ -894,14 +875,11 @@
           controls.enabled = true;
         }
       } else if (key === 'f') {
-        // Prevent 'f' from typing into input
         e.preventDefault();
         toggleFilterBox();
       }
     });
   </script>
-
-   
 
   <!-- Hidden by default in CSS -->
   <div id="filterBox">
@@ -910,5 +888,17 @@
     <input id="filterInput" type="text" placeholder="Enter text to filter bottles..." />
   </div>
 
+  <!-- Help window, hidden by default -->
+  <div id="helpWindow">
+    <h3>Help</h3>
+    <ul>
+      <li><strong>d</strong>: Toggle drag mode</li>
+      <li><strong>f</strong>: Toggle filter box</li>
+      <li><strong>h</strong>: Toggle help window</li>
+      <li><strong>Escape</strong>: Close filter box</li>
+      <li>Click on a bottle to toggle fly effect</li>
+      <li>Drag bottles when in drag mode</li>
+    </ul>
+  </div>
 </body>
 </html>
