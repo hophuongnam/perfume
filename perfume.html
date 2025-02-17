@@ -7,21 +7,7 @@
     body { margin: 0; }
     canvas { display: block; }
 
-    #toolbox {
-      position: absolute;
-      width: 50%;
-      height: 50%;
-      bottom: 0;
-      right: 0;
-      background-color: rgba(255, 255, 255, 0.8);
-      display: none;
-      border: 1px solid #ccc;
-      padding: 8px;
-      box-sizing: border-box;
-      overflow: auto;
-      pointer-events: auto;
-      z-index: 9999;
-    }
+
 
     #dragIndicator {
       position: absolute;
@@ -113,7 +99,7 @@
     let dragPlaneIntersect = new THREE.Vector3();
 
     // Toolbox & Filter states
-    let toolboxVisible = false;
+    
 
     window.addEventListener('load', async () => {
       await fetchConfig();
@@ -545,9 +531,6 @@
     // -------------------------------------------
     function onDocumentMouseDown(event) {
       // Removed the filterBox check so user can still click bottles while filtering
-      if (toolboxVisible) {
-        return;
-      }
       event.preventDefault();
 
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -802,18 +785,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // Toggle the main Toolbox
-    function toggleToolbox() {
-      toolboxVisible = !toolboxVisible;
-      const toolbox = document.getElementById('toolbox');
-      if (toolboxVisible) {
-        toolbox.style.display = 'block';
-        controls.enabled = false;
-      } else {
-        toolbox.style.display = 'none';
-        controls.enabled = true;
-      }
-    }
+    
 
     // Check if filter box is visible
     function isFilterBoxVisible() {
@@ -911,9 +883,7 @@
       }
 
       // Otherwise normal keys
-      if (key === 't') {
-        toggleToolbox();
-      } else if (key === 'd') {
+      if (key === 'd') {
         dragMode = !dragMode;
         const dragIndicator = document.getElementById('dragIndicator');
         if (dragMode) {
@@ -931,10 +901,7 @@
     });
   </script>
 
-  <div id="toolbox">
-    <h3>Toolbox</h3>
-    <p>Press [T] to toggle this toolbox.<br/>Press [D] to toggle drag mode.</p>
-  </div>
+   
 
   <!-- Hidden by default in CSS -->
   <div id="filterBox">
