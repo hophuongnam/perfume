@@ -280,9 +280,9 @@
         if (!rackIds || !rackIds.length) return;
     
         const planeGroup = new THREE.Group();
-        planeGroup.position.set(0, currentPlaneY, 0);
+        planeGroup.position.set(0, currentPlaneY, index * 12 * SLOT_WIDTH_DEPTH);
         scene.add(planeGroup);
-    
+
         // We already initialized planeLayouts[planeNumber], so we can safely push slots below
 
         let rowIndexBase = 0;
