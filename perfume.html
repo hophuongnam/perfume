@@ -550,9 +550,12 @@
         house: house,
         accords: accords,
         type: type,
-        meshesToHighlight: [bottleMesh, capMesh]
+        highlightables: [
+          { mesh: bottleMesh, originalColor: bottleMesh.material.color.clone() },
+          { mesh: capMesh, originalColor: capMesh.material.color.clone() }
+        ]
       };
-
+      clickableBottles.push(bottleGroup);
       clickableBottles.push(bottleGroup);
       scene.add(bottleGroup);
 
@@ -1023,11 +1026,10 @@
       const trimmed = searchText.trim().toLowerCase();
       if (!trimmed) {
         clickableBottles.forEach(bg => {
-          if (!bg.userData.meshesToHighlight) return;
-          bg.userData.meshesToHighlight.forEach(mesh => {
-            if (mesh.material?.emissive) {
-              mesh.material.emissive.set(0x000000);
-            }
+          const { highlightables } = bg.userData;
+          if (!highlightables) return;
+          highlightables.forEach(entry => {
+            entry.mesh.material.color.copy(entry.originalColor);
           });
         });
         return;
@@ -1036,22 +1038,28 @@
       const searchTokens = trimmed.split(/\s+/);
 
       clickableBottles.forEach(bg => {
-        const { notionData, meshesToHighlight } = bg.userData;
-        if (!meshesToHighlight) return;
-
+        const { notionData, highlightables } = bg.userData;
+        if (!highlightables) return;
+    
         const nameTokens = (notionData.name || "").toLowerCase().split(/\s+/);
         const houseTokens = (notionData.house || "").toLowerCase().split(/\s+/);
         const accordsTokens = (notionData.accords || [])
           .map(a => a.toLowerCase().split(/\s+/))
           .flat();
+        const seasonTokens = (notionData.seasons || [])
+          .map(s => s.toLowerCase().split(/\s+/))
+          .flat();
 
-        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens];
-
+        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens, ...seasonTokens];
+    
         const foundAll = searchTokens.every(token => bottleTokens.includes(token));
-
-        meshesToHighlight.forEach(mesh => {
-          if (mesh.material?.emissive) {
-            mesh.material.emissive.set(foundAll ? 0xff0000 : 0x000000);
+    
+        highlightables.forEach(entry => {
+          const mesh = entry.mesh;
+          if (foundAll) {
+            mesh.material.color.set(0xff0000);
+          } else {
+            mesh.material.color.copy(entry.originalColor);
           }
         });
       });

@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-02-15T01:13:57.163Z
+Retrieved at: 2025-02-18T07:44:41.499Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -12,6 +12,45 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
   "name": "URL",
   "type": "url",
   "url": {}
+}
+```
+
+## Field: Season
+**Type**: multi_select
+
+```json
+{
+  "id": "%3C%3D_x",
+  "name": "Season",
+  "type": "multi_select",
+  "multi_select": {
+    "options": [
+      {
+        "id": "20c57115-d6c6-4d34-a8cd-7e02dc53cca3",
+        "name": "Winter",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "8b2d30b1-0f39-43bb-9874-3f8648bf0835",
+        "name": "Summer",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "0df42852-ed34-4b35-b626-73f979bb4442",
+        "name": "Autumn",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "fe0b8f23-6f36-4202-a554-5214c26a4a10",
+        "name": "Spring",
+        "color": "green",
+        "description": null
+      }
+    ]
+  }
 }
 ```
 
@@ -1180,6 +1219,12 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
         "id": "3cff7146-00a1-4a5e-8e69-a752f4da25b5",
         "name": "Boadicea the Victorious",
         "color": "purple",
+        "description": null
+      },
+      {
+        "id": "a6ae0b2d-bc72-4d15-baa8-574663c866a5",
+        "name": "Matiere Premiere",
+        "color": "pink",
         "description": null
       }
     ]
