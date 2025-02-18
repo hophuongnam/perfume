@@ -900,8 +900,8 @@
 
               // If flying, recreate the board every frame so we can show updated line4
               if (bottle.userData.flying) {
-              // We'll define a line3 for instructions
-              const line3 = "";
+              // We'll define line3 with the slot position
+              const line3 = `Row: ${bottle.userData.row}, Col: ${bottle.userData.column}`;
               // The 4th line can be set dynamically
               const line4 = bottle.userData.noticeLine4 || "";
   
@@ -1054,12 +1054,6 @@
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
 
-      // Toggle Help window with 'h' key regardless of filter box
-      if (key === 'h') {
-        toggleHelpWindow();
-        return;
-      }
-
       if (isFilterBoxVisible()) {
         if (key === 'escape') {
           const filterInput = document.getElementById('filterInput');
@@ -1069,6 +1063,12 @@
           applyFilter('');
           toggleFilterBox();
         }
+        return;
+      }
+
+      // Toggle Help window with 'h' key (unless dragMode is on)
+      if (!dragMode && key === 'h') {
+        toggleHelpWindow();
         return;
       }
 
@@ -1082,7 +1082,7 @@
           dragIndicator.style.display = 'none';
           controls.enabled = true;
         }
-      } else if (key === 'f') {
+      } else if (!dragMode && key === 'f') {
         e.preventDefault();
         toggleFilterBox();
       } else if (dragMode && draggingBottle) {
