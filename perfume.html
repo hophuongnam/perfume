@@ -298,25 +298,25 @@
 
           const rows    = rDef.rows;
           const columns = rDef.columns;
-          const rackGroup = createSteppedRack(rows, columns);
+          const { group: rackGroup, rowHeights } = createSteppedRack(rows, columns);
           const rackDepth = rows * SLOT_WIDTH_DEPTH;
 
           rackGroup.position.z = -rowStackOffset;
           planeGroup.add(rackGroup);
 
-          for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < columns; col++) {
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < columns; c++) {
               const totalWidth = columns * SLOT_WIDTH_DEPTH;
-              const slotCenterX = -(totalWidth / 2) + col*SLOT_WIDTH_DEPTH + SLOT_WIDTH_DEPTH/2;
-              const slotCenterZ = (rackDepth / 2) - row*SLOT_WIDTH_DEPTH - (SLOT_WIDTH_DEPTH / 2);
+              const slotCenterX = -(totalWidth / 2) + c*SLOT_WIDTH_DEPTH + SLOT_WIDTH_DEPTH/2;
+              const slotCenterZ = (rackDepth / 2) - r*SLOT_WIDTH_DEPTH - (SLOT_WIDTH_DEPTH / 2);
               const worldX = slotCenterX;
-              const worldY = currentPlaneY;
+              const worldY = currentPlaneY + rowHeights[r];
               const worldZ = planeGroup.position.z + rackGroup.position.z + slotCenterZ;
 
               planeLayouts[planeNumber].push({
                 plane: planeNumber,
-                row: rowIndexBase + row + 1,
-                column: col + 1,
+                row: rowIndexBase + r + 1,
+                column: c + 1,
                 x: worldX,
                 y: worldY,
                 z: worldZ
@@ -355,8 +355,14 @@
         return totalDepth / 2 - rowDepth / 2 - rowDepth*i;
       }
 
+      // We'll store the "top" y-position for each row so we can place bottles accordingly
+      const rowHeights = [];
+
       for (let i = 0; i < numRows; i++) {
         const rowBaseY = baseY + stepY*i;
+        // This is the top of the floor for row i
+        rowHeights.push(rowBaseY + wallThickness);
+
         const centerZ  = rowCenterZ(i);
 
         // floor
@@ -424,7 +430,8 @@
         group.add(sharedWall);
       }
 
-      return group;
+      // Return both the rack group and the array of rowHeights
+      return { group, rowHeights };
     }
 
     function createBeveledWall(width, height, depth, bevelSize, bevelThickness) {
