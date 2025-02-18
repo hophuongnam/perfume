@@ -1028,6 +1028,92 @@
       } else if (key === 'f') {
         e.preventDefault();
         toggleFilterBox();
+      } else if (dragMode && draggingBottle) {
+        if (key === 'escape') {
+          // Cancel drag
+          cancelDrag();
+        } else if (key === 'q') {
+          // Move to plane above
+          moveDraggingBottleToPlane(-1);
+        } else if (key === 'a') {
+          // Move to plane below
+          moveDraggingBottleToPlane(1);
+        }
+      }
+
+      function cancelDrag() {
+        // revert to old position
+        const p = draggingBottle.userData;
+        const oldPlane = p.plane;
+        const oldRow = p.row;
+        const oldCol = p.column;
+        const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
+        if (oldSlot) {
+          draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
+          slotOccupants[`${oldPlane}-${oldRow}-${oldCol}`] = draggingBottle;
+        }
+        // Hide drag labels
+        const dragBottleLabel = document.getElementById('dragBottleLabel');
+        const dragSlotLabel = document.getElementById('dragSlotLabel');
+        dragBottleLabel.style.display = 'none';
+        dragSlotLabel.style.display = 'none';
+
+        draggingBottle = null;
+      }
+
+      function moveDraggingBottleToPlane(delta) {
+        if (!draggingBottle) return;
+        const p = draggingBottle.userData;
+        const oldPlane = p.plane;
+        const row = p.row;
+        const col = p.column;
+        const newPlane = oldPlane + delta;
+        if (newPlane < 1 || newPlane > 4) {
+          console.log(`Cannot move to plane ${newPlane}`);
+          return;
+        }
+
+        // find the slot in newPlane for same row & col
+        const newSlot = planeLayouts[newPlane].find(s => s.row === row && s.column === col);
+        if (!newSlot) {
+          console.log(`No slot found in plane=${newPlane} row=${row} col=${col}`);
+          return;
+        }
+
+        const newKey = `${newPlane}-${row}-${col}`;
+        const occupant = slotOccupants[newKey];
+        if (occupant && occupant !== draggingBottle) {
+          // occupant is in the new plane's same row/col
+          // Move occupant back to oldPlane, same row/col
+          const occupantPlane = occupant.userData.plane;
+          const occupantRow   = occupant.userData.row;
+          const occupantCol   = occupant.userData.column;
+          const occupantOldKey = `${occupantPlane}-${occupantRow}-${occupantCol}`;
+          const occupantOldSlot = planeLayouts[oldPlane].find(s => s.row === row && s.column === col);
+          if (occupantOldSlot) {
+            occupant.position.set(occupantOldSlot.x, occupantOldSlot.y, occupantOldSlot.z);
+            occupant.userData.plane = oldPlane;
+            occupant.userData.row   = row;
+            occupant.userData.column= col;
+            occupant.userData.initialY = occupantOldSlot.y;
+            slotOccupants[`${oldPlane}-${row}-${col}`] = occupant;
+            updateBottleSlotOnServer(occupant.userData.notionData.id, oldPlane, row, col);
+            delete slotOccupants[occupantOldKey];
+          }
+        }
+
+        // Now place the draggingBottle in newPlane
+        draggingBottle.position.set(newSlot.x, newSlot.y, newSlot.z);
+        draggingBottle.userData.plane = newPlane;
+        draggingBottle.userData.initialY = newSlot.y;
+        slotOccupants[newKey] = draggingBottle;
+        updateBottleSlotOnServer(draggingBottle.userData.notionData.id, newPlane, row, col);
+
+        // Remove draggingBottle from occupantMap at old plane
+        const oldKeyForDraggingBottle = `${oldPlane}-${row}-${col}`;
+        if (slotOccupants[oldKeyForDraggingBottle] === draggingBottle) {
+          delete slotOccupants[oldKeyForDraggingBottle];
+        }
       }
     });
   </script>
@@ -1046,7 +1132,8 @@
       <li><strong>d</strong>: Toggle drag mode</li>
       <li><strong>f</strong>: Toggle filter box</li>
       <li><strong>h</strong>: Toggle help window</li>
-      <li><strong>Escape</strong>: Close filter box</li>
+      <li><strong>q</strong> / <strong>a</strong>: Move dragged bottle to plane above/below</li>
+      <li><strong>Escape</strong>: Close filter box or cancel drag</li>
       <li>Click on a bottle to toggle fly effect</li>
       <li>Drag bottles when in drag mode</li>
     </ul>
