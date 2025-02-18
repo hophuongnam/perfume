@@ -671,9 +671,7 @@
           dragSlotLabel.style.display = 'block';
           dragSlotLabel.innerText = '';
 
-          const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
-          dragPlaneMoveLabel.style.display = 'block';
-          dragPlaneMoveLabel.innerText = 'Press Q or A to move plane up/down';
+          
 
           const oldKey = `${draggingBottle.userData.plane}-${draggingBottle.userData.row}-${draggingBottle.userData.column}`;
           if (slotOccupants[oldKey] === draggingBottle) {
@@ -727,8 +725,10 @@
           draggingBottle.position.z = dragPlaneIntersect.z;
 
           // Show the occupant or row/col of the nearest slot
-          const plane = draggingBottle.userData.plane;
-          const nearest = findNearestSlotInPlane(plane, draggingBottle.position.x, draggingBottle.position.z);
+          const dragPlaneNum = (draggingBottle.userData.dragPlaneNum !== undefined)
+            ? draggingBottle.userData.dragPlaneNum
+            : draggingBottle.userData.plane;
+          const nearest = findNearestSlotInPlane(dragPlaneNum, draggingBottle.position.x, draggingBottle.position.z);
           const dragSlotLabel = document.getElementById('dragSlotLabel');
           if (nearest) {
             const key = `${nearest.plane}-${nearest.row}-${nearest.column}`;
@@ -750,13 +750,18 @@
       if (!dragMode || !draggingBottle) return;
 
       event.preventDefault();
+      event.preventDefault();
 
-      const plane = draggingBottle.userData.plane;
-      const nearest = findNearestSlotInPlane(plane, draggingBottle.position.x, draggingBottle.position.z);
+      // Use the dragPlaneNum if set, otherwise fallback to the original plane
+      const finalPlane = (draggingBottle.userData.dragPlaneNum !== undefined)
+        ? draggingBottle.userData.dragPlaneNum
+        : draggingBottle.userData.plane;
+      draggingBottle.userData.dragPlaneNum = undefined; // reset
+
+      const nearest = findNearestSlotInPlane(finalPlane, draggingBottle.position.x, draggingBottle.position.z);
       if (nearest) {
         const newKey = `${nearest.plane}-${nearest.row}-${nearest.column}`;
         const occupant = slotOccupants[newKey];
-
         if (occupant && occupant !== draggingBottle) {
           const occupantData = occupant.userData;
           console.log(`Swapping occupant of slot ${newKey}`);
@@ -1115,63 +1120,39 @@
 
       function moveDraggingBottleToPlane(delta) {
         if (!draggingBottle) return;
+        
         const p = draggingBottle.userData;
-        const oldPlane = p.plane;
-        const row = p.row;
-        const col = p.column;
-        const newPlane = oldPlane + delta;
-        if (newPlane < 1 || newPlane > 4) {
-          console.log(`Cannot move to plane ${newPlane}`);
-          return;
+        const oldPlane = (p.dragPlaneNum !== undefined) ? p.dragPlaneNum : p.plane;
+        let newPlane = oldPlane + delta;
+        if (newPlane < 1) newPlane = 1;
+        if (newPlane > 4) newPlane = 4;
+        
+        // Store this plane choice but do not finalize occupant changes until mouse up
+        p.dragPlaneNum = newPlane;
+        
+        // Adjust the dragPlane so the user can visually drag in the new plane's Y
+        const planeSlots = planeLayouts[newPlane];
+        if (planeSlots && planeSlots.length > 0) {
+          const planeY = planeSlots[0].y;
+          dragPlane.constant = -planeY;
+          draggingBottle.position.y = planeY;
+          p.initialY = planeY;
         }
-
-        // find the slot in newPlane for same row & col
-        const newSlot = planeLayouts[newPlane].find(s => s.row === row && s.column === col);
-        if (!newSlot) {
-          console.log(`No slot found in plane=${newPlane} row=${row} col=${col}`);
-          return;
-        }
-
-        const newKey = `${newPlane}-${row}-${col}`;
-        const occupant = slotOccupants[newKey];
-        if (occupant && occupant !== draggingBottle) {
-          // occupant is in the new plane's same row/col
-          // Move occupant back to oldPlane, same row/col
-          const occupantPlane = occupant.userData.plane;
-          const occupantRow   = occupant.userData.row;
-          const occupantCol   = occupant.userData.column;
-          const occupantOldKey = `${occupantPlane}-${occupantRow}-${occupantCol}`;
-          const occupantOldSlot = planeLayouts[oldPlane].find(s => s.row === row && s.column === col);
-          if (occupantOldSlot) {
-            occupant.position.set(occupantOldSlot.x, occupantOldSlot.y, occupantOldSlot.z);
-            occupant.userData.plane = oldPlane;
-            occupant.userData.row   = row;
-            occupant.userData.column= col;
-            occupant.userData.initialY = occupantOldSlot.y;
-            slotOccupants[`${oldPlane}-${row}-${col}`] = occupant;
-            updateBottleSlotOnServer(occupant.userData.notionData.id, oldPlane, row, col);
-            delete slotOccupants[occupantOldKey];
-          }
-        }
-
-        // Now place the draggingBottle in newPlane
-        draggingBottle.position.set(newSlot.x, newSlot.y, newSlot.z);
-        draggingBottle.userData.plane = newPlane;
-        draggingBottle.userData.initialY = newSlot.y;
-        slotOccupants[newKey] = draggingBottle;
-        updateBottleSlotOnServer(draggingBottle.userData.notionData.id, newPlane, row, col);
 
         const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
-        dragPlaneMoveLabel.innerText = `Moved to plane ${newPlane}`;
-
-        // Remove draggingBottle from occupantMap at old plane
-        const oldKeyForDraggingBottle = `${oldPlane}-${row}-${col}`;
-        if (slotOccupants[oldKeyForDraggingBottle] === draggingBottle) {
-          delete slotOccupants[oldKeyForDraggingBottle];
+        dragPlaneMoveLabel.style.display = 'block';
+        if (delta < 0) {
+          dragPlaneMoveLabel.innerText = "Move up";
+        } else {
+          dragPlaneMoveLabel.innerText = "Move down";
         }
+      }
+    });
 
-        // Set a short notice on the 4th line
-        draggingBottle.userData.noticeLine4 = `Moved to plane ${newPlane}`;
+    window.addEventListener('keyup', (e) => {
+      if (dragMode && (e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 'q')) {
+        const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
+        dragPlaneMoveLabel.style.display = 'none';
       }
     });
   </script>
