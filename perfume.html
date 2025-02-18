@@ -241,6 +241,12 @@
       dragSlotLabel.style.display = 'none';
       dragIndicator.appendChild(dragSlotLabel);
 
+      // Cross-plane label
+      const dragPlaneMoveLabel = document.createElement('div');
+      dragPlaneMoveLabel.id = 'dragPlaneMoveLabel';
+      dragPlaneMoveLabel.style.display = 'none';
+      dragIndicator.appendChild(dragPlaneMoveLabel);
+
       document.body.appendChild(dragIndicator);
 
       // Listen for filter input
@@ -258,19 +264,26 @@
     function buildAllPlanes() {
       const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
       let currentPlaneY = 0;
+    
+      // First, ensure all plane indices (1..4) have an empty array by default
+      for (let i = 1; i <= 4; i++) {
+        planeLayouts[i] = [];
+      }
+    
       planeKeys.forEach((planeKey, index) => {
         const definition = config[planeKey];
+        // If no definition, we keep the default empty array and skip building shelves.
         if (!definition) return;
-
+    
         const planeNumber = index + 1;
         const rackIds = parsePlaneDefinition(definition);
         if (!rackIds || !rackIds.length) return;
-
+    
         const planeGroup = new THREE.Group();
         planeGroup.position.set(0, currentPlaneY, 0);
         scene.add(planeGroup);
-
-        planeLayouts[planeNumber] = [];
+    
+        // We already initialized planeLayouts[planeNumber], so we can safely push slots below
 
         let rowIndexBase = 0;
         let rowStackOffset = 0;
@@ -567,22 +580,22 @@
     }
 
     /**
-     * Create a 2-line board mesh for "House" (first line) and "Name" (second line).
+     * Create a 4-line board mesh: line1=house, line2=name, line3, line4.
      */
-    function createBoardMesh(house, name) {
+    function createBoardMesh(house, name, line3, line4) {
+      // We'll use a taller canvas for 4 lines
       const width  = 256;
-      const height = 128;
+      const height = 256;
       const canvas = document.createElement('canvas');
       canvas.width  = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
 
       // Helper to measure and clip text if too large
-      function clipAndFillText(context, text, maxWidth, x, y) {
-        // We'll add an ellipsis if clipped
+      function clipAndFillText(context, text, maxWidth, x, y, fontStyle = "20px Arial", isBold = false) {
+        context.font = fontStyle;
         let clipped = text;
         const ellipsis = '…';
-        // measure the text in a loop, remove last char until it fits
         while (clipped.length > 0 && context.measureText(clipped + ellipsis).width > maxWidth) {
           clipped = clipped.slice(0, -1);
         }
@@ -596,24 +609,29 @@
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
 
-      // Text styles
+      // Text styles (baseline, alignment)
       ctx.fillStyle    = "#000000";
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
 
-      // House (top line)
-      ctx.font = "20px Arial";
-      clipAndFillText(ctx, house, 220, width / 2, height / 2 - 16);
+      // line1: House
+      clipAndFillText(ctx, house, 220, width / 2, 48, "20px Arial");
 
-      // Name (bottom line)
-      ctx.font = "bold 24px Arial";
-      clipAndFillText(ctx, name, 220, width / 2, height / 2 + 16);
+      // line2: Name
+      clipAndFillText(ctx, name, 220, width / 2, 88, "bold 24px Arial");
+
+      // line3: custom (e.g. "Press Q or A to move plane up/down")
+      clipAndFillText(ctx, line3, 220, width / 2, 128, "16px Arial");
+
+      // line4: custom dynamic notice
+      clipAndFillText(ctx, line4, 220, width / 2, 168, "16px Arial");
 
       const tex = new THREE.CanvasTexture(canvas);
       tex.needsUpdate = true;
 
       // Plane geometry for the board
-      const boardGeo = new THREE.PlaneGeometry(40, 20);
+      // We'll make it a bit bigger to fit the 4 lines
+      const boardGeo = new THREE.PlaneGeometry(40, 40);
       const boardMat = new THREE.MeshBasicMaterial({
         map: tex,
         side: THREE.DoubleSide,
@@ -652,6 +670,10 @@
           dragBottleLabel.innerText = `Dragging: ${draggingBottle.userData.notionData.name}`;
           dragSlotLabel.style.display = 'block';
           dragSlotLabel.innerText = '';
+
+          const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
+          dragPlaneMoveLabel.style.display = 'block';
+          dragPlaneMoveLabel.innerText = 'Press Q or A to move plane up/down';
 
           const oldKey = `${draggingBottle.userData.plane}-${draggingBottle.userData.row}-${draggingBottle.userData.column}`;
           if (slotOccupants[oldKey] === draggingBottle) {
@@ -788,6 +810,9 @@
       dragBottleLabel.style.display = 'none';
       dragSlotLabel.style.display = 'none';
 
+      const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
+      dragPlaneMoveLabel.style.display = 'none';
+
       draggingBottle = null;
     }
 
@@ -868,22 +893,49 @@
               }
               bottle.position.y = Math.min(bottle.position.y, targetY);
 
-              // If flying and there's no board, create one
-              if (!bottle.userData.boardMesh) {
+              // If flying, recreate the board every frame so we can show updated line4
+              if (bottle.userData.flying) {
+              // We'll define a line3 for instructions
+              const line3 = "";
+              // The 4th line can be set dynamically
+              const line4 = bottle.userData.noticeLine4 || "";
+  
+                // If a board exists, remove it first so we can rebuild
+                if (bottle.userData.boardMesh) {
+                  bottle.remove(bottle.userData.boardMesh);
+                  // Clean up old geometry/material
+                  bottle.userData.boardMesh.geometry.dispose();
+                  if (bottle.userData.boardMesh.material.map) {
+                    bottle.userData.boardMesh.material.map.dispose();
+                  }
+                  bottle.userData.boardMesh.material.dispose();
+                }
+  
+                // Create a new 4-line board
                 bottle.userData.boardMesh = createBoardMesh(
                   bottle.userData.notionData.house || "Unknown House",
-                  bottle.userData.notionData.name  || "No Name"
+                  bottle.userData.notionData.name  || "No Name",
+                  line3,
+                  line4
                 );
                 // Attach board above the bottle
                 bottle.add(bottle.userData.boardMesh);
-                // Position: slightly above the cap
-                // BOTTLE_HEIGHT + capHeight(15) + offset(10)
                 bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 15 + 10, 0);
-              }
-
-              // Make the board face the camera
-              if (bottle.userData.boardMesh) {
+  
+                // Make the board face the camera
                 bottle.userData.boardMesh.lookAt(camera.position);
+  
+              } else {
+                // Not flying => remove board if present
+                if (bottle.userData.boardMesh) {
+                  bottle.remove(bottle.userData.boardMesh);
+                  bottle.userData.boardMesh.geometry.dispose();
+                  if (bottle.userData.boardMesh.material.map) {
+                    bottle.userData.boardMesh.material.map.dispose();
+                  }
+                  bottle.userData.boardMesh.material.dispose();
+                  bottle.userData.boardMesh = null;
+                }
               }
 
             } else {
@@ -1109,11 +1161,17 @@
         slotOccupants[newKey] = draggingBottle;
         updateBottleSlotOnServer(draggingBottle.userData.notionData.id, newPlane, row, col);
 
+        const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
+        dragPlaneMoveLabel.innerText = `Moved to plane ${newPlane}`;
+
         // Remove draggingBottle from occupantMap at old plane
         const oldKeyForDraggingBottle = `${oldPlane}-${row}-${col}`;
         if (slotOccupants[oldKeyForDraggingBottle] === draggingBottle) {
           delete slotOccupants[oldKeyForDraggingBottle];
         }
+
+        // Set a short notice on the 4th line
+        draggingBottle.userData.noticeLine4 = `Moved to plane ${newPlane}`;
       }
     });
   </script>
