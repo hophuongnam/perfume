@@ -1049,11 +1049,12 @@
         const seasonTokens = (notionData.seasons || [])
           .map(s => s.toLowerCase().split(/\s+/))
           .flat();
+        const typeTokens = (notionData.type || "").toLowerCase().split(/\s+/);
 
-        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens, ...seasonTokens];
-    
+        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens, ...seasonTokens, ...typeTokens];
+
         const foundAll = searchTokens.every(token => bottleTokens.includes(token));
-    
+
         highlightables.forEach(entry => {
           const mesh = entry.mesh;
           if (foundAll) {
@@ -1183,13 +1184,11 @@
   <div id="helpWindow">
     <h3>Help</h3>
     <ul>
-      <li><strong>d</strong>: Toggle drag mode</li>
-      <li><strong>f</strong>: Toggle filter box</li>
-      <li><strong>h</strong>: Toggle help window</li>
+      <li><strong>d</strong>: Toggle Drag Mode</li>
+      <li><strong>f</strong>: Toggle Filter Mode</li>
+      <li><strong>h</strong>: Toggle this Help Window</li>
       <li><strong>q</strong> / <strong>a</strong>: Move dragged bottle to plane above/below</li>
-      <li><strong>Escape</strong>: Close filter box or cancel drag</li>
-      <li>Click on a bottle to toggle fly effect</li>
-      <li>Drag bottles when in drag mode</li>
+      <li><strong>ESC</strong>: Close Filter box or cancel drag</li>
     </ul>
   </div>
 <div id="helpHint">H for Help</div>
