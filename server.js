@@ -154,6 +154,29 @@ app.post('/api/updateBottleSlot', async (req, res) => {
   }
 });
 
+app.post('/api/updateBottleCap', async (req, res) => {
+  try {
+    const { pageId, capColor } = req.body;
+    if (!pageId) {
+      return res.status(400).json({ error: 'Missing pageId' });
+    }
+    await notion.pages.update({
+      page_id: pageId,
+      properties: {
+        "Cap Color": {
+          select: {
+            name: capColor
+          }
+        }
+      }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('/api/updateBottleCap error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

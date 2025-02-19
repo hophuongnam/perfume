@@ -40,7 +40,7 @@
       bottom: 0;
       right: 0;
       width: 34vw;
-      height: 25vh;
+      height: 30vh;
       background-color: rgba(0, 0, 0, 0.8);
       color: white;
       padding: 16px;
@@ -969,6 +969,36 @@
       }
     }
 
+    async function updateBottleCapColorOnServer(pageId, capColor) {
+      try {
+        const resp = await fetch('/api/updateBottleCap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pageId, capColor })
+        });
+        if (!resp.ok) {
+          console.error("Failed to update Notion for bottle cap color:", pageId, resp.status);
+        }
+      } catch (err) {
+        console.error("Error calling /api/updateBottleCap:", err);
+      }
+    }
+
+    function setCapColor(bottle, colorName) {
+      const highlightables = bottle.userData.highlightables;
+      if (!highlightables || highlightables.length < 2) return;
+      const capEntry = highlightables[1];
+      try {
+        capEntry.mesh.material.color.setStyle(colorName);
+      } catch (err) {
+        console.warn('Invalid color style, defaulting to gold');
+        capEntry.mesh.material.color.setStyle('Gold');
+      }
+      bottle.userData.notionData.capColor = colorName;
+      // Update in Notion
+      updateBottleCapColorOnServer(bottle.userData.notionData.id, colorName);
+    }
+
     // -------------------------------------------
     // 8) Main animation loop
     // -------------------------------------------
@@ -1218,6 +1248,21 @@
             sourceBottle = null;
             targetBottle = null;
           }
+        } else if (key === '3') {
+          // Cap color = Gold
+          if (activeBottle && activeBottle.userData.flying) {
+            setCapColor(activeBottle, 'Gold');
+          }
+        } else if (key === '4') {
+          // Cap color = Silver
+          if (activeBottle && activeBottle.userData.flying) {
+            setCapColor(activeBottle, 'Silver');
+          }
+        } else if (key === '5') {
+          // Cap color = Black
+          if (activeBottle && activeBottle.userData.flying) {
+            setCapColor(activeBottle, 'Black');
+          }
         }
       }
 
@@ -1227,7 +1272,7 @@
         const oldPlane = p.plane;
         const oldRow = p.row;
         const oldCol = p.column;
-        const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
+        const oldSlot = planeLayouts[`${oldPlane}`].find(s => s.row === oldRow && s.column === oldCol);
         if (oldSlot) {
           draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
           slotOccupants[`${oldPlane}-${oldRow}-${oldCol}`] = draggingBottle;
@@ -1297,6 +1342,9 @@
       <li><strong>q</strong> / <strong>a</strong>: Move dragged bottle to plane above/below (Drag Mode)</li>
       <li><strong>1</strong>: Mark flying bottle as Source (Green) in Normal mode</li>
       <li><strong>2</strong>: Mark flying bottle as Target (Blue) in Normal mode</li>
+      <li><strong>3</strong>: Set cap color to Gold (Normal mode + flying bottle)</li>
+      <li><strong>4</strong>: Set cap color to Silver (Normal mode + flying bottle)</li>
+      <li><strong>5</strong>: Set cap color to Black (Normal mode + flying bottle)</li>
       <li><strong>s</strong>: Swap Source & Target (Normal mode only)</li>
       <li><strong>ESC</strong>: Close Filter box/cancel drag or reset Source/Target in Normal mode</li>
     </ul>
