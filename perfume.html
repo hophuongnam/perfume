@@ -39,7 +39,7 @@
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 25vw;
+      width: 34vw;
       height: 25vh;
       background-color: rgba(0, 0, 0, 0.8);
       color: white;
@@ -76,6 +76,85 @@
     let scene, camera, renderer, controls;
     const raycaster = new THREE.Raycaster();
     const mouse     = new THREE.Vector2();
+
+    // Marking system for flying bottles
+    let sourceBottle = null;
+    let targetBottle = null;
+
+    function markAsSource(bottle) {
+      if (sourceBottle) revertMark(sourceBottle);
+      sourceBottle = bottle;
+      if (bottle) {
+        // set color to green
+        const highlightables = bottle.userData.highlightables || [];
+        highlightables.forEach(h => {
+          h.mesh.material.color.set(0x00ff00);
+        });
+      }
+    }
+
+    function markAsTarget(bottle) {
+      if (targetBottle) revertMark(targetBottle);
+      targetBottle = bottle;
+      if (bottle) {
+        // set color to blue
+        const highlightables = bottle.userData.highlightables || [];
+        highlightables.forEach(h => {
+          h.mesh.material.color.set(0x0000ff);
+        });
+      }
+    }
+
+    function revertMark(bottle) {
+      if (!bottle) return;
+      const highlightables = bottle.userData.highlightables || [];
+      highlightables.forEach(h => {
+        h.mesh.material.color.copy(h.originalColor);
+      });
+      if (bottle === sourceBottle) sourceBottle = null;
+      if (bottle === targetBottle) targetBottle = null;
+    }
+
+    function swapBottlePositions(bottleA, bottleB) {
+      // occupant swap logic
+      const Aplane = bottleA.userData.plane;
+      const Arow   = bottleA.userData.row;
+      const Acol   = bottleA.userData.column;
+      const Bplane = bottleB.userData.plane;
+      const Brow   = bottleB.userData.row;
+      const Bcol   = bottleB.userData.column;
+
+      const Akey = `${Aplane}-${Arow}-${Acol}`;
+      const Bkey = `${Bplane}-${Brow}-${Bcol}`;
+
+      const Apos = planeLayouts[Aplane].find(s => s.row === Arow && s.column === Acol);
+      const Bpos = planeLayouts[Bplane].find(s => s.row === Brow && s.column === Bcol);
+
+      if (Apos && Bpos) {
+        // Swap occupant references
+        slotOccupants[Akey] = bottleB;
+        slotOccupants[Bkey] = bottleA;
+
+        // Move the bottles
+        bottleA.position.set(Bpos.x, Bpos.y, Bpos.z);
+        bottleB.position.set(Apos.x, Apos.y, Apos.z);
+
+        // Update userData for new plane/row/col
+        bottleA.userData.plane = Bplane;
+        bottleA.userData.row   = Brow;
+        bottleA.userData.column= Bcol;
+        bottleA.userData.initialY = Bpos.y;
+
+        bottleB.userData.plane = Aplane;
+        bottleB.userData.row   = Arow;
+        bottleB.userData.column= Acol;
+        bottleB.userData.initialY = Apos.y;
+
+        // Update Notion
+        updateBottleSlotOnServer(bottleA.userData.notionData.id, Bplane, Brow, Bcol);
+        updateBottleSlotOnServer(bottleB.userData.notionData.id, Aplane, Arow, Acol);
+      }
+    }
 
     // We'll store all clickable bottle meshes here:
     const clickableBottles = [];
@@ -1112,6 +1191,34 @@
           // Move to plane below
           moveDraggingBottleToPlane(1);
         }
+      } else if (!dragMode) {
+        // Normal mode additional keys
+        if (key === 'escape') {
+          // Press ESC in normal mode => reset source/target if any
+          if (sourceBottle) revertMark(sourceBottle);
+          if (targetBottle) revertMark(targetBottle);
+          sourceBottle = null;
+          targetBottle = null;
+        } else if (key === '1') {
+          // Mark activeBottle as source
+          if (activeBottle && activeBottle.userData.flying) {
+            markAsSource(activeBottle);
+          }
+        } else if (key === '2') {
+          // Mark activeBottle as target
+          if (activeBottle && activeBottle.userData.flying) {
+            markAsTarget(activeBottle);
+          }
+        } else if (key === 's') {
+          // Swap if both source and target are set
+          if (sourceBottle && targetBottle) {
+            swapBottlePositions(sourceBottle, targetBottle);
+            revertMark(sourceBottle);
+            revertMark(targetBottle);
+            sourceBottle = null;
+            targetBottle = null;
+          }
+        }
       }
 
       function cancelDrag() {
@@ -1187,8 +1294,11 @@
       <li><strong>d</strong>: Toggle Drag Mode</li>
       <li><strong>f</strong>: Toggle Filter Mode</li>
       <li><strong>h</strong>: Toggle this Help Window</li>
-      <li><strong>q</strong> / <strong>a</strong>: Move dragged bottle to plane above/below</li>
-      <li><strong>ESC</strong>: Close Filter box or cancel drag</li>
+      <li><strong>q</strong> / <strong>a</strong>: Move dragged bottle to plane above/below (Drag Mode)</li>
+      <li><strong>1</strong>: Mark flying bottle as Source (Green) in Normal mode</li>
+      <li><strong>2</strong>: Mark flying bottle as Target (Blue) in Normal mode</li>
+      <li><strong>s</strong>: Swap Source & Target (Normal mode only)</li>
+      <li><strong>ESC</strong>: Close Filter box/cancel drag or reset Source/Target in Normal mode</li>
     </ul>
   </div>
 <div id="helpHint">H for Help</div>
