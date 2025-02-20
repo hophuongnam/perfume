@@ -74,6 +74,7 @@
     // Global Scene Variables
     // -------------------------------------------
     let scene, camera, renderer, controls;
+    let lastFilterMatches = [];
     const raycaster = new THREE.Raycaster();
     const mouse     = new THREE.Vector2();
 
@@ -635,7 +636,6 @@
         ]
       };
       clickableBottles.push(bottleGroup);
-      clickableBottles.push(bottleGroup);
       scene.add(bottleGroup);
 
       // Mark this slot occupant
@@ -1134,22 +1134,36 @@
     function applyFilter(searchText) {
       const trimmed = searchText.trim().toLowerCase();
       if (!trimmed) {
+        // Reset highlight
         clickableBottles.forEach(bg => {
           const { highlightables } = bg.userData;
           if (!highlightables) return;
           highlightables.forEach(entry => {
             entry.mesh.material.color.copy(entry.originalColor);
           });
+          // Also revert flying state
+          bg.userData.flying = false;
         });
+        activeBottle = null;
+        // Clear lastFilterMatches too
+        lastFilterMatches = [];
         return;
       }
 
       const searchTokens = trimmed.split(/\s+/);
 
+      // We'll track which bottles match
+      const matchedBottles = [];
+
+      // First reset flying state so we can do our logic anew
+      clickableBottles.forEach(bg => {
+        bg.userData.flying = false;
+      });
+
       clickableBottles.forEach(bg => {
         const { notionData, highlightables } = bg.userData;
         if (!highlightables) return;
-    
+
         const nameTokens = (notionData.name || "").toLowerCase().split(/\s+/);
         const houseTokens = (notionData.house || "").toLowerCase().split(/\s+/);
         const accordsTokens = (notionData.accords || [])
@@ -1160,9 +1174,18 @@
           .flat();
         const typeTokens = (notionData.type || "").toLowerCase().split(/\s+/);
 
-        const bottleTokens = [...nameTokens, ...houseTokens, ...accordsTokens, ...seasonTokens, ...typeTokens];
+        const bottleTokens = [
+          ...nameTokens,
+          ...houseTokens,
+          ...accordsTokens,
+          ...seasonTokens,
+          ...typeTokens
+        ];
 
         const foundAll = searchTokens.every(token => bottleTokens.includes(token));
+        if (foundAll) {
+          matchedBottles.push(bg);
+        }
 
         highlightables.forEach(entry => {
           const mesh = entry.mesh;
@@ -1173,6 +1196,32 @@
           }
         });
       });
+
+      // Store matchedBottles so we can reference them in keydown ESC logic
+      lastFilterMatches = matchedBottles;
+
+      // If exactly 1 match, simulate a "click" on that bottle
+      if (matchedBottles.length === 1) {
+        const singleMatch = matchedBottles[0];
+        // If there's a different active bottle, turn off flying
+        if (activeBottle && activeBottle !== singleMatch) {
+          activeBottle.userData.flying = false;
+        }
+        // If it's a different bottle than the current activeBottle, set it active & fly
+        if (activeBottle !== singleMatch) {
+          activeBottle = singleMatch;
+          activeBottle.userData.flying = true;
+        } else {
+          // If it's the same bottle, toggle flying state
+          activeBottle.userData.flying = !activeBottle.userData.flying;
+        }
+      } else {
+        // More or less than one match => no auto-fly
+        if (activeBottle) {
+          activeBottle.userData.flying = false;
+        }
+        activeBottle = null;
+      }
     }
 
     // Key listeners
@@ -1181,12 +1230,28 @@
 
       if (isFilterBoxVisible()) {
         if (key === 'escape') {
-          const filterInput = document.getElementById('filterInput');
-          if (filterInput) {
-            filterInput.value = '';
+          if (lastFilterMatches.length === 1) {
+            // Revert color but keep flying
+            const singleMatch = lastFilterMatches[0];
+            const { highlightables } = singleMatch.userData;
+            highlightables.forEach((entry) => {
+              entry.mesh.material.color.copy(entry.originalColor);
+            });
+
+            // Exit filter mode
+            const filterInput = document.getElementById('filterInput');
+            if (filterInput) {
+              filterInput.value = '';
+            }
+            toggleFilterBox();
+          } else {
+            const filterInput = document.getElementById('filterInput');
+            if (filterInput) {
+              filterInput.value = '';
+            }
+            applyFilter('');
+            toggleFilterBox();
           }
-          applyFilter('');
-          toggleFilterBox();
         }
         return;
       }
