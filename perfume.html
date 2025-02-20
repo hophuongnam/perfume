@@ -1138,8 +1138,12 @@
         clickableBottles.forEach(bg => {
           const { highlightables } = bg.userData;
           if (!highlightables) return;
+          const isSource = (bg === sourceBottle);
+          const isTarget = (bg === targetBottle);
           highlightables.forEach(entry => {
-            entry.mesh.material.color.copy(entry.originalColor);
+            if (!isSource && !isTarget) {
+              entry.mesh.material.color.copy(entry.originalColor);
+            }
           });
           // Also revert flying state
           bg.userData.flying = false;
@@ -1187,12 +1191,20 @@
           matchedBottles.push(bg);
         }
 
+        const isSource = (bg === sourceBottle);
+        const isTarget = (bg === targetBottle);
         highlightables.forEach(entry => {
           const mesh = entry.mesh;
           if (foundAll) {
-            mesh.material.color.set(0xff0000);
+            // set highlight color only if not source/target
+            if (!isSource && !isTarget) {
+              mesh.material.color.set(0xff0000);
+            }
           } else {
-            mesh.material.color.copy(entry.originalColor);
+            // revert color if not source/target
+            if (!isSource && !isTarget) {
+              mesh.material.color.copy(entry.originalColor);
+            }
           }
         });
       });
