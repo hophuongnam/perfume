@@ -640,6 +640,9 @@
 
       // Mark this slot occupant
       const key = `${plane}-${row}-${column}`;
+      if (slotOccupants[key]) {
+        console.warn(`Multiple occupant in slot ${key}: occupant = ${slotOccupants[key].userData.notionData.name}, new occupant = ${bData.name}`);
+      }
       slotOccupants[key] = bottleGroup;
     }
 
@@ -1020,7 +1023,7 @@
               // If flying, recreate the board every frame so we can show updated line4
               if (bottle.userData.flying) {
               // We'll define line3 with the slot position
-              const line3 = `Row: ${bottle.userData.row}, Col: ${bottle.userData.column}`;
+              const line3 = `Col: ${bottle.userData.column}, Row: ${bottle.userData.row}`;
               // The 4th line can be set dynamically
               const line4 = bottle.userData.noticeLine4 || "";
   
@@ -1069,9 +1072,9 @@
               bottle.position.y = Math.max(bottle.position.y, initialY);
 
               // If the bottle is no longer flying, remove/destroy the board
+              // If the bottle is no longer flying, remove/destroy the board
               if (bottle.userData.boardMesh) {
                 bottle.remove(bottle.userData.boardMesh);
-                // Clean up geometry and materials
                 bottle.userData.boardMesh.geometry.dispose();
                 if (bottle.userData.boardMesh.material.map) {
                   bottle.userData.boardMesh.material.map.dispose();
@@ -1082,6 +1085,15 @@
             }
           }
         });
+      }
+
+      // Update lower-middle notice on screen
+      const noticeBar = document.getElementById('noticeBar');
+      if (activeBottle && activeBottle.userData.flying) {
+        noticeBar.textContent = `${activeBottle.userData.notionData.name || 'Unknown'} @ column ${activeBottle.userData.column}, row ${activeBottle.userData.row}`;
+        noticeBar.style.display = 'inline-block';
+      } else {
+        noticeBar.style.display = 'none';
       }
 
       renderer.render(scene, camera);
@@ -1426,6 +1438,9 @@
       <li><strong>ESC</strong>: Close Filter box/cancel drag or reset Source/Target in Normal mode</li>
     </ul>
   </div>
-<div id="helpHint">H for Help</div>
+<div id="helpHint">
+  <span>H for Help</span>
+  <span id="noticeBar" style="margin-left: 12px; display:none;"></span>
+</div>
 </body>
 </html>
