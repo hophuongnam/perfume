@@ -138,12 +138,12 @@ async function main() {
       const pageId = page.id;
 
       // parse plane, row, col from Notion
-      const planeVal = page.properties["Plane"]?.rich_text?.[0]?.plain_text || "";
-      const rowVal   = page.properties["Row"]?.rich_text?.[0]?.plain_text || "";
-      const colVal   = page.properties["Column"]?.rich_text?.[0]?.plain_text || "";
-      let plane = parseInt(planeVal, 10) || 0;
-      let row   = parseInt(rowVal, 10)   || 0;
-      let column= parseInt(colVal, 10)   || 0;
+      const planeVal = page.properties["Plane"]?.number || 0;
+      const rowVal   = page.properties["Row"]?.number || 0;
+      const colVal   = page.properties["Column"]?.number || 0;
+      let plane = planeVal;
+      let row   = rowVal;
+      let column= colVal;
 
       // check if (plane,row,col) is valid in planeLayouts
       if (!isSlotValid(plane, row, column)) {
@@ -217,13 +217,13 @@ async function updateBottleSlotInNotion(pageId, plane, row, column) {
       page_id: pageId,
       properties: {
         Plane: {
-          rich_text: [{ type: 'text', text: { content: String(plane) } }]
+          number: plane
         },
         Row: {
-          rich_text: [{ type: 'text', text: { content: String(row) } }]
+          number: row
         },
         Column: {
-          rich_text: [{ type: 'text', text: { content: String(column) } }]
+          number: column
         }
       }
     });

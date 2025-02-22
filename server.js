@@ -94,9 +94,9 @@ app.get('/api/bottles', async (req, res) => {
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
         const capColorVal = capColorProp?.select?.name || "Gold";
         const houseVal    = houseProp?.select?.name || "Unknown House";
-        const planeVal    = planeProp?.rich_text?.[0]?.plain_text || "";
-        const rowVal      = rowProp?.rich_text?.[0]?.plain_text || "";
-        const colVal      = columnProp?.rich_text?.[0]?.plain_text || "";
+        const planeVal    = planeProp?.number || 0;
+        const rowVal      = rowProp?.number || 0;
+        const colVal      = columnProp?.number || 0;
         const typeVal     = typeProp?.select?.name || "Unknown Type";
         const accordsVal  = accordsProp?.multi_select?.map(opt => opt.name) || [];
         const seasonVal   = seasonProp?.multi_select?.map(opt => opt.name) || [];
@@ -106,9 +106,9 @@ app.get('/api/bottles', async (req, res) => {
           name: nameVal,
           capColor: capColorVal,
           house: houseVal,
-          plane: parseInt(planeVal, 10) || 0,
-          row: parseInt(rowVal, 10) || 0,
-          column: parseInt(colVal, 10) || 0,
+          plane: planeVal,
+          row: rowVal,
+          column: colVal,
           type: typeVal,
           accords: accordsVal,
           seasons: seasonVal
@@ -137,13 +137,13 @@ app.post('/api/updateBottleSlot', async (req, res) => {
       page_id: pageId,
       properties: {
         Plane: {
-          rich_text: [{ type: 'text', text: { content: String(plane || '') } }]
+          number: plane
         },
         Row: {
-          rich_text: [{ type: 'text', text: { content: String(row || '') } }]
+          number: row
         },
         Column: {
-          rich_text: [{ type: 'text', text: { content: String(column || '') } }]
+          number: column
         }
       }
     });

@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-02-18T07:44:41.499Z
+Retrieved at: 2025-02-22T13:15:42.345Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -15,13 +15,13 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 }
 ```
 
-## Field: Season
+## Field: Seasons
 **Type**: multi_select
 
 ```json
 {
   "id": "%3C%3D_x",
-  "name": "Season",
+  "name": "Seasons",
   "type": "multi_select",
   "multi_select": {
     "options": [
@@ -39,7 +39,7 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
       },
       {
         "id": "0df42852-ed34-4b35-b626-73f979bb4442",
-        "name": "Autumn",
+        "name": "Fall",
         "color": "yellow",
         "description": null
       },
@@ -67,14 +67,16 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 ```
 
 ## Field: Row
-**Type**: rich_text
+**Type**: number
 
 ```json
 {
   "id": "HBCA",
   "name": "Row",
-  "type": "rich_text",
-  "rich_text": {}
+  "type": "number",
+  "number": {
+    "format": "number"
+  }
 }
 ```
 
@@ -91,14 +93,16 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 ```
 
 ## Field: Plane
-**Type**: rich_text
+**Type**: number
 
 ```json
 {
   "id": "Jx%3ET",
   "name": "Plane",
-  "type": "rich_text",
-  "rich_text": {}
+  "type": "number",
+  "number": {
+    "format": "number"
+  }
 }
 ```
 
@@ -531,7 +535,7 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
       {
         "id": "w]{S",
         "name": "Silver",
-        "color": "gray",
+        "color": "green",
         "description": null
       },
       {
@@ -543,7 +547,7 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
       {
         "id": "|E?a",
         "name": "Black",
-        "color": "blue",
+        "color": "default",
         "description": null
       }
     ]
@@ -720,14 +724,16 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 ```
 
 ## Field: Column
-**Type**: rich_text
+**Type**: number
 
 ```json
 {
   "id": "xBCF",
   "name": "Column",
-  "type": "rich_text",
-  "rich_text": {}
+  "type": "number",
+  "number": {
+    "format": "number"
+  }
 }
 ```
 
