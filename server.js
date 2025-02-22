@@ -88,7 +88,7 @@ app.get('/api/bottles', async (req, res) => {
         const columnProp    = page.properties["Column"];
         const typeProp      = page.properties["Type"];
         const accordsProp   = page.properties["Accords"];
-        const seasonProp    = page.properties["Season"];
+        const seasonsProp   = page.properties["Seasons"];
 
         // Parse fields
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
@@ -99,7 +99,7 @@ app.get('/api/bottles', async (req, res) => {
         const colVal      = columnProp?.number || 0;
         const typeVal     = typeProp?.select?.name || "Unknown Type";
         const accordsVal  = accordsProp?.multi_select?.map(opt => opt.name) || [];
-        const seasonVal   = seasonProp?.multi_select?.map(opt => opt.name) || [];
+        const seasonsVal  = seasonsProp?.multi_select?.map(opt => opt.name) || [];
 
         return {
           id: page.id,
@@ -111,7 +111,7 @@ app.get('/api/bottles', async (req, res) => {
           column: colVal,
           type: typeVal,
           accords: accordsVal,
-          seasons: seasonVal
+          seasons: seasonsVal
         };
       });
 
