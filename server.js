@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
+const chokidar = require('chokidar');
+const fs = require('fs');
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const app = express();
@@ -181,3 +183,90 @@ app.post('/api/updateBottleCap', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
+
+const dataFilePath = path.join(__dirname, 'perfumeData.json');
+
+/**
+ * Reads perfumeData.json, updates Notion for any new/unupdated records,
+ * and marks them so they won't be updated again.
+ */
+async function updatePerfumeData() {
+  try {
+    if (!fs.existsSync(dataFilePath)) {
+      return; // No file to process
+    }
+
+    const rawData = fs.readFileSync(dataFilePath, 'utf8');
+    let perfumeData = JSON.parse(rawData);
+
+    // Handle the case where perfumeData might be a single object
+    if (!Array.isArray(perfumeData)) {
+      perfumeData = [perfumeData];
+    }
+
+    let updatedSomething = false;
+
+    // Process each record in the JSON
+    for (const record of perfumeData) {
+      // Skip if already updated or missing a URL
+      if (record.notionUpdated || !record.url) {
+        continue;
+      }
+
+      // Query Notion for a page with matching URL
+      const resp = await notion.databases.query({
+        database_id: process.env.NOTION_DATABASE_ID,
+        filter: {
+          property: 'URL',
+          url: {
+            equals: record.url
+          }
+        }
+      });
+
+      if (resp.results.length > 0) {
+        const page = resp.results[0];
+        // Update "Accords" field or any other fields from the record
+        // If "accords" is present, update it
+        if (Array.isArray(record.accords)) {
+          await notion.pages.update({
+            page_id: page.id,
+            properties: {
+              Accords: {
+                multi_select: record.accords.map(a => ({ name: a }))
+              }
+            }
+          });
+          console.log(`Notion updated for URL: ${record.url}`);
+        } else {
+          console.log(`Record has no accords array for URL: ${record.url}`);
+        }
+
+        // Mark this record as updated
+        record.notionUpdated = true;
+        updatedSomething = true;
+      } else {
+        console.log(`No matching page found for URL: ${record.url}`);
+      }
+    }
+
+    // If we updated at least one record, write back to the file
+    if (updatedSomething) {
+      fs.writeFileSync(dataFilePath, JSON.stringify(perfumeData, null, 2), 'utf8');
+      console.log('perfumeData.json updated to mark notion updates.');
+    }
+  } catch (error) {
+    console.error('Error updating Notion from JSON file:', error);
+  }
+}
+
+// Watch the JSON file for changes and trigger an update
+chokidar.watch(dataFilePath).on('change', () => {
+  console.log(`Detected change in ${dataFilePath}. Updating Notion...`);
+  updatePerfumeData();
+});
+
+// Also update Notion once every minute, in case the file hasn't changed
+setInterval(() => {
+  updatePerfumeData();
+}, 60000);
