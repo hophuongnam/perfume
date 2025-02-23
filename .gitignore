@@ -7,7 +7,7 @@ Thumbs.db
 *~            # Backup files (often created by text editors)
 *.log         # Log files
 .vscode/      # VS Code settings (optional, but good to ignore if not shared)
-perfumeData.json
+perfumeData.txt
 
 # Node.js
 node_modules/
