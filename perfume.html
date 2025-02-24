@@ -1144,7 +1144,16 @@
 
     // Apply filter logic: highlight matching bottles
     function applyFilter(searchText) {
-      const trimmed = searchText.trim().toLowerCase();
+
+      // Helper to fold diacritics (normalize + strip)
+      function fold(str) {
+        return str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+      }
+
+      const trimmed = fold(searchText.trim());
       if (!trimmed) {
         // Reset highlight
         clickableBottles.forEach(bg => {
@@ -1180,15 +1189,15 @@
         const { notionData, highlightables } = bg.userData;
         if (!highlightables) return;
 
-        const nameTokens = (notionData.name || "").toLowerCase().split(/\s+/);
-        const houseTokens = (notionData.house || "").toLowerCase().split(/\s+/);
+        const nameTokens = fold(notionData.name || '').split(/\s+/);
+        const houseTokens = fold(notionData.house || '').split(/\s+/);
         const accordsTokens = (notionData.accords || [])
-          .map(a => a.toLowerCase().split(/\s+/))
+          .map(a => fold(a).split(/\s+/))
           .flat();
         const seasonTokens = (notionData.seasons || [])
-          .map(s => s.toLowerCase().split(/\s+/))
+          .map(s => fold(s).split(/\s+/))
           .flat();
-        const typeTokens = (notionData.type || "").toLowerCase().split(/\s+/);
+        const typeTokens = fold(notionData.type || '').split(/\s+/);
 
         const bottleTokens = [
           ...nameTokens,
