@@ -141,8 +141,8 @@ function createSteppedRack(numRows, numColumns) {
     side: THREE.DoubleSide,
     clearcoat: 0.3,
     clearcoatRoughness: 0.4,
-    envMap: envMap,
     envMapIntensity: 0.5
+    // Note: envMap is now set via scene.environment in SceneManager.js
   });
 
   const rowDepth = totalDepth / numRows;

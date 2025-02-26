@@ -60,7 +60,6 @@ export function createBottleFromNotion(bData) {
       roughness: 0.01,
       transmission: 0.92,
       thickness: 1.8,
-      envMap: envMap,
       envMapIntensity: 1.5,
       clearcoat: 0.7,
       clearcoatRoughness: 0.05,
@@ -68,6 +67,7 @@ export function createBottleFromNotion(bData) {
       transparent: true,
       opacity: 0.92,
       reflectivity: 0.2
+      // Note: envMap is now set via scene.environment in SceneManager.js
     });
     const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
     bottleMesh.position.set(0, bottleHeight/2, 0);
@@ -287,6 +287,7 @@ function createLabelTexture(text) {
   ctx.restore();
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
   return texture;
 }
@@ -357,6 +358,7 @@ function createBoardMesh(house, name, line3, line4) {
   clipAndFillText(ctx, line4, 320, width / 2, 220, "bold 18px Arial");
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
 
   const boardGeo = new THREE.PlaneGeometry(64, 48);

@@ -37,16 +37,26 @@ export function initScene() {
   );
   camera.position.set(3, 180, 220);
 
-  // Initialize renderer
+  // Initialize renderer with WebGL2
   renderer = new THREE.WebGLRenderer({
     antialias: true,
-    powerPreference: "high-performance"
+    powerPreference: "high-performance",
+    alpha: false,
+    stencil: false
   });
+  
+  // Check if WebGL2 is supported
+  if (renderer.capabilities.isWebGL2) {
+    console.log('Using WebGL2');
+  } else {
+    console.warn('WebGL2 not supported, falling back to WebGL1');
+  }
+  
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.physicallyCorrectLights = true;
+  renderer.useLegacyLights = false; // Use physically correct lighting (replaces physicallyCorrectLights)
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.outputColorSpace = THREE.SRGBColorSpace; // Updated from outputEncoding
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   
@@ -117,8 +127,8 @@ function createGradientBackground() {
 
 function setupEnvironmentMap() {
   pmremGenerator = new THREE.PMREMGenerator(renderer);
-  pmremGenerator.compileCubemapShader();
-
+  // No need to call compileCubemapShader() in newer Three.js versions
+  
   // Create a procedural environment with a gradient sky
   const environmentTexture = generateEnvironmentTexture();
   const envRT = pmremGenerator.fromEquirectangular(environmentTexture);
@@ -126,12 +136,13 @@ function setupEnvironmentMap() {
 
   scene.environment = envMap;
   environmentTexture.dispose();
+  pmremGenerator.dispose(); // Properly dispose of the generator
 }
 
 function generateEnvironmentTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048; // Higher resolution for WebGL2
+  canvas.height = 1024;
   const context = canvas.getContext('2d');
 
   // Gradient for sky
@@ -155,6 +166,7 @@ function generateEnvironmentTexture() {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace; // Set proper color space
   return texture;
 }
 

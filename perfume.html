@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Perfume Racks with Notion Data</title>
   <style>
     body { margin: 0; }
@@ -198,6 +199,13 @@
   </style>
 </head>
 <body>
+  <!-- WebGL2 compatibility check -->
+  <div id="webglCompatError" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); color: white; text-align: center; padding-top: 30vh; z-index: 30000; font-family: sans-serif;">
+    <h2>WebGL2 Required</h2>
+    <p>Your browser doesn't seem to support WebGL2, which is required for this application.</p>
+    <p>Please try using a modern browser like Chrome, Firefox, Safari, or Edge.</p>
+  </div>
+  
   <!-- Loading Screen Overlay -->
   <div id="loadingOverlay">
     <div class="bottleLogo">
@@ -259,8 +267,22 @@
 
   <script type="module">
     import { initApp } from './UIController.js';
+    
+    // Check WebGL2 support before initializing
+    function checkWebGL2Support() {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2');
+      return !!gl;
+    }
+    
     window.addEventListener('load', () => {
-      initApp();
+      if (checkWebGL2Support()) {
+        initApp();
+      } else {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('webglCompatError').style.display = 'block';
+        console.error('WebGL2 not supported by this browser');
+      }
     });
   </script>
 
