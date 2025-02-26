@@ -65,9 +65,181 @@
       z-index: 10000;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
+
+    /* Loading screen styles */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(22, 34, 57, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20000;
+      transition: opacity 0.5s ease;
+    }
+
+    #loadingTitle {
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 28px;
+      font-weight: 300;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    #loadingContainer {
+      width: 60%;
+      max-width: 500px;
+    }
+
+    .loadingBar {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      height: 10px;
+      margin: 15px 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loadingProgress {
+      background: linear-gradient(90deg, #4F7CAC 0%, #8BBCCC 100%);
+      height: 100%;
+      width: 0%;
+      border-radius: 8px;
+      transition: width 0.3s ease;
+    }
+
+    .loadingStep {
+      color: #B0C4DE;
+      font-family: sans-serif;
+      font-size: 14px;
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .loadingStepName {
+      flex-grow: 1;
+    }
+
+    .loadingStepStatus {
+      margin-left: 15px;
+      font-weight: bold;
+    }
+
+    .loadingStepComplete {
+      color: #98FB98;
+    }
+
+    .loadingStepActive {
+      color: #F0F8FF;
+    }
+
+    .loadingStepPending {
+      color: #B0C4DE;
+      opacity: 0.6;
+    }
+
+    .bottleLogo {
+      width: 60px;
+      height: 90px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .bottleBody {
+      position: absolute;
+      width: 40px;
+      height: 70px;
+      background-color: rgba(173, 216, 230, 0.5);
+      border-radius: 5px;
+      left: 10px;
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    .bottleCap {
+      position: absolute;
+      width: 20px;
+      height: 15px;
+      background-color: gold;
+      border-radius: 3px;
+      left: 20px;
+      top: 0;
+    }
+
+    .bottleFill {
+      position: absolute;
+      width: 100%;
+      background-color: rgba(173, 216, 230, 0.8);
+      bottom: 0;
+      left: 0;
+      height: 0%;
+      transition: height 0.8s ease-in-out;
+    }
+
+    @keyframes shine {
+      0% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+      100% { opacity: 0.4; }
+    }
+
+    .bottleShine {
+      position: absolute;
+      width: 10px;
+      height: 50px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transform: rotate(30deg);
+      top: 10px;
+      left: 15px;
+      animation: shine 2s infinite;
+    }
   </style>
 </head>
 <body>
+  <!-- Loading Screen Overlay -->
+  <div id="loadingOverlay">
+    <div class="bottleLogo">
+      <div class="bottleBody">
+        <div class="bottleFill" id="bottleFillAnimation"></div>
+        <div class="bottleShine"></div>
+      </div>
+      <div class="bottleCap"></div>
+    </div>
+    <div id="loadingTitle">Loading Perfume Collection</div>
+    <div id="loadingContainer">
+      <div class="loadingBar">
+        <div class="loadingProgress" id="loadingProgressBar"></div>
+      </div>
+      <div id="loadingSteps">
+        <div class="loadingStep">
+          <span class="loadingStepName">Loading Configuration</span>
+          <span class="loadingStepStatus" id="loadingStepConfig">Pending</span>
+        </div>
+        <div class="loadingStep">
+          <span class="loadingStepName">Initializing Scene</span>
+          <span class="loadingStepStatus" id="loadingStepScene">Pending</span>
+        </div>
+        <div class="loadingStep">
+          <span class="loadingStepName">Building Display Structure</span>
+          <span class="loadingStepStatus" id="loadingStepPlanes">Pending</span>
+        </div>
+        <div class="loadingStep">
+          <span class="loadingStepName">Fetching Perfume Data</span>
+          <span class="loadingStepStatus" id="loadingStepNotion">Pending</span>
+        </div>
+        <div class="loadingStep">
+          <span class="loadingStepName">Placing Bottles</span>
+          <span class="loadingStepStatus" id="loadingStepBottles">Pending</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Three.js, OrbitControls, and additional modules for PBR -->
   <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
@@ -76,6 +248,103 @@
   
   <!-- Remove post-processing that was causing issues -->
   <script>
+    // -------------------------------------------
+    // Loading Manager
+    // -------------------------------------------
+    class LoadingManager {
+      constructor() {
+        // Loading steps and their weights (importance for progress calculation)
+        this.steps = {
+          'config': { weight: 10, status: 'pending', element: 'loadingStepConfig' },
+          'scene': { weight: 15, status: 'pending', element: 'loadingStepScene' },
+          'planes': { weight: 15, status: 'pending', element: 'loadingStepPlanes' },
+          'notion': { weight: 30, status: 'pending', element: 'loadingStepNotion' },
+          'bottles': { weight: 30, status: 'pending', element: 'loadingStepBottles' }
+        };
+        
+        this.totalWeight = Object.values(this.steps).reduce((sum, step) => sum + step.weight, 0);
+        this.completedWeight = 0;
+        this.progressBar = document.getElementById('loadingProgressBar');
+        this.bottleFill = document.getElementById('bottleFillAnimation');
+        this.overlay = document.getElementById('loadingOverlay');
+        
+        // Initialize UI
+        this.updateProgressBar();
+      }
+      
+      // Start a loading step
+      startStep(stepName) {
+        if (!this.steps[stepName]) return;
+        
+        this.steps[stepName].status = 'active';
+        const element = document.getElementById(this.steps[stepName].element);
+        if (element) {
+          element.innerText = 'In Progress';
+          element.className = 'loadingStepStatus loadingStepActive';
+        }
+        this.updateProgressBar();
+      }
+      
+      // Complete a loading step
+      completeStep(stepName) {
+        if (!this.steps[stepName]) return;
+        
+        const step = this.steps[stepName];
+        if (step.status !== 'complete') {
+          step.status = 'complete';
+          this.completedWeight += step.weight;
+          
+          const element = document.getElementById(step.element);
+          if (element) {
+            element.innerText = 'Complete';
+            element.className = 'loadingStepStatus loadingStepComplete';
+          }
+          
+          this.updateProgressBar();
+        }
+      }
+      
+      // Update the visual progress bar
+      updateProgressBar() {
+        const progressPercent = (this.completedWeight / this.totalWeight) * 100;
+        
+        if (this.progressBar) {
+          this.progressBar.style.width = `${progressPercent}%`;
+        }
+        
+        if (this.bottleFill) {
+          this.bottleFill.style.height = `${progressPercent}%`;
+        }
+        
+        // When all steps are complete, hide the overlay
+        if (progressPercent >= 100) {
+          setTimeout(() => {
+            this.hideOverlay();
+          }, 500);
+        }
+      }
+      
+      // Hide the loading overlay with animation
+      hideOverlay() {
+        if (this.overlay) {
+          this.overlay.style.opacity = '0';
+          setTimeout(() => {
+            this.overlay.style.display = 'none';
+          }, 500);
+        }
+      }
+      
+      // Force finish loading (for error scenarios)
+      forceComplete() {
+        Object.keys(this.steps).forEach(key => {
+          this.completeStep(key);
+        });
+      }
+    }
+
+    // Global instance
+    let loadingManager;
+
     // -------------------------------------------
     // Global Scene Variables
     // -------------------------------------------
@@ -212,21 +481,60 @@
     // Toolbox & Filter states
     
     window.addEventListener('load', async () => {
-      await fetchConfig();
-      parseRackConfigs();
-
-      initScene();
-      buildAllPlanes();
-
-      // Now fetch the Notion data
-      const notionBottles = await fetchAllNotionBottles();
-
-      // Place each bottle
-      notionBottles.forEach(bData => {
-        createBottleFromNotion(bData);
-      });
-
-      animate();
+      try {
+        // Initialize loading manager
+        loadingManager = new LoadingManager();
+        
+        // Step 1: Fetch configuration
+        loadingManager.startStep('config');
+        await fetchConfig();
+        parseRackConfigs();
+        loadingManager.completeStep('config');
+        
+        // Step 2: Initialize scene
+        loadingManager.startStep('scene');
+        initScene();
+        loadingManager.completeStep('scene');
+        
+        // Step 3: Build all display planes
+        loadingManager.startStep('planes');
+        buildAllPlanes();
+        loadingManager.completeStep('planes');
+        
+        // Step 4: Fetch Notion data
+        loadingManager.startStep('notion');
+        const notionBottles = await fetchAllNotionBottles();
+        loadingManager.completeStep('notion');
+        
+        // Step 5: Place each bottle
+        loadingManager.startStep('bottles');
+        if (notionBottles && notionBottles.length > 0) {
+          notionBottles.forEach(bData => {
+            createBottleFromNotion(bData);
+          });
+        } else {
+          console.warn("No bottles found or empty array returned");
+        }
+        loadingManager.completeStep('bottles');
+        
+        // Start animation loop
+        animate();
+      } catch (error) {
+        console.error("Error during initialization:", error);
+        // Show error in loading screen
+        const loadingTitle = document.getElementById('loadingTitle');
+        if (loadingTitle) {
+          loadingTitle.innerText = "Error Loading Application";
+          loadingTitle.style.color = "#ff6b6b";
+        }
+        
+        // Force complete loading after a delay to prevent UI lockup
+        setTimeout(() => {
+          if (loadingManager) {
+            loadingManager.forceComplete();
+          }
+        }, 2000);
+      }
     });
 
     // -------------------------------------------
@@ -236,11 +544,21 @@
       try {
         const response = await fetch('/api/config');
         if (!response.ok) {
-          throw new Error('Failed to load config');
+          throw new Error(`Failed to load config. Status: ${response.status}`);
         }
         config = await response.json();
       } catch (err) {
         console.error('Error fetching config:', err);
+        
+        // Update loading UI with error
+        const configStep = document.getElementById('loadingStepConfig');
+        if (configStep) {
+          configStep.innerText = 'Error';
+          configStep.style.color = '#ff6b6b';
+        }
+        
+        // Rethrow for centralized error handling
+        throw err;
       }
     }
 
@@ -685,6 +1003,23 @@
         return data;
       } catch (err) {
         console.error('fetchAllNotionBottles error:', err);
+        
+        // Update loading UI with error
+        const notionStep = document.getElementById('loadingStepNotion');
+        if (notionStep) {
+          notionStep.innerText = 'Error';
+          notionStep.style.color = '#ff6b6b';
+        }
+        
+        // Display error message on the loading screen
+        const loadingTitle = document.getElementById('loadingTitle');
+        if (loadingTitle) {
+          loadingTitle.innerText = "Error Loading Perfume Data";
+          loadingTitle.style.color = "#ff6b6b";
+        }
+        
+        // Wait a moment before continuing with empty data
+        await new Promise(resolve => setTimeout(resolve, 1500));
         return [];
       }
     }
@@ -693,17 +1028,18 @@
     // 6) Create Bottles in the Correct Position
     // -------------------------------------------
     function createBottleFromNotion(bData) {
-      const { plane, row, column, name, capColor, id, house, accords, type } = bData;
-      if (!planeLayouts[plane]) {
-        console.warn(`No plane layout found for plane=${plane}`);
-        return;
-      }
-
-      const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
-      if (!slot) {
-        console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
-        return;
-      }
+      try {
+        const { plane, row, column, name, capColor, id, house, accords, type } = bData;
+        if (!planeLayouts[plane]) {
+          console.warn(`No plane layout found for plane=${plane}`);
+          return;
+        }
+  
+        const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
+        if (!slot) {
+          console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
+          return;
+        }
 
       const bottleGroup = new THREE.Group();
       const bottleWidth  = 10;
@@ -830,6 +1166,10 @@
         console.warn(`Multiple occupant in slot ${key}: occupant = ${slotOccupants[key].userData.notionData.name}, new occupant = ${bData.name}`);
       }
       slotOccupants[key] = bottleGroup;
+      } catch (err) {
+        console.error(`Error creating bottle from Notion data:`, err, bData);
+        // Continue with other bottles
+      }
     }
 
     // Helper function to determine bottle glass color based on perfume type/characteristics
