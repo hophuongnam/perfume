@@ -57,11 +57,13 @@
       bottom: 8px;
       left: 8px;
       color: white;
-      background-color: rgba(0,0,0,0.5);
-      padding: 4px 8px;
+      background-color: rgba(50, 100, 150, 0.8);
+      padding: 6px 10px;
       border-radius: 4px;
       font-family: sans-serif;
+      font-weight: bold;
       z-index: 10000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
   </style>
 </head>
@@ -273,7 +275,32 @@
     // -------------------------------------------
     function initScene() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x222222); // Darker background to see reflections better
+      
+      // Create a gradient background texture instead of a solid color
+      const bgTexture = createGradientBackground();
+      scene.background = bgTexture;
+      
+      // Helper function to create a soft, elegant background gradient
+      function createGradientBackground() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 2;
+        canvas.height = 512;
+        const context = canvas.getContext('2d');
+        
+        // Create a vertical gradient - soft lavender to light cream
+        const gradient = context.createLinearGradient(0, 0, 0, 512);
+        gradient.addColorStop(0, '#f3e9f9'); // Light lavender at top
+        gradient.addColorStop(0.5, '#f0f0f6'); // Middle - soft gray-lavender
+        gradient.addColorStop(1, '#fff9f2'); // Warm cream at bottom
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 2, 512);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        return texture;
+      }
 
       camera = new THREE.PerspectiveCamera(
         60,
@@ -530,15 +557,16 @@
       const baseY     = wallThickness / 2;
 
       const mat = new THREE.MeshPhysicalMaterial({
-        color: 0xdddddd,
-        roughness: 0.5,
-        metalness: 0.2,
+        color: 0xe0e0e0,      // Slight off-white for plastic
+        roughness: 0.7,       // Higher roughness for plastic
+        metalness: 0.0,       // Plastic is not metallic
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.35,
         side: THREE.DoubleSide,
-        clearcoat: 0.1,
-        clearcoatRoughness: 0.2,
-        envMap: envMap
+        clearcoat: 0.3,       // Light clearcoat for shiny plastic finish
+        clearcoatRoughness: 0.4,
+        envMap: envMap,
+        envMapIntensity: 0.5  // Reduced reflections for plastic
       });
 
       const rowDepth = totalDepth / numRows;
@@ -690,20 +718,21 @@
       // Get a subtle glass color based on perfume type or house
       const glassColorHex = getBottleGlassColor(bData);
       
-      // Create advanced glass material with PBR properties
+      // Create advanced glass material with PBR properties - refined for realistic glass
       const bottleMat = new THREE.MeshPhysicalMaterial({
         color: glassColorHex,
         metalness: 0.0,
-        roughness: 0.05,
-        transmission: 0.95,  // Amount of light that passes through
-        thickness: 1.5,      // Glass thickness for refraction
-        envMap: envMap,      // Environment map for reflections
-        envMapIntensity: 1.0,
-        clearcoat: 0.5,      // Clear coat layer
-        clearcoatRoughness: 0.1,
-        ior: 1.5,            // Index of refraction (1.5 for glass)
+        roughness: 0.01,      // Smoother for glass
+        transmission: 0.92,   // Amount of light that passes through
+        thickness: 1.8,       // Glass thickness for refraction
+        envMap: envMap,       // Environment map for reflections
+        envMapIntensity: 1.5, // Enhanced reflections for glass
+        clearcoat: 0.7,       // Enhanced clear coat for glass shine
+        clearcoatRoughness: 0.05,
+        ior: 1.52,            // Index of refraction for glass (1.52 is more accurate)
         transparent: true,
-        opacity: 0.95
+        opacity: 0.92,
+        reflectivity: 0.2     // Glass reflectivity
       });
       
       // Apply material to mesh
@@ -888,8 +917,8 @@
      * Create a 4-line board mesh: line1=house, line2=name, line3, line4.
      */
     function createBoardMesh(house, name, line3, line4) {
-      // We'll use a taller canvas for 4 lines
-      const width  = 256;
+      // Larger canvas for better resolution and visibility
+      const width  = 384;
       const height = 256;
       const canvas = document.createElement('canvas');
       canvas.width  = width;
@@ -910,33 +939,59 @@
         context.fillText(clipped, x, y);
       }
 
-      // Background
-      ctx.fillStyle = "#ffffff";
+      // Background with gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, "#f0f8ff");
+      gradient.addColorStop(1, "#e6f2ff");
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
+      
+      // Add subtle border
+      ctx.strokeStyle = "#4682b4";
+      ctx.lineWidth = 8;
+      ctx.strokeRect(4, 4, width - 8, height - 8);
+      
+      // Inner shadow for depth
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(12, 12, width - 24, height - 24);
+      
+      // Background for content area
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.fillRect(12, 12, width - 24, height - 24);
 
       // Text styles (baseline, alignment)
-      ctx.fillStyle    = "#000000";
-      ctx.textAlign    = "center";
+      ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // line1: House
-      clipAndFillText(ctx, house, 220, width / 2, 48, "20px Arial");
+      // line1: House (with subtle shadow for better readability)
+      ctx.fillStyle = "#444";
+      clipAndFillText(ctx, house, 320, width / 2, 48, "bold 24px Arial");
 
-      // line2: Name
-      clipAndFillText(ctx, name, 220, width / 2, 88, "bold 24px Arial");
+      // line2: Name (larger and bolder)
+      ctx.fillStyle = "#000";
+      clipAndFillText(ctx, name, 320, width / 2, 100, "bold 32px Arial");
+
+      // Separator line
+      ctx.strokeStyle = "#4682b4";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(width/4, 140);
+      ctx.lineTo(width*3/4, 140);
+      ctx.stroke();
 
       // line3: custom (e.g. "Press Q or A to move plane up/down")
-      clipAndFillText(ctx, line3, 220, width / 2, 128, "16px Arial");
+      ctx.fillStyle = "#333";
+      clipAndFillText(ctx, line3, 320, width / 2, 180, "18px Arial");
 
-      // line4: custom dynamic notice
-      clipAndFillText(ctx, line4, 220, width / 2, 168, "16px Arial");
+      // line4: custom dynamic notice (highlight important information)
+      ctx.fillStyle = "#1E5AAB";
+      clipAndFillText(ctx, line4, 320, width / 2, 220, "bold 18px Arial");
 
       const tex = new THREE.CanvasTexture(canvas);
       tex.needsUpdate = true;
 
-      // Plane geometry for the board
-      // We'll make it a bit bigger to fit the 4 lines
-      const boardGeo = new THREE.PlaneGeometry(40, 40);
+      // Plane geometry for the board - much larger for better visibility
+      const boardGeo = new THREE.PlaneGeometry(64, 48);
       const boardMat = new THREE.MeshBasicMaterial({
         map: tex,
         side: THREE.DoubleSide,
@@ -1256,8 +1311,18 @@
               }
               bottle.position.y = Math.min(bottle.position.y, targetY);
 
-              // If flying, recreate the board every frame so we can show updated line4
+              // If flying, handle billboard animation
               if (bottle.userData.flying) {
+                // If the bottle has a board, animate it slightly
+                if (bottle.userData.boardMesh) {
+                  // Make board gently float up and down
+                  const now = Date.now();
+                  const floatOffset = Math.sin(now * 0.002) * 2;
+                  bottle.userData.boardMesh.position.y = BOTTLE_HEIGHT + 40 + floatOffset;
+                  
+                  // Always face the camera
+                  bottle.userData.boardMesh.lookAt(camera.position);
+                }
               // We'll define line3 with the slot position
               const line3 = `Col: ${bottle.userData.column}, Row: ${bottle.userData.row}`;
               // The 4th line can be set dynamically
@@ -1281,12 +1346,15 @@
                   line3,
                   line4
                 );
-                // Attach board above the bottle
+                // Attach board above the bottle with better positioning
                 bottle.add(bottle.userData.boardMesh);
-                bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 15 + 10, 0);
+                bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 40, 0);
   
-                // Make the board face the camera
+                // Make the board always face the camera and update on render
                 bottle.userData.boardMesh.lookAt(camera.position);
+                
+                // Add slight floating animation to make it more noticeable
+                bottle.userData.boardAnimationOffset = Date.now() % 2000 / 2000;
   
               } else {
                 // Not flying => remove board if present
