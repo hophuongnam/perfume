@@ -58,12 +58,14 @@ export function createBottleFromNotion(bData) {
       color: glassColorHex,
       metalness: 0.0,
       roughness: 0.01,
-      transmission: 0.92,
-      thickness: 1.8,
+      transmission: 0.98,  // Better for glass than transparency
+      thickness: 0.5,      // Physical thickness for refraction
+      ior: 1.52,           // Accurate index of refraction for glass
+      attenuationDistance: 0.5,
+      attenuationColor: new THREE.Color(glassColorHex).multiplyScalar(0.5),
       envMapIntensity: 1.5,
       clearcoat: 0.7,
       clearcoatRoughness: 0.05,
-      ior: 1.52,
       transparent: true,
       opacity: 0.92,
       reflectivity: 0.2
