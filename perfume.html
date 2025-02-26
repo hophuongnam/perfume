@@ -240,16 +240,29 @@
     </div>
   </div>
 
-  <!-- Three.js, OrbitControls, and additional modules for PBR -->
-  <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/RGBELoader.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/HDRCubeTextureLoader.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
-  <script src="https://unpkg.com/three@0.146.0/examples/js/helpers/RectAreaLightHelper.js"></script>
-  
-  <!-- Remove post-processing that was causing issues -->
-  <script>
+  <!-- Import map for Three.js and extra modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@latest/build/three.module.js",
+      "OrbitControls": "https://unpkg.com/three@latest/examples/jsm/controls/OrbitControls.js",
+      "RGBELoader": "https://unpkg.com/three@latest/examples/jsm/loaders/RGBELoader.js",
+      "HDRCubeTextureLoader": "https://unpkg.com/three@latest/examples/jsm/loaders/HDRCubeTextureLoader.js",
+      "RectAreaLightUniformsLib": "https://unpkg.com/three@latest/examples/jsm/lights/RectAreaLightUniformsLib.js",
+      "RectAreaLightHelper": "https://unpkg.com/three@latest/examples/jsm/helpers/RectAreaLightHelper.js"
+    }
+  }
+  </script>
+
+  <!-- Convert script to ES modules -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'OrbitControls';
+    import { RGBELoader } from 'RGBELoader';
+    import { HDRCubeTextureLoader } from 'HDRCubeTextureLoader';
+    import { RectAreaLightUniformsLib } from 'RectAreaLightUniformsLib';
+    import { RectAreaLightHelper } from 'RectAreaLightHelper';
+
     // -------------------------------------------
     // Loading Manager
     // -------------------------------------------
@@ -644,7 +657,7 @@
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.body.appendChild(renderer.domElement);
 
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 50, 0);
       controls.update();
 
@@ -718,7 +731,7 @@
         });
         
         // Initialize RectAreaLight uniforms needed for shader compilation
-        THREE.RectAreaLightUniformsLib.init();
+        RectAreaLightUniformsLib.init();
         
         // Ambient light for general illumination (slightly reduced intensity)
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
@@ -774,8 +787,8 @@
           shelfLight.lookAt((minX + maxX) / 2, planeY, (minZ + maxZ) / 2);
           scene.add(shelfLight);
           
-          // Add a helper for debugging (uncomment if needed for development)
-          // const shelfLightHelper = new THREE.RectAreaLightHelper(shelfLight);
+          // Add a helper for debugging (uncomment if needed)
+          // const shelfLightHelper = new RectAreaLightHelper(shelfLight);
           // shelfLight.add(shelfLightHelper);
           
           // Add a subtle uplight from the bottom for more dimension
@@ -788,7 +801,6 @@
       
       function setupPostProcessing() {
         // We're removing the post-processing due to compatibility issues
-        // with the version of Three.js being used
         composer = null;
         console.log("Post-processing disabled");
       }
@@ -856,8 +868,6 @@
         const planeGroup = new THREE.Group();
         planeGroup.position.set(0, currentPlaneY, index * 12 * SLOT_WIDTH_DEPTH);
         scene.add(planeGroup);
-
-        // We already initialized planeLayouts[planeNumber], so we can safely push slots below
 
         let rowIndexBase = 0;
         let rowStackOffset = 0;
@@ -1084,168 +1094,159 @@
           return;
         }
 
-      const bottleGroup = new THREE.Group();
-      const bottleWidth  = 10;
-      const bottleDepth  = 10;
-      const bottleHeight = BOTTLE_HEIGHT;
-      const capHeight    = 15;
-      const capRadius    = 5;
+        const bottleGroup = new THREE.Group();
+        const bottleWidth  = 10;
+        const bottleDepth  = 10;
+        const bottleHeight = BOTTLE_HEIGHT;
+        const capHeight    = 15;
+        const capRadius    = 5;
 
-      // Enhanced bottle body with realistic glass using PBR
-      const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
-      
-      // Get a subtle glass color based on perfume type or house
-      const glassColorHex = getBottleGlassColor(bData);
-      
-      // Create advanced glass material with PBR properties - refined for realistic glass
-      const bottleMat = new THREE.MeshPhysicalMaterial({
-        color: glassColorHex,
-        metalness: 0.0,
-        roughness: 0.01,      // Smoother for glass
-        transmission: 0.92,   // Amount of light that passes through
-        thickness: 1.8,       // Glass thickness for refraction
-        envMap: envMap,       // Environment map for reflections
-        envMapIntensity: 1.5, // Enhanced reflections for glass
-        clearcoat: 0.7,       // Enhanced clear coat for glass shine
-        clearcoatRoughness: 0.05,
-        ior: 1.52,            // Index of refraction for glass (1.52 is more accurate)
-        transparent: true,
-        opacity: 0.92,
-        reflectivity: 0.2     // Glass reflectivity
-      });
-      
-      // Apply material to mesh
-      const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
-      bottleMesh.position.set(0, bottleHeight/2, 0);
-      bottleMesh.castShadow = true;
-      bottleMesh.receiveShadow = true;
+        // Enhanced bottle body with realistic glass using PBR
+        const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
+        
+        // Get a subtle glass color based on perfume type or house
+        const glassColorHex = getBottleGlassColor(bData);
+        
+        // Create advanced glass material with PBR properties - refined for realistic glass
+        const bottleMat = new THREE.MeshPhysicalMaterial({
+          color: glassColorHex,
+          metalness: 0.0,
+          roughness: 0.01,      // Smoother for glass
+          transmission: 0.92,   // Amount of light that passes through
+          thickness: 1.8,       // Glass thickness for refraction
+          envMap: envMap,       // Environment map for reflections
+          envMapIntensity: 1.5, // Enhanced reflections for glass
+          clearcoat: 0.7,       // Enhanced clear coat for glass shine
+          clearcoatRoughness: 0.05,
+          ior: 1.52,            // Index of refraction for glass (1.52 is close to real glass)
+          transparent: true,
+          opacity: 0.92,
+          reflectivity: 0.2
+        });
+        
+        // Apply material to mesh
+        const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
+        bottleMesh.position.set(0, bottleHeight/2, 0);
+        bottleMesh.castShadow = true;
+        bottleMesh.receiveShadow = true;
 
-      // Label with improved quality
-      const labelWidth  = bottleWidth;
-      const labelHeight = bottleHeight / 2;
-      const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
-      const labelTexture = createLabelTexture(name || "(No Name)");
-      
-      // Improved label material
-      const labelMat = new THREE.MeshStandardMaterial({
-        map: labelTexture,
-        side: THREE.DoubleSide,
-        transparent: true,
-        roughness: 0.7,     // Paper-like roughness
-        metalness: 0.0
-      });
-      
-      const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-      labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
-      bottleMesh.add(labelMesh);
+        // Label with improved quality
+        const labelWidth  = bottleWidth;
+        const labelHeight = bottleHeight / 2;
+        const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
+        const labelTexture = createLabelTexture(name || "(No Name)");
+        
+        // Improved label material
+        const labelMat = new THREE.MeshStandardMaterial({
+          map: labelTexture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          roughness: 0.7,     // Paper-like roughness
+          metalness: 0.0
+        });
+        
+        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+        labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
+        bottleMesh.add(labelMesh);
 
-      // Enhanced cap with metallic PBR properties
-      const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
-      
-      // Create a map for metallic caps
-      let capMetalness = 1.0;
-      let capRoughness = 0.2;
-      
-      // Determine cap material properties based on color
-      if (capColor === 'Gold') {
-        capMetalness = 1.0;
-        capRoughness = 0.1;
-      } else if (capColor === 'Silver') {
-        capMetalness = 0.95;
-        capRoughness = 0.1;
-      } else if (capColor === 'Black') {
-        capMetalness = 0.8;
-        capRoughness = 0.3;
-      }
-      
-      // Enhanced cap material with PBR
-      const capMat = new THREE.MeshStandardMaterial({
-        color: 0xffd700,
-        roughness: capRoughness,
-        metalness: capMetalness,
-        envMap: envMap
-      });
-      
-      if (capColor) {
-        try {
-          capMat.color.setStyle(capColor);
-        } catch {
-          capMat.color.set(0xffd700);
+        // Enhanced cap with metallic PBR properties
+        const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
+        
+        // Create a map for metallic caps
+        let capMetalness = 1.0;
+        let capRoughness = 0.2;
+        
+        if (capColor === 'Gold') {
+          capMetalness = 1.0;
+          capRoughness = 0.1;
+        } else if (capColor === 'Silver') {
+          capMetalness = 0.95;
+          capRoughness = 0.1;
+        } else if (capColor === 'Black') {
+          capMetalness = 0.8;
+          capRoughness = 0.3;
         }
-      }
-      
-      const capMesh = new THREE.Mesh(capGeo, capMat);
-      capMesh.position.set(0, bottleHeight + capHeight/2, 0);
-      capMesh.castShadow = true;
-      capMesh.receiveShadow = true;
+        
+        const capMat = new THREE.MeshStandardMaterial({
+          color: 0xffd700,
+          roughness: capRoughness,
+          metalness: capMetalness,
+          envMap: envMap
+        });
+        
+        if (capColor) {
+          try {
+            capMat.color.setStyle(capColor);
+          } catch {
+            capMat.color.set(0xffd700);
+          }
+        }
+        
+        const capMesh = new THREE.Mesh(capGeo, capMat);
+        capMesh.position.set(0, bottleHeight + capHeight/2, 0);
+        capMesh.castShadow = true;
+        capMesh.receiveShadow = true;
 
-      bottleGroup.add(bottleMesh);
-      bottleGroup.add(capMesh);
+        bottleGroup.add(bottleMesh);
+        bottleGroup.add(capMesh);
 
-      bottleGroup.position.set(slot.x, slot.y, slot.z);
+        bottleGroup.position.set(slot.x, slot.y, slot.z);
 
-      // Store custom data, including references to meshes for highlight
-      bottleGroup.userData = {
-        initialY: slot.y,
-        flying: false,
-        notionData: bData,
-        plane: plane,
-        row: row,
-        column: column,
-        house: house,
-        accords: accords,
-        type: type,
-        highlightables: [
-          { mesh: bottleMesh, originalColor: bottleMesh.material.color.clone() },
-          { mesh: capMesh, originalColor: capMesh.material.color.clone() }
-        ]
-      };
-      clickableBottles.push(bottleGroup);
-      scene.add(bottleGroup);
+        // Store custom data, including references to meshes for highlight
+        bottleGroup.userData = {
+          initialY: slot.y,
+          flying: false,
+          notionData: bData,
+          plane: plane,
+          row: row,
+          column: column,
+          house: house,
+          accords: accords,
+          type: type,
+          highlightables: [
+            { mesh: bottleMesh, originalColor: bottleMesh.material.color.clone() },
+            { mesh: capMesh, originalColor: capMesh.material.color.clone() }
+          ]
+        };
+        clickableBottles.push(bottleGroup);
+        scene.add(bottleGroup);
 
-      // Mark this slot occupant
-      const key = `${plane}-${row}-${column}`;
-      if (slotOccupants[key]) {
-        console.warn(`Multiple occupant in slot ${key}: occupant = ${slotOccupants[key].userData.notionData.name}, new occupant = ${bData.name}`);
-      }
-      slotOccupants[key] = bottleGroup;
+        // Mark this slot occupant
+        const key = `${plane}-${row}-${column}`;
+        if (slotOccupants[key]) {
+          console.warn(`Multiple occupant in slot ${key}: occupant = ${slotOccupants[key].userData.notionData.name}, new occupant = ${bData.name}`);
+        }
+        slotOccupants[key] = bottleGroup;
       } catch (err) {
         console.error(`Error creating bottle from Notion data:`, err, bData);
-        // Continue with other bottles
       }
     }
 
-    // Helper function to determine bottle glass color based on perfume type/characteristics
     function getBottleGlassColor(bottleData) {
-      // Default subtle light blue-tinted glass
-      let glassColor = 0xF0F8FF;
+      let glassColor = 0xF0F8FF; // default subtle light blue-tinted glass
       
-      // If we have accords data, use it to influence glass color
       if (bottleData.accords && bottleData.accords.length > 0) {
-        // Map common perfume accords to subtle glass tints
         const accordColorMap = {
-          'floral': 0xFFF0F5,        // Very light pink
-          'woody': 0xF5DEB3,         // Light wheat
-          'fresh': 0xE0FFFF,         // Light cyan
-          'citrus': 0xFFFACD,        // Lemon chiffon
-          'spicy': 0xFFE4B5,         // Moccasin
-          'sweet': 0xFFE4E1,         // Misty rose
-          'amber': 0xFFD700,         // Gold
-          'powdery': 0xFFF0F5,       // Lavender blush
-          'aromatic': 0xF0FFF0,      // Honeydew
-          'fruity': 0xFFF0F5,        // Light pink
-          'green': 0xF0FFF0,         // Honeydew
-          'marine': 0xE0FFFF,        // Light cyan
-          'vanilla': 0xFFF8DC,       // Cornsilk
-          'oud': 0xDEB887,           // Burlywood
-          'leather': 0xD2B48C,       // Tan
-          'musky': 0xE6E6FA          // Lavender
+          'floral': 0xFFF0F5,
+          'woody': 0xF5DEB3,
+          'fresh': 0xE0FFFF,
+          'citrus': 0xFFFACD,
+          'spicy': 0xFFE4B5,
+          'sweet': 0xFFE4E1,
+          'amber': 0xFFD700,
+          'powdery': 0xFFF0F5,
+          'aromatic': 0xF0FFF0,
+          'fruity': 0xFFF0F5,
+          'green': 0xF0FFF0,
+          'marine': 0xE0FFFF,
+          'vanilla': 0xFFF8DC,
+          'oud': 0xDEB887,
+          'leather': 0xD2B48C,
+          'musky': 0xE6E6FA
         };
         
-        // Check if any accord matches our map
         for (const accord of bottleData.accords) {
           const lowerAccord = accord.toLowerCase();
-          // Look for partial matches in our accord map
           for (const [key, color] of Object.entries(accordColorMap)) {
             if (lowerAccord.includes(key)) {
               glassColor = color;
@@ -1255,16 +1256,14 @@
         }
       }
       
-      // House can override accord colors for brand consistency
       if (bottleData.house) {
         const houseLower = bottleData.house.toLowerCase();
-        // Map some notable houses to specific glass colors (just examples)
         if (houseLower.includes('dior')) {
-          glassColor = 0xF0F8FF; // Light blue-white
+          glassColor = 0xF0F8FF;
         } else if (houseLower.includes('chanel')) {
-          glassColor = 0xFFFAFA; // Snow white
+          glassColor = 0xFFFAFA;
         } else if (houseLower.includes('guerlain')) {
-          glassColor = 0xFFF5EE; // Seashell
+          glassColor = 0xFFF5EE;
         }
       }
       
@@ -1296,11 +1295,7 @@
       return texture;
     }
 
-    /**
-     * Create a 4-line board mesh: line1=house, line2=name, line3, line4.
-     */
     function createBoardMesh(house, name, line3, line4) {
-      // Larger canvas for better resolution and visibility
       const width  = 384;
       const height = 256;
       const canvas = document.createElement('canvas');
@@ -1308,8 +1303,7 @@
       canvas.height = height;
       const ctx = canvas.getContext('2d');
 
-      // Helper to measure and clip text if too large
-      function clipAndFillText(context, text, maxWidth, x, y, fontStyle = "20px Arial", isBold = false) {
+      function clipAndFillText(context, text, maxWidth, x, y, fontStyle = "20px Arial") {
         context.font = fontStyle;
         let clipped = text;
         const ellipsis = '…';
@@ -1322,39 +1316,34 @@
         context.fillText(clipped, x, y);
       }
 
-      // Background with gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
       gradient.addColorStop(0, "#f0f8ff");
       gradient.addColorStop(1, "#e6f2ff");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
       
-      // Add subtle border
       ctx.strokeStyle = "#4682b4";
       ctx.lineWidth = 8;
       ctx.strokeRect(4, 4, width - 8, height - 8);
       
-      // Inner shadow for depth
       ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
       ctx.fillRect(12, 12, width - 24, height - 24);
       
-      // Background for content area
       ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
       ctx.fillRect(12, 12, width - 24, height - 24);
 
-      // Text styles (baseline, alignment)
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // line1: House (with subtle shadow for better readability)
+      // line1: House
       ctx.fillStyle = "#444";
       clipAndFillText(ctx, house, 320, width / 2, 48, "bold 24px Arial");
 
-      // line2: Name (larger and bolder)
+      // line2: Name
       ctx.fillStyle = "#000";
       clipAndFillText(ctx, name, 320, width / 2, 100, "bold 32px Arial");
 
-      // Separator line
+      // Separator
       ctx.strokeStyle = "#4682b4";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -1362,18 +1351,17 @@
       ctx.lineTo(width*3/4, 140);
       ctx.stroke();
 
-      // line3: custom (e.g. "Press Q or A to move plane up/down")
+      // line3
       ctx.fillStyle = "#333";
       clipAndFillText(ctx, line3, 320, width / 2, 180, "18px Arial");
 
-      // line4: custom dynamic notice (highlight important information)
+      // line4
       ctx.fillStyle = "#1E5AAB";
       clipAndFillText(ctx, line4, 320, width / 2, 220, "bold 18px Arial");
 
       const tex = new THREE.CanvasTexture(canvas);
       tex.needsUpdate = true;
 
-      // Plane geometry for the board - much larger for better visibility
       const boardGeo = new THREE.PlaneGeometry(64, 48);
       const boardMat = new THREE.MeshBasicMaterial({
         map: tex,
@@ -1382,7 +1370,7 @@
       });
 
       const boardMesh = new THREE.Mesh(boardGeo, boardMat);
-      boardMesh.renderOrder = 9999; // so it's drawn on top
+      boardMesh.renderOrder = 9999;
       return boardMesh;
     }
 
@@ -1396,7 +1384,6 @@
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
 
-      // If we are in drag mode, attempt to pick up a bottle
       if (dragMode) {
         const intersects = raycaster.intersectObjects(clickableBottles, true);
         if (intersects.length > 0) {
@@ -1406,15 +1393,12 @@
           }
           draggingBottle = clickedGroup;
           
-          // Show which bottle is being dragged
           const dragBottleLabel = document.getElementById('dragBottleLabel');
           const dragSlotLabel = document.getElementById('dragSlotLabel');
           dragBottleLabel.style.display = 'block';
           dragBottleLabel.innerText = `Dragging: ${draggingBottle.userData.notionData.name}`;
           dragSlotLabel.style.display = 'block';
           dragSlotLabel.innerText = '';
-
-          
 
           const oldKey = `${draggingBottle.userData.plane}-${draggingBottle.userData.row}-${draggingBottle.userData.column}`;
           if (slotOccupants[oldKey] === draggingBottle) {
@@ -1425,9 +1409,7 @@
         return;
       }
 
-      // Normal "fly" logic
       const intersects = raycaster.intersectObjects(clickableBottles, true);
-
       if (intersects.length > 0) {
         let clickedGroup = intersects[0].object;
         while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
@@ -1467,7 +1449,6 @@
           draggingBottle.position.x = dragPlaneIntersect.x;
           draggingBottle.position.z = dragPlaneIntersect.z;
 
-          // Show the occupant or row/col of the nearest slot
           const dragPlaneNum = (draggingBottle.userData.dragPlaneNum !== undefined)
             ? draggingBottle.userData.dragPlaneNum
             : draggingBottle.userData.plane;
@@ -1495,11 +1476,10 @@
       event.preventDefault();
       event.preventDefault();
 
-      // Use the dragPlaneNum if set, otherwise fallback to the original plane
       const finalPlane = (draggingBottle.userData.dragPlaneNum !== undefined)
         ? draggingBottle.userData.dragPlaneNum
         : draggingBottle.userData.plane;
-      draggingBottle.userData.dragPlaneNum = undefined; // reset
+      draggingBottle.userData.dragPlaneNum = undefined;
 
       const nearest = findNearestSlotInPlane(finalPlane, draggingBottle.position.x, draggingBottle.position.z);
       if (nearest) {
@@ -1552,7 +1532,6 @@
         }
       }
 
-      // Hide the notices after releasing the bottle
       const dragBottleLabel = document.getElementById('dragBottleLabel');
       const dragSlotLabel = document.getElementById('dragSlotLabel');
       dragBottleLabel.style.display = 'none';
@@ -1564,9 +1543,6 @@
       draggingBottle = null;
     }
 
-    // -------------------------------------------
-    // Helper: findNearestSlot (all planes)
-    // -------------------------------------------
     function findNearestSlot(x, z) {
       let nearest = null;
       let minDist = Infinity;
@@ -1585,9 +1561,6 @@
       return nearest;
     }
 
-    // -------------------------------------------
-    // Helper: findNearestSlotInPlane
-    // -------------------------------------------
     function findNearestSlotInPlane(plane, x, z) {
       let nearest = null;
       let minDist = Infinity;
@@ -1605,9 +1578,6 @@
       return nearest;
     }
 
-    // -------------------------------------------
-    // Update Notion field
-    // -------------------------------------------
     async function updateBottleSlotOnServer(pageId, plane, row, column) {
       try {
         const resp = await fetch('/api/updateBottleSlot', {
@@ -1643,7 +1613,6 @@
       if (!highlightables || highlightables.length < 2) return;
       const capEntry = highlightables[1];
       
-      // Determine metallic properties based on cap color
       let metalness = 1.0;
       let roughness = 0.2;
       
@@ -1658,7 +1627,6 @@
         roughness = 0.3;
       }
       
-      // Update PBR material properties
       capEntry.mesh.material.metalness = metalness;
       capEntry.mesh.material.roughness = roughness;
       
@@ -1672,7 +1640,6 @@
       }
       
       bottle.userData.notionData.capColor = colorName;
-      // Update in Notion
       updateBottleCapColorOnServer(bottle.userData.notionData.id, colorName);
     }
 
@@ -1694,53 +1661,37 @@
               }
               bottle.position.y = Math.min(bottle.position.y, targetY);
 
-              // If flying, handle billboard animation
               if (bottle.userData.flying) {
-                // If the bottle has a board, animate it slightly
                 if (bottle.userData.boardMesh) {
-                  // Make board gently float up and down
                   const now = Date.now();
                   const floatOffset = Math.sin(now * 0.002) * 2;
                   bottle.userData.boardMesh.position.y = BOTTLE_HEIGHT + 40 + floatOffset;
-                  
-                  // Always face the camera
                   bottle.userData.boardMesh.lookAt(camera.position);
-                }
-              // We'll define line3 with the slot position
-              const line3 = `Col: ${bottle.userData.column}, Row: ${bottle.userData.row}`;
-              // The 4th line can be set dynamically
-              const line4 = bottle.userData.noticeLine4 || "";
+                } else {
+                  const line3 = `Col: ${bottle.userData.column}, Row: ${bottle.userData.row}`;
+                  const line4 = bottle.userData.noticeLine4 || "";
   
-                // If a board exists, remove it first so we can rebuild
-                if (bottle.userData.boardMesh) {
-                  bottle.remove(bottle.userData.boardMesh);
-                  // Clean up old geometry/material
-                  bottle.userData.boardMesh.geometry.dispose();
-                  if (bottle.userData.boardMesh.material.map) {
-                    bottle.userData.boardMesh.material.map.dispose();
+                  if (bottle.userData.boardMesh) {
+                    bottle.remove(bottle.userData.boardMesh);
+                    bottle.userData.boardMesh.geometry.dispose();
+                    if (bottle.userData.boardMesh.material.map) {
+                      bottle.userData.boardMesh.material.map.dispose();
+                    }
+                    bottle.userData.boardMesh.material.dispose();
                   }
-                  bottle.userData.boardMesh.material.dispose();
+  
+                  bottle.userData.boardMesh = createBoardMesh(
+                    bottle.userData.notionData.house || "Unknown House",
+                    bottle.userData.notionData.name  || "No Name",
+                    line3,
+                    line4
+                  );
+                  bottle.add(bottle.userData.boardMesh);
+                  bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 40, 0);
+                  bottle.userData.boardMesh.lookAt(camera.position);
+                  bottle.userData.boardAnimationOffset = Date.now() % 2000 / 2000;
                 }
-  
-                // Create a new 4-line board
-                bottle.userData.boardMesh = createBoardMesh(
-                  bottle.userData.notionData.house || "Unknown House",
-                  bottle.userData.notionData.name  || "No Name",
-                  line3,
-                  line4
-                );
-                // Attach board above the bottle with better positioning
-                bottle.add(bottle.userData.boardMesh);
-                bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 40, 0);
-  
-                // Make the board always face the camera and update on render
-                bottle.userData.boardMesh.lookAt(camera.position);
-                
-                // Add slight floating animation to make it more noticeable
-                bottle.userData.boardAnimationOffset = Date.now() % 2000 / 2000;
-  
               } else {
-                // Not flying => remove board if present
                 if (bottle.userData.boardMesh) {
                   bottle.remove(bottle.userData.boardMesh);
                   bottle.userData.boardMesh.geometry.dispose();
@@ -1758,8 +1709,6 @@
               }
               bottle.position.y = Math.max(bottle.position.y, initialY);
 
-              // If the bottle is no longer flying, remove/destroy the board
-              // If the bottle is no longer flying, remove/destroy the board
               if (bottle.userData.boardMesh) {
                 bottle.remove(bottle.userData.boardMesh);
                 bottle.userData.boardMesh.geometry.dispose();
@@ -1774,7 +1723,6 @@
         });
       }
 
-      // Update lower-middle notice on screen
       const noticeBar = document.getElementById('noticeBar');
       if (activeBottle && activeBottle.userData.flying) {
         noticeBar.textContent = `${activeBottle.userData.notionData.name || 'Unknown'} @ column ${activeBottle.userData.column}, row ${activeBottle.userData.row}`;
@@ -1783,7 +1731,6 @@
         noticeBar.style.display = 'none';
       }
 
-      // Render the scene directly since composer was removed
       renderer.render(scene, camera);
     }
 
@@ -1792,13 +1739,11 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       
-      // Update composer size as well
       if (composer) {
         composer.setSize(window.innerWidth, window.innerHeight);
       }
     }
 
-    // Check if filter box is visible
     function isFilterBoxVisible() {
       const filterBox = document.getElementById('filterBox');
       if (!filterBox) return false;
@@ -1806,7 +1751,6 @@
       return computedDisplay !== 'none';
     }
 
-    // Toggle the Filter Box
     function toggleFilterBox() {
       const filterBox = document.getElementById('filterBox');
       if (!filterBox) return;
@@ -1823,7 +1767,6 @@
       }
     }
 
-    // Toggle the Help Window
     function toggleHelpWindow() {
       const helpWindow = document.getElementById('helpWindow');
       if (!helpWindow) return;
@@ -1835,10 +1778,7 @@
       }
     }
 
-    // Apply filter logic: highlight matching bottles
     function applyFilter(searchText) {
-
-      // Helper to fold diacritics (normalize + strip)
       function fold(str) {
         return str
           .toLowerCase()
@@ -1848,36 +1788,29 @@
 
       const trimmed = fold(searchText.trim());
       if (!trimmed) {
-        // Reset highlight
         clickableBottles.forEach(bg => {
           const { highlightables } = bg.userData;
           if (!highlightables) return;
           const isSource = (bg === sourceBottle);
           const isTarget = (bg === targetBottle);
-          highlightables.forEach(entry => {
+          highlightables.forEach(h => {
             if (!isSource && !isTarget) {
-              entry.mesh.material.color.copy(entry.originalColor);
+              h.mesh.material.color.copy(h.originalColor);
             }
           });
-          // Also revert flying state
           bg.userData.flying = false;
         });
         activeBottle = null;
-        // Clear lastFilterMatches too
         lastFilterMatches = [];
         return;
       }
 
       const searchTokens = trimmed.split(/\s+/);
-
-      // We'll track which bottles match
-      const matchedBottles = [];
-
-      // First reset flying state so we can do our logic anew
       clickableBottles.forEach(bg => {
         bg.userData.flying = false;
       });
 
+      const matchedBottles = [];
       clickableBottles.forEach(bg => {
         const { notionData, highlightables } = bg.userData;
         if (!highlightables) return;
@@ -1908,41 +1841,32 @@
         const isSource = (bg === sourceBottle);
         const isTarget = (bg === targetBottle);
         highlightables.forEach(entry => {
-          const mesh = entry.mesh;
           if (foundAll) {
-            // set highlight color only if not source/target
             if (!isSource && !isTarget) {
-              mesh.material.color.set(0xff0000);
+              entry.mesh.material.color.set(0xff0000);
             }
           } else {
-            // revert color if not source/target
             if (!isSource && !isTarget) {
-              mesh.material.color.copy(entry.originalColor);
+              entry.mesh.material.color.copy(entry.originalColor);
             }
           }
         });
       });
 
-      // Store matchedBottles so we can reference them in keydown ESC logic
       lastFilterMatches = matchedBottles;
 
-      // If exactly 1 match, simulate a "click" on that bottle
       if (matchedBottles.length === 1) {
         const singleMatch = matchedBottles[0];
-        // If there's a different active bottle, turn off flying
         if (activeBottle && activeBottle !== singleMatch) {
           activeBottle.userData.flying = false;
         }
-        // If it's a different bottle than the current activeBottle, set it active & fly
         if (activeBottle !== singleMatch) {
           activeBottle = singleMatch;
           activeBottle.userData.flying = true;
         } else {
-          // If it's the same bottle, toggle flying state
           activeBottle.userData.flying = !activeBottle.userData.flying;
         }
       } else {
-        // More or less than one match => no auto-fly
         if (activeBottle) {
           activeBottle.userData.flying = false;
         }
@@ -1950,21 +1874,17 @@
       }
     }
 
-    // Key listeners
     window.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
 
       if (isFilterBoxVisible()) {
         if (key === 'escape') {
           if (lastFilterMatches.length === 1) {
-            // Revert color but keep flying
             const singleMatch = lastFilterMatches[0];
             const { highlightables } = singleMatch.userData;
             highlightables.forEach((entry) => {
               entry.mesh.material.color.copy(entry.originalColor);
             });
-
-            // Exit filter mode
             const filterInput = document.getElementById('filterInput');
             if (filterInput) {
               filterInput.value = '';
@@ -1982,7 +1902,6 @@
         return;
       }
 
-      // Toggle Help window with 'h' key (unless dragMode is on)
       if (!dragMode && key === 'h') {
         toggleHelpWindow();
         return;
@@ -2003,35 +1922,27 @@
         toggleFilterBox();
       } else if (dragMode && draggingBottle) {
         if (key === 'escape') {
-          // Cancel drag
           cancelDrag();
         } else if (key === 'q') {
-          // Move to plane above
           moveDraggingBottleToPlane(-1);
         } else if (key === 'a') {
-          // Move to plane below
           moveDraggingBottleToPlane(1);
         }
       } else if (!dragMode) {
-        // Normal mode additional keys
         if (key === 'escape') {
-          // Press ESC in normal mode => reset source/target if any
           if (sourceBottle) revertMark(sourceBottle);
           if (targetBottle) revertMark(targetBottle);
           sourceBottle = null;
           targetBottle = null;
         } else if (key === '1') {
-          // Mark activeBottle as source
           if (activeBottle && activeBottle.userData.flying) {
             markAsSource(activeBottle);
           }
         } else if (key === '2') {
-          // Mark activeBottle as target
           if (activeBottle && activeBottle.userData.flying) {
             markAsTarget(activeBottle);
           }
         } else if (key === 's') {
-          // Swap if both source and target are set
           if (sourceBottle && targetBottle) {
             swapBottlePositions(sourceBottle, targetBottle);
             revertMark(sourceBottle);
@@ -2040,17 +1951,14 @@
             targetBottle = null;
           }
         } else if (key === '3') {
-          // Cap color = Gold
           if (activeBottle && activeBottle.userData.flying) {
             setCapColor(activeBottle, 'Gold');
           }
         } else if (key === '4') {
-          // Cap color = Silver
           if (activeBottle && activeBottle.userData.flying) {
             setCapColor(activeBottle, 'Silver');
           }
         } else if (key === '5') {
-          // Cap color = Black
           if (activeBottle && activeBottle.userData.flying) {
             setCapColor(activeBottle, 'Black');
           }
@@ -2058,7 +1966,6 @@
       }
 
       function cancelDrag() {
-        // revert to old position
         const p = draggingBottle.userData;
         const oldPlane = p.plane;
         const oldRow = p.row;
@@ -2068,7 +1975,6 @@
           draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
           slotOccupants[`${oldPlane}-${oldRow}-${oldCol}`] = draggingBottle;
         }
-        // Hide drag labels
         const dragBottleLabel = document.getElementById('dragBottleLabel');
         const dragSlotLabel = document.getElementById('dragSlotLabel');
         dragBottleLabel.style.display = 'none';
@@ -2086,10 +1992,8 @@
         if (newPlane < 1) newPlane = 1;
         if (newPlane > 4) newPlane = 4;
         
-        // Store this plane choice but do not finalize occupant changes until mouse up
         p.dragPlaneNum = newPlane;
         
-        // Adjust the dragPlane so the user can visually drag in the new plane's Y
         const planeSlots = planeLayouts[newPlane];
         if (planeSlots && planeSlots.length > 0) {
           const planeY = planeSlots[0].y;
@@ -2136,7 +2040,7 @@
       <li><strong>3</strong>: Set cap color to Gold (Normal mode + flying bottle)</li>
       <li><strong>4</strong>: Set cap color to Silver (Normal mode + flying bottle)</li>
       <li><strong>5</strong>: Set cap color to Black (Normal mode + flying bottle)</li>
-      <li><strong>s</strong>: Swap Source & Target (Normal mode only)</li>
+      <li><strong>s</strong>: Swap Source &amp; Target (Normal mode only)</li>
       <li><strong>ESC</strong>: Close Filter box/cancel drag or reset Source/Target in Normal mode</li>
     </ul>
   </div>
