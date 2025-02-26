@@ -66,17 +66,23 @@
   </style>
 </head>
 <body>
-  <!-- Three.js and OrbitControls -->
+  <!-- Three.js, OrbitControls, and additional modules for PBR -->
   <script src="https://unpkg.com/three@0.146.0/build/three.min.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/RGBELoader.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+  
+  <!-- Remove post-processing that was causing issues -->
   <script>
     // -------------------------------------------
     // Global Scene Variables
     // -------------------------------------------
-    let scene, camera, renderer, controls;
+    let scene, camera, renderer, controls, composer;
     let lastFilterMatches = [];
     const raycaster = new THREE.Raycaster();
     const mouse     = new THREE.Vector2();
+    let envMap;
+    let pmremGenerator, pmremCubeUVPacker;
 
     // Marking system for flying bottles
     let sourceBottle = null;
@@ -267,7 +273,7 @@
     // -------------------------------------------
     function initScene() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xffffff);
+      scene.background = new THREE.Color(0x222222); // Darker background to see reflections better
 
       camera = new THREE.PerspectiveCamera(
         60,
@@ -277,20 +283,32 @@
       );
       camera.position.set(3, 180, 220);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      // Initialize renderer with physically correct lighting
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: "high-performance"
+      });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.physicallyCorrectLights = true;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.body.appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 50, 0);
       controls.update();
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-      scene.add(ambientLight);
+      // Create environment map for reflections
+      setupEnvironmentMap();
 
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-      directionalLight.position.set(10, 20, 10);
-      scene.add(directionalLight);
+      // Create PBR-compatible lighting
+      setupPBRLighting();
+      
+      // Setup post-processing
+      setupPostProcessing();
 
       // Event Listeners
       renderer.domElement.addEventListener('mousedown', onDocumentMouseDown);
@@ -298,6 +316,94 @@
       renderer.domElement.addEventListener('mouseup', onDocumentMouseUp);
 
       window.addEventListener('resize', onWindowResize);
+      
+      // Setup functions for PBR rendering
+      function setupEnvironmentMap() {
+        // Create a procedural environment map since we don't have an HDR file
+        pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileCubemapShader();
+        
+        // Create a simple environment with gradient
+        const environmentTexture = generateEnvironmentTexture();
+        const environmentCubeRenderTarget = pmremGenerator.fromEquirectangular(environmentTexture);
+        envMap = environmentCubeRenderTarget.texture;
+        
+        scene.environment = envMap; // Set the environment map for all PBR materials
+        environmentTexture.dispose();
+      }
+      
+      function generateEnvironmentTexture() {
+        // Create a procedural environment texture (gradient sky)
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 512;
+        const context = canvas.getContext('2d');
+        
+        // Create a gradient for a simple sky
+        const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#4287f5'); // Blue sky at top
+        gradient.addColorStop(0.5, '#a7c5f9'); // Lighter blue in middle
+        gradient.addColorStop(1, '#ffffff'); // White at horizon
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add some simple clouds
+        context.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        for (let i = 0; i < 15; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height * 0.5;
+          const radius = 20 + Math.random() * 60;
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        return texture;
+      }
+      
+      function setupPBRLighting() {
+        // Clear any existing lights
+        scene.children.forEach(child => {
+          if (child.isLight) scene.remove(child);
+        });
+        
+        // Ambient light for general illumination
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+        
+        // Main directional light (like sun)
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        mainLight.position.set(50, 100, 50);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 1024;
+        mainLight.shadow.mapSize.height = 1024;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 500;
+        mainLight.shadow.camera.left = -100;
+        mainLight.shadow.camera.right = 100;
+        mainLight.shadow.camera.top = 100;
+        mainLight.shadow.camera.bottom = -100;
+        scene.add(mainLight);
+        
+        // Add some fill lights for better showcase of glass and metals
+        const fillLight1 = new THREE.PointLight(0xffffee, 0.5);
+        fillLight1.position.set(-50, 100, -50);
+        scene.add(fillLight1);
+        
+        const fillLight2 = new THREE.PointLight(0xeeeeff, 0.5);
+        fillLight2.position.set(100, 50, -50);
+        scene.add(fillLight2);
+      }
+      
+      function setupPostProcessing() {
+        // We're removing the post-processing due to compatibility issues
+        // with the version of Three.js being used
+        composer = null;
+        console.log("Post-processing disabled");
+      }
 
       // Create a small overlay to indicate drag mode
       const dragIndicator = document.createElement('div');
@@ -423,11 +529,16 @@
       const stepY     = rowHeight * 0.3;
       const baseY     = wallThickness / 2;
 
-      const mat = new THREE.MeshPhongMaterial({
-        color: 0xcccccc,
+      const mat = new THREE.MeshPhysicalMaterial({
+        color: 0xdddddd,
+        roughness: 0.5,
+        metalness: 0.2,
         transparent: true,
         opacity: 0.3,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        clearcoat: 0.1,
+        clearcoatRoughness: 0.2,
+        envMap: envMap
       });
 
       const rowDepth = totalDepth / numRows;
@@ -573,37 +684,80 @@
       const capHeight    = 15;
       const capRadius    = 5;
 
-      // Bottle body
+      // Enhanced bottle body with realistic glass using PBR
       const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
+      
+      // Get a subtle glass color based on perfume type or house
+      const glassColorHex = getBottleGlassColor(bData);
+      
+      // Create advanced glass material with PBR properties
       const bottleMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
-        roughness: 0,
-        metalness: 0,
-        transmission: 1,
-        thickness: 1,
+        color: glassColorHex,
+        metalness: 0.0,
+        roughness: 0.05,
+        transmission: 0.95,  // Amount of light that passes through
+        thickness: 1.5,      // Glass thickness for refraction
+        envMap: envMap,      // Environment map for reflections
+        envMapIntensity: 1.0,
+        clearcoat: 0.5,      // Clear coat layer
+        clearcoatRoughness: 0.1,
+        ior: 1.5,            // Index of refraction (1.5 for glass)
         transparent: true,
-        opacity: 0.9
+        opacity: 0.95
       });
+      
+      // Apply material to mesh
       const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
       bottleMesh.position.set(0, bottleHeight/2, 0);
+      bottleMesh.castShadow = true;
+      bottleMesh.receiveShadow = true;
 
-      // Label
+      // Label with improved quality
       const labelWidth  = bottleWidth;
       const labelHeight = bottleHeight / 2;
       const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
       const labelTexture = createLabelTexture(name || "(No Name)");
-      const labelMat = new THREE.MeshBasicMaterial({
+      
+      // Improved label material
+      const labelMat = new THREE.MeshStandardMaterial({
         map: labelTexture,
         side: THREE.DoubleSide,
-        transparent: true
+        transparent: true,
+        roughness: 0.7,     // Paper-like roughness
+        metalness: 0.0
       });
+      
       const labelMesh = new THREE.Mesh(labelGeo, labelMat);
       labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
       bottleMesh.add(labelMesh);
 
-      // Cap
+      // Enhanced cap with metallic PBR properties
       const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
-      const capMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+      
+      // Create a map for metallic caps
+      let capMetalness = 1.0;
+      let capRoughness = 0.2;
+      
+      // Determine cap material properties based on color
+      if (capColor === 'Gold') {
+        capMetalness = 1.0;
+        capRoughness = 0.1;
+      } else if (capColor === 'Silver') {
+        capMetalness = 0.95;
+        capRoughness = 0.1;
+      } else if (capColor === 'Black') {
+        capMetalness = 0.8;
+        capRoughness = 0.3;
+      }
+      
+      // Enhanced cap material with PBR
+      const capMat = new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        roughness: capRoughness,
+        metalness: capMetalness,
+        envMap: envMap
+      });
+      
       if (capColor) {
         try {
           capMat.color.setStyle(capColor);
@@ -611,8 +765,11 @@
           capMat.color.set(0xffd700);
         }
       }
+      
       const capMesh = new THREE.Mesh(capGeo, capMat);
       capMesh.position.set(0, bottleHeight + capHeight/2, 0);
+      capMesh.castShadow = true;
+      capMesh.receiveShadow = true;
 
       bottleGroup.add(bottleMesh);
       bottleGroup.add(capMesh);
@@ -644,6 +801,62 @@
         console.warn(`Multiple occupant in slot ${key}: occupant = ${slotOccupants[key].userData.notionData.name}, new occupant = ${bData.name}`);
       }
       slotOccupants[key] = bottleGroup;
+    }
+
+    // Helper function to determine bottle glass color based on perfume type/characteristics
+    function getBottleGlassColor(bottleData) {
+      // Default subtle light blue-tinted glass
+      let glassColor = 0xF0F8FF;
+      
+      // If we have accords data, use it to influence glass color
+      if (bottleData.accords && bottleData.accords.length > 0) {
+        // Map common perfume accords to subtle glass tints
+        const accordColorMap = {
+          'floral': 0xFFF0F5,        // Very light pink
+          'woody': 0xF5DEB3,         // Light wheat
+          'fresh': 0xE0FFFF,         // Light cyan
+          'citrus': 0xFFFACD,        // Lemon chiffon
+          'spicy': 0xFFE4B5,         // Moccasin
+          'sweet': 0xFFE4E1,         // Misty rose
+          'amber': 0xFFD700,         // Gold
+          'powdery': 0xFFF0F5,       // Lavender blush
+          'aromatic': 0xF0FFF0,      // Honeydew
+          'fruity': 0xFFF0F5,        // Light pink
+          'green': 0xF0FFF0,         // Honeydew
+          'marine': 0xE0FFFF,        // Light cyan
+          'vanilla': 0xFFF8DC,       // Cornsilk
+          'oud': 0xDEB887,           // Burlywood
+          'leather': 0xD2B48C,       // Tan
+          'musky': 0xE6E6FA          // Lavender
+        };
+        
+        // Check if any accord matches our map
+        for (const accord of bottleData.accords) {
+          const lowerAccord = accord.toLowerCase();
+          // Look for partial matches in our accord map
+          for (const [key, color] of Object.entries(accordColorMap)) {
+            if (lowerAccord.includes(key)) {
+              glassColor = color;
+              break;
+            }
+          }
+        }
+      }
+      
+      // House can override accord colors for brand consistency
+      if (bottleData.house) {
+        const houseLower = bottleData.house.toLowerCase();
+        // Map some notable houses to specific glass colors (just examples)
+        if (houseLower.includes('dior')) {
+          glassColor = 0xF0F8FF; // Light blue-white
+        } else if (houseLower.includes('chanel')) {
+          glassColor = 0xFFFAFA; // Snow white
+        } else if (houseLower.includes('guerlain')) {
+          glassColor = 0xFFF5EE; // Seashell
+        }
+      }
+      
+      return glassColor;
     }
 
     function createLabelTexture(text) {
@@ -991,12 +1204,35 @@
       const highlightables = bottle.userData.highlightables;
       if (!highlightables || highlightables.length < 2) return;
       const capEntry = highlightables[1];
+      
+      // Determine metallic properties based on cap color
+      let metalness = 1.0;
+      let roughness = 0.2;
+      
+      if (colorName === 'Gold') {
+        metalness = 1.0;
+        roughness = 0.1;
+      } else if (colorName === 'Silver') {
+        metalness = 0.95;
+        roughness = 0.1;
+      } else if (colorName === 'Black') {
+        metalness = 0.8;
+        roughness = 0.3;
+      }
+      
+      // Update PBR material properties
+      capEntry.mesh.material.metalness = metalness;
+      capEntry.mesh.material.roughness = roughness;
+      
       try {
         capEntry.mesh.material.color.setStyle(colorName);
+        capEntry.originalColor.setStyle(colorName);
       } catch (err) {
         console.warn('Invalid color style, defaulting to gold');
         capEntry.mesh.material.color.setStyle('Gold');
+        capEntry.originalColor.setStyle('Gold');
       }
+      
       bottle.userData.notionData.capColor = colorName;
       // Update in Notion
       updateBottleCapColorOnServer(bottle.userData.notionData.id, colorName);
@@ -1096,6 +1332,7 @@
         noticeBar.style.display = 'none';
       }
 
+      // Render the scene directly since composer was removed
       renderer.render(scene, camera);
     }
 
@@ -1103,6 +1340,11 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Update composer size as well
+      if (composer) {
+        composer.setSize(window.innerWidth, window.innerHeight);
+      }
     }
 
     // Check if filter box is visible
