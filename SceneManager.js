@@ -161,30 +161,59 @@ function generateEnvironmentTexture() {
 function setupPBRLighting() {
   RectAreaLightUniformsLib.init();
 
-  // Ambient
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+  // Ambient - slight reduction in intensity for more contrast
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
   scene.add(ambientLight);
 
-  // Main directional (sun) light
-  const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  mainLight.position.set(50, 100, 50);
+  // Main directional (sun) light - enhanced shadows
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  mainLight.position.set(50, 120, 50);
   mainLight.castShadow = true;
-  mainLight.shadow.mapSize.width = 1024;
-  mainLight.shadow.mapSize.height = 1024;
+  mainLight.shadow.mapSize.width = 2048; // Higher resolution shadows
+  mainLight.shadow.mapSize.height = 2048;
   mainLight.shadow.camera.near = 0.5;
   mainLight.shadow.camera.far = 500;
-  mainLight.shadow.camera.left = -100;
-  mainLight.shadow.camera.right = 100;
-  mainLight.shadow.camera.top = 100;
-  mainLight.shadow.camera.bottom = -100;
+  mainLight.shadow.camera.left = -150; // Wider shadow camera frustum
+  mainLight.shadow.camera.right = 150;
+  mainLight.shadow.camera.top = 150;
+  mainLight.shadow.camera.bottom = -150;
+  mainLight.shadow.bias = -0.0005; // Reduce shadow acne
+  mainLight.shadow.normalBias = 0.02; // Improve shadow quality on curved surfaces
   scene.add(mainLight);
 
-  // Fill lights
-  const fillLight1 = new THREE.PointLight(0xffffee, 0.4);
-  fillLight1.position.set(-50, 100, -50);
+  // Enhanced fill lights
+  const fillLight1 = new THREE.PointLight(0xffffee, 0.3);
+  fillLight1.position.set(-70, 80, -70);
+  fillLight1.castShadow = true; // Enable shadows for fill light
+  fillLight1.shadow.mapSize.width = 1024;
+  fillLight1.shadow.mapSize.height = 1024;
+  fillLight1.shadow.camera.near = 1;
+  fillLight1.shadow.camera.far = 300;
+  fillLight1.shadow.bias = -0.001;
   scene.add(fillLight1);
 
-  const fillLight2 = new THREE.PointLight(0xeeeeff, 0.4);
-  fillLight2.position.set(100, 50, -50);
+  const fillLight2 = new THREE.PointLight(0xeeeeff, 0.3);
+  fillLight2.position.set(120, 60, -70);
   scene.add(fillLight2);
+
+  // New spotlights for dramatic shadows and highlights
+  const spotLight1 = new THREE.SpotLight(0xffffff, 0.6);
+  spotLight1.position.set(100, 150, 50);
+  spotLight1.angle = Math.PI / 6; // Narrow beam
+  spotLight1.penumbra = 0.5; // Soft edge
+  spotLight1.decay = 1.5; // Physical light falloff
+  spotLight1.distance = 500;
+  spotLight1.castShadow = true;
+  spotLight1.shadow.mapSize.width = 1024;
+  spotLight1.shadow.mapSize.height = 1024;
+  spotLight1.shadow.camera.near = 10;
+  spotLight1.shadow.camera.far = 400;
+  spotLight1.shadow.bias = -0.001;
+  scene.add(spotLight1);
+
+  // Optional: Adjust the spot light target
+  const spotTarget1 = new THREE.Object3D();
+  spotTarget1.position.set(0, 30, 0);
+  scene.add(spotTarget1);
+  spotLight1.target = spotTarget1;
 }

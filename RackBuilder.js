@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { scene, envMap } from './SceneManager.js';
+import { RectAreaLightHelper } from 'RectAreaLightHelper';
 
 /**
  * Because original code references these as constants, define them here
@@ -249,10 +250,8 @@ function createBeveledWall(width, height, depth, bevelSize, bevelThickness) {
  * Overhead lights for each plane
  */
 function addPlaneLights() {
-  // Because in original code, we do this after building planes
-  // We'll add rect area lights to each plane.
-  // We'll import the "scene" from SceneManager
-  // We can only do this if planeLayouts[plane].length > 0
+  // Create enhanced rect area lights for each plane
+  // with additional spotlights for better shadows
   for (let planeNum = 1; planeNum <= 4; planeNum++) {
     if (!planeLayouts[planeNum] || planeLayouts[planeNum].length === 0) continue;
     const slots = planeLayouts[planeNum];
@@ -265,17 +264,69 @@ function addPlaneLights() {
     const planeWidth = maxX - minX;
     const planeDepth = maxZ - minZ;
     const planeY = slots[0].y; // assume all have same Y
+    const planeCenterX = (minX + maxX) / 2;
+    const planeCenterZ = (minZ + maxZ) / 2;
 
-    // Overhead shelfLight
-    const shelfLight = new THREE.RectAreaLight(0xffffff, 2.0, planeWidth * 1.2, planeDepth * 1.2);
-    shelfLight.position.set((minX + maxX) / 2, planeY + BOTTLE_HEIGHT + 20, (minZ + maxZ) / 2);
-    shelfLight.lookAt((minX + maxX) / 2, planeY, (minZ + maxZ) / 2);
+    // Enhanced overhead shelf light
+    const shelfLight = new THREE.RectAreaLight(0xffffff, 2.5, planeWidth * 1.4, planeDepth * 1.4);
+    shelfLight.position.set(planeCenterX, planeY + BOTTLE_HEIGHT + 25, planeCenterZ);
+    shelfLight.lookAt(planeCenterX, planeY, planeCenterZ);
     scene.add(shelfLight);
 
-    // Subtle up light
-    const upLight = new THREE.RectAreaLight(0xeeeeff, 0.8, planeWidth * 1.2, planeDepth * 1.2);
-    upLight.position.set((minX + maxX) / 2, planeY - 10, (minZ + maxZ) / 2);
-    upLight.lookAt((minX + maxX) / 2, planeY + BOTTLE_HEIGHT/2, (minZ + maxZ) / 2);
+    // Add helper for debugging (optional - comment out in production)
+    // const shelfLightHelper = new RectAreaLightHelper(shelfLight);
+    // shelfLight.add(shelfLightHelper);
+
+    // Enhanced subtle up light with warmer color
+    const upLight = new THREE.RectAreaLight(0xfff0e0, 1.0, planeWidth * 1.4, planeDepth * 1.4);
+    upLight.position.set(planeCenterX, planeY - 15, planeCenterZ);
+    upLight.lookAt(planeCenterX, planeY + BOTTLE_HEIGHT/2, planeCenterZ);
     scene.add(upLight);
-}
+
+    // Add helper for debugging (optional - comment out in production)
+    // const upLightHelper = new RectAreaLightHelper(upLight);
+    // upLight.add(upLightHelper);
+
+    // Add accent spotlights for each plane corner to create deeper shadows
+    const cornerOffsetX = planeWidth * 0.4;
+    const cornerOffsetZ = planeDepth * 0.4;
+    
+    // Front left corner spotlight
+    const spotFL = new THREE.SpotLight(0xffffff, 0.4);
+    spotFL.position.set(planeCenterX - cornerOffsetX, planeY + BOTTLE_HEIGHT * 1.5, planeCenterZ + cornerOffsetZ);
+    spotFL.angle = Math.PI / 8;
+    spotFL.penumbra = 0.5;
+    spotFL.decay = 1.5;
+    spotFL.distance = 300;
+    spotFL.castShadow = true;
+    spotFL.shadow.mapSize.width = 512;
+    spotFL.shadow.mapSize.height = 512;
+    spotFL.shadow.bias = -0.001;
+    scene.add(spotFL);
+    
+    // Create and set spotlight target
+    const spotTargetFL = new THREE.Object3D();
+    spotTargetFL.position.set(planeCenterX, planeY, planeCenterZ);
+    scene.add(spotTargetFL);
+    spotFL.target = spotTargetFL;
+    
+    // Front right corner spotlight
+    const spotFR = new THREE.SpotLight(0xffffff, 0.4);
+    spotFR.position.set(planeCenterX + cornerOffsetX, planeY + BOTTLE_HEIGHT * 1.5, planeCenterZ + cornerOffsetZ);
+    spotFR.angle = Math.PI / 8;
+    spotFR.penumbra = 0.5;
+    spotFR.decay = 1.5;
+    spotFR.distance = 300;
+    spotFR.castShadow = true;
+    spotFR.shadow.mapSize.width = 512;
+    spotFR.shadow.mapSize.height = 512;
+    spotFR.shadow.bias = -0.001;
+    scene.add(spotFR);
+    
+    // Create and set spotlight target
+    const spotTargetFR = new THREE.Object3D();
+    spotTargetFR.position.set(planeCenterX, planeY, planeCenterZ);
+    scene.add(spotTargetFR);
+    spotFR.target = spotTargetFR;
+  }
 }
