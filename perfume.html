@@ -245,6 +245,8 @@
   <script src="https://unpkg.com/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/RGBELoader.js"></script>
   <script src="https://unpkg.com/three@0.146.0/examples/js/loaders/HDRCubeTextureLoader.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+  <script src="https://unpkg.com/three@0.146.0/examples/js/helpers/RectAreaLightHelper.js"></script>
   
   <!-- Remove post-processing that was causing issues -->
   <script>
@@ -715,12 +717,15 @@
           if (child.isLight) scene.remove(child);
         });
         
-        // Ambient light for general illumination
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        // Initialize RectAreaLight uniforms needed for shader compilation
+        THREE.RectAreaLightUniformsLib.init();
+        
+        // Ambient light for general illumination (slightly reduced intensity)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
         scene.add(ambientLight);
         
         // Main directional light (like sun)
-        const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
         mainLight.position.set(50, 100, 50);
         mainLight.castShadow = true;
         mainLight.shadow.mapSize.width = 1024;
@@ -734,13 +739,51 @@
         scene.add(mainLight);
         
         // Add some fill lights for better showcase of glass and metals
-        const fillLight1 = new THREE.PointLight(0xffffee, 0.5);
+        const fillLight1 = new THREE.PointLight(0xffffee, 0.4);
         fillLight1.position.set(-50, 100, -50);
         scene.add(fillLight1);
         
-        const fillLight2 = new THREE.PointLight(0xeeeeff, 0.5);
+        const fillLight2 = new THREE.PointLight(0xeeeeff, 0.4);
         fillLight2.position.set(100, 50, -50);
         scene.add(fillLight2);
+        
+        // Add RectAreaLights for each shelf plane
+        // This creates realistic illumination for the shelves
+        for (let planeNum = 1; planeNum <= 4; planeNum++) {
+          if (!planeLayouts[planeNum] || planeLayouts[planeNum].length === 0) continue;
+          
+          // Get the first slot of this plane to determine its position
+          const firstSlot = planeLayouts[planeNum][0];
+          const lastSlot = planeLayouts[planeNum][planeLayouts[planeNum].length - 1];
+          
+          if (!firstSlot) continue;
+          
+          // Calculate plane dimensions
+          const minX = Math.min(...planeLayouts[planeNum].map(slot => slot.x)) - SLOT_WIDTH_DEPTH/2;
+          const maxX = Math.max(...planeLayouts[planeNum].map(slot => slot.x)) + SLOT_WIDTH_DEPTH/2;
+          const minZ = Math.min(...planeLayouts[planeNum].map(slot => slot.z)) - SLOT_WIDTH_DEPTH/2;
+          const maxZ = Math.max(...planeLayouts[planeNum].map(slot => slot.z)) + SLOT_WIDTH_DEPTH/2;
+          
+          const planeWidth = maxX - minX;
+          const planeDepth = maxZ - minZ;
+          const planeY = firstSlot.y;
+          
+          // Create a RectAreaLight above the plane
+          const shelfLight = new THREE.RectAreaLight(0xffffff, 2.0, planeWidth * 1.2, planeDepth * 1.2);
+          shelfLight.position.set((minX + maxX) / 2, planeY + BOTTLE_HEIGHT + 20, (minZ + maxZ) / 2);
+          shelfLight.lookAt((minX + maxX) / 2, planeY, (minZ + maxZ) / 2);
+          scene.add(shelfLight);
+          
+          // Add a helper for debugging (uncomment if needed for development)
+          // const shelfLightHelper = new THREE.RectAreaLightHelper(shelfLight);
+          // shelfLight.add(shelfLightHelper);
+          
+          // Add a subtle uplight from the bottom for more dimension
+          const upLight = new THREE.RectAreaLight(0xeeeeff, 0.8, planeWidth * 1.2, planeDepth * 1.2);
+          upLight.position.set((minX + maxX) / 2, planeY - 10, (minZ + maxZ) / 2);
+          upLight.lookAt((minX + maxX) / 2, planeY + BOTTLE_HEIGHT/2, (minZ + maxZ) / 2);
+          scene.add(upLight);
+        }
       }
       
       function setupPostProcessing() {
