@@ -37,7 +37,9 @@ const mouse     = new THREE.Vector2();
 let sourceBottle = null;
 let targetBottle = null;
 let activeBottle = null;
+let hoveredBottle = null;
 let lastFilterMatches = [];
+const hoverIntensity = 0.15; // Brightness increase for hover effect
 
 // A minimal class from original code for a multi-step loading UI
 class LoadingManager {
@@ -227,6 +229,27 @@ function setupEventListeners() {
 }
 
 /**
+ * Helper function to get the top-level bottle from any object in the hierarchy
+ */
+function getTopLevelBottle(object) {
+  let current = object;
+  while (current.parent && !clickableBottles.includes(current)) {
+    current = current.parent;
+  }
+  return clickableBottles.includes(current) ? current : null;
+}
+
+/**
+ * Determines if a bottle can be highlighted (not already selected/flying)
+ */
+function canHighlightBottle(bottle) {
+  return bottle &&
+         bottle !== sourceBottle &&
+         bottle !== targetBottle &&
+         !bottle.userData.flying;
+}
+
+/**
  * MOUSE / DRAG LOGIC
  */
 function onCanvasMouseDown(event) {
@@ -288,40 +311,91 @@ function onCanvasMouseDown(event) {
 }
 
 function onCanvasMouseMove(event) {
-  if (isFilterBoxVisible()) return;
-  if (!dragMode || !draggingBottle) return;
-
-  event.preventDefault();
+  // Update mouse coordinates for raycasting
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, window._cameraOverride || undefined);
+  
+  // Skip hover effects if filter box is visible
+  if (isFilterBoxVisible()) return;
+  
+  // Handle drag mode
+  if (dragMode && draggingBottle) {
+    event.preventDefault();
+    raycaster.setFromCamera(mouse, window._cameraOverride || undefined);
 
-  if (dragPlane) {
-    if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
-      draggingBottle.position.x = dragPlaneIntersect.x;
-      draggingBottle.position.z = dragPlaneIntersect.z;
+    if (dragPlane) {
+      if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
+        draggingBottle.position.x = dragPlaneIntersect.x;
+        draggingBottle.position.z = dragPlaneIntersect.z;
 
-      const dragPlaneNum = (draggingBottle.userData.dragPlaneNum !== undefined)
-        ? draggingBottle.userData.dragPlaneNum
-        : draggingBottle.userData.plane;
-      const nearest = findNearestSlotInPlane(dragPlaneNum, draggingBottle.position.x, draggingBottle.position.z);
-      const dragSlotLabel = document.getElementById('dragSlotLabel');
-      if (nearest) {
-        const key = `${nearest.plane}-${nearest.row}-${nearest.column}`;
-        const occupant = slotOccupants[key];
-        if (occupant && occupant !== draggingBottle) {
-          dragSlotLabel.innerText = `Slot occupant: ${occupant.userData.notionData.name}`;
+        const dragPlaneNum = (draggingBottle.userData.dragPlaneNum !== undefined)
+          ? draggingBottle.userData.dragPlaneNum
+          : draggingBottle.userData.plane;
+        const nearest = findNearestSlotInPlane(dragPlaneNum, draggingBottle.position.x, draggingBottle.position.z);
+        const dragSlotLabel = document.getElementById('dragSlotLabel');
+        if (nearest) {
+          const key = `${nearest.plane}-${nearest.row}-${nearest.column}`;
+          const occupant = slotOccupants[key];
+          if (occupant && occupant !== draggingBottle) {
+            dragSlotLabel.innerText = `Slot occupant: ${occupant.userData.notionData.name}`;
+          } else {
+            dragSlotLabel.innerText = `Slot: row=${nearest.row}, col=${nearest.column}`;
+          }
         } else {
-          dragSlotLabel.innerText = `Slot: row=${nearest.row}, col=${nearest.column}`;
+          dragSlotLabel.innerText = '(No nearest slot in this plane)';
         }
-      } else {
-        dragSlotLabel.innerText = '(No nearest slot in this plane)';
       }
     }
+    return;
   }
+  
+  // Handle hover highlighting in normal mode
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(clickableBottles, true);
+  
+  // Determine which bottle (if any) should be hovered
+  let newHoveredBottle = null;
+  if (intersects.length > 0) {
+    const topLevelBottle = getTopLevelBottle(intersects[0].object);
+    if (canHighlightBottle(topLevelBottle)) {
+      newHoveredBottle = topLevelBottle;
+    }
+  }
+  
+  // Handle unhover if needed (restore original color)
+  if (hoveredBottle && hoveredBottle !== newHoveredBottle) {
+    const highlightables = hoveredBottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+  }
+  
+  // Handle new hover (apply highlight color)
+  if (newHoveredBottle && hoveredBottle !== newHoveredBottle) {
+    const highlightables = newHoveredBottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      const hoverColor = h.originalColor.clone();
+      hoverColor.r = Math.min(1, hoverColor.r + hoverIntensity);
+      hoverColor.g = Math.min(1, hoverColor.g + hoverIntensity);
+      hoverColor.b = Math.min(1, hoverColor.b + hoverIntensity);
+      h.mesh.material.color.copy(hoverColor);
+    });
+  }
+  
+  // Update the hoveredBottle reference
+  hoveredBottle = newHoveredBottle;
 }
 
 function onCanvasMouseUp(event) {
+  // Reset hover state if we're ending a drag operation
+  if (hoveredBottle) {
+    const highlightables = hoveredBottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+    hoveredBottle = null;
+  }
+
   if (isFilterBoxVisible()) return;
   if (!dragMode || !draggingBottle) return;
 
@@ -444,6 +518,14 @@ function onKeyDown(e) {
     dragMode = !dragMode;
     const dragIndicator = document.getElementById('dragIndicator');
     if (dragMode) {
+      // Reset hover state when entering drag mode
+      if (hoveredBottle) {
+        const highlightables = hoveredBottle.userData.highlightables || [];
+        highlightables.forEach(h => {
+          h.mesh.material.color.copy(h.originalColor);
+        });
+        hoveredBottle = null;
+      }
       dragIndicator.style.display = 'block';
     } else {
       dragIndicator.style.display = 'none';
@@ -731,6 +813,15 @@ function toggleFilterBox() {
   if (!filterBox) return;
   const computedDisplay = window.getComputedStyle(filterBox).display;
   if (computedDisplay === 'none') {
+    // Reset hover state when opening filter box
+    if (hoveredBottle) {
+      const highlightables = hoveredBottle.userData.highlightables || [];
+      highlightables.forEach(h => {
+        h.mesh.material.color.copy(h.originalColor);
+      });
+      hoveredBottle = null;
+    }
+    
     filterBox.style.display = 'block';
     const filterInput = document.getElementById('filterInput');
     if (filterInput) {
