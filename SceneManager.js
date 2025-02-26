@@ -129,12 +129,14 @@ function setupEnvironmentMap() {
   pmremGenerator = new THREE.PMREMGenerator(renderer);
   // No need to call compileCubemapShader() in newer Three.js versions
   
-  // Create a procedural environment with a gradient sky
+  // Create an enhanced procedural environment with a gradient sky
   const environmentTexture = generateEnvironmentTexture();
   const envRT = pmremGenerator.fromEquirectangular(environmentTexture);
   envMap = envRT.texture;
 
   scene.environment = envMap;
+  scene.background = envMap;
+  
   environmentTexture.dispose();
   pmremGenerator.dispose(); // Properly dispose of the generator
 }
@@ -145,24 +147,35 @@ function generateEnvironmentTexture() {
   canvas.height = 1024;
   const context = canvas.getContext('2d');
 
-  // Gradient for sky
+  // Enhanced gradient for sky - more luxurious feel
   const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#4287f5');
-  gradient.addColorStop(0.5, '#a7c5f9');
-  gradient.addColorStop(1, '#ffffff');
+  gradient.addColorStop(0, '#2c3e50'); // Darker blue at top
+  gradient.addColorStop(0.3, '#4287f5'); // Mid blue
+  gradient.addColorStop(0.6, '#a7c5f9'); // Light blue
+  gradient.addColorStop(1, '#f5f5f5');   // Almost white at bottom
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Some clouds
-  context.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  for (let i = 0; i < 15; i++) {
+  // Some subtle clouds
+  context.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  for (let i = 0; i < 20; i++) {
     const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height * 0.5;
-    const radius = 20 + Math.random() * 60;
+    const y = Math.random() * canvas.height * 0.4;
+    const radius = 30 + Math.random() * 80;
     context.beginPath();
     context.arc(x, y, radius, 0, Math.PI * 2);
     context.fill();
   }
+
+  // Add a subtle glow near horizon
+  const horizonGlow = context.createRadialGradient(
+    canvas.width / 2, canvas.height * 0.7, 0,
+    canvas.width / 2, canvas.height * 0.7, canvas.width * 0.8
+  );
+  horizonGlow.addColorStop(0, 'rgba(255, 240, 220, 0.3)'); // Warm glow
+  horizonGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');   // Fade out
+  context.fillStyle = horizonGlow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.mapping = THREE.EquirectangularReflectionMapping;
