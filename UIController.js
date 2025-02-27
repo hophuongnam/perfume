@@ -856,21 +856,14 @@ function toggleHelpWindow() {
 }
 
 /**
- * Update notice bar with the active bottle name
+ * Update info board when bottle is active
  */
 function handleActiveBottleNotice() {
-  const noticeBar = document.getElementById('noticeBar');
-  if (!noticeBar) return;
   if (activeBottle && activeBottle.userData.flying) {
-    noticeBar.textContent = `${activeBottle.userData.notionData.name || 'Unknown'} @ column ${activeBottle.userData.column}, row ${activeBottle.userData.row}`;
-    noticeBar.style.display = 'inline-block';
-    
-    // Also update the info board
+    // Update the info board with bottle details
     updateInfoBoard(activeBottle);
   } else {
-    noticeBar.style.display = 'none';
-    
-    // Hide the info board
+    // Hide the info board when no bottle is active
     hideInfoBoard();
   }
 }
