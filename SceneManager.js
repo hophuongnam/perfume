@@ -242,8 +242,8 @@ function setupPBRLighting() {
 function setupCSM() {
   csm = new CSM({
     maxFar: 1000,
-    cascades: 4,
-    shadowMapSize: 2048,
+    cascades: 3, // Reduce from 4 to 3
+    shadowMapSize: 1024, // Reduce from 2048 to 1024 for performance
     lightDirection: new THREE.Vector3(0.5, -1, -0.5).normalize(),
     camera: camera,
     parent: scene,
@@ -253,6 +253,6 @@ function setupCSM() {
     fade: true
   });
   
-  // Apply CSM material plugin to materials that should receive/cast shadows
+  // Only apply to objects that need shadows
   csm.fade = true;
 }
