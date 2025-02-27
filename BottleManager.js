@@ -93,7 +93,7 @@ export function createBottleFromNotion(bData) {
     addLiquidToBottle(bottleMesh, fillPercentage, liquidColor);
 
     // Label - use shared geometry
-    const labelTexture = createLabelTexture(name || "(No Name)");
+    const labelTexture = createLabelTexture(name || "(No Name)", house);
     const labelMat = new THREE.MeshStandardMaterial({
       map: labelTexture,
       side: THREE.DoubleSide,
@@ -429,25 +429,67 @@ function addLiquidToBottle(bottleMesh, fillPercentage = 0.75, liquidColor = 0xf5
   return liquidMesh;
 }
 
-function createLabelTexture(text) {
+function createLabelTexture(text, houseText) {
   const canvas  = document.createElement('canvas');
-  canvas.width  = 256;
-  canvas.height = 819;
+  canvas.width  = 512;  // Increased for better resolution
+  canvas.height = 1024;
   const ctx     = canvas.getContext('2d');
 
-  ctx.fillStyle = "#ffffff";
+  // Create elegant background with gradient
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "#f8f8f8");
+  gradient.addColorStop(0.5, "#ffffff");
+  gradient.addColorStop(1, "#f8f8f8");
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.font         = "60px Arial";
-  ctx.fillStyle    = "#000000";
-  ctx.textAlign    = "center";
-  ctx.textBaseline = "middle";
+  // Add decorative border
+  ctx.strokeStyle = "#d0d0d0";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+  
+  // Add inner subtle border
+  ctx.strokeStyle = "#e0e0e0";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
 
+  // Rotate for vertical text (perfume bottles often have vertical labels)
   ctx.save();
   ctx.translate(0, canvas.height);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText(text, canvas.height / 2, canvas.width / 2);
+  
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "middle";
+  
+  // Draw house name (smaller, at top)
+  ctx.font = "bold 50px 'Palatino', serif";
+  ctx.fillStyle = "#666666";
+  ctx.fillText(houseText || "Unknown House", canvas.height / 2, canvas.width / 4);
+  
+  // Decorative divider
+  ctx.strokeStyle = "#d0d0d0";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(canvas.height / 2 - 120, canvas.width / 2 - 20);
+  ctx.lineTo(canvas.height / 2 + 120, canvas.width / 2 - 20);
+  ctx.stroke();
+  
+  // Draw perfume name (larger, below divider)
+  ctx.font = "bold 70px 'Palatino', serif";
+  ctx.fillStyle = "#333333";
+  ctx.fillText(text, canvas.height / 2, canvas.width / 2 + 50);
+  
   ctx.restore();
+
+  // Apply a subtle vignette effect for elegance
+  const radialGradient = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, canvas.width / 4,
+    canvas.width / 2, canvas.height / 2, canvas.width
+  );
+  radialGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+  radialGradient.addColorStop(1, "rgba(230, 230, 230, 0.3)");
+  ctx.fillStyle = radialGradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -456,14 +498,14 @@ function createLabelTexture(text) {
 }
 
 function createBoardMesh(house, name, line3, line4) {
-  const width  = 384;
-  const height = 256;
+  const width  = 512;  // Wider for more elegant layout
+  const height = 320;  // Taller to accommodate more information
   const canvas = document.createElement('canvas');
   canvas.width  = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  function clipAndFillText(context, txt, maxW, x, y, fontStyle="20px Arial") {
+  function clipAndFillText(context, txt, maxW, x, y, fontStyle="20px 'Palatino', serif") {
     context.font = fontStyle;
     let clipped = txt;
     const ellipsis = '…';
@@ -476,55 +518,114 @@ function createBoardMesh(house, name, line3, line4) {
     context.fillText(clipped, x, y);
   }
 
-  // background gradient
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, "#f0f8ff");
-  gradient.addColorStop(1, "#e6f2ff");
-  ctx.fillStyle = gradient;
+  // Create a sophisticated background gradient
+  const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+  bgGradient.addColorStop(0, "#f0f5ff");
+  bgGradient.addColorStop(1, "#e6f0ff");
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.strokeStyle = "#4682b4";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, width - 8, height - 8);
+  // Add subtle pattern
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  for (let i = 0; i < 50; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const size = 1 + Math.random() * 2;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-  ctx.fillRect(12, 12, width - 24, height - 24);
+  // Add elegant border with shadow effect
+  ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+  ctx.shadowBlur = 15;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 5;
+  
+  // Gold/bronze border
+  const borderGradient = ctx.createLinearGradient(0, 0, width, height);
+  borderGradient.addColorStop(0, "#d4af37");  // Gold
+  borderGradient.addColorStop(0.5, "#f9f7e8"); // Light gold
+  borderGradient.addColorStop(1, "#cd7f32");  // Bronze
+  ctx.strokeStyle = borderGradient;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(8, 8, width - 16, height - 16);
+  
+  // Reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-  ctx.fillRect(12, 12, width - 24, height - 24);
+  // Elegant inner panel
+  ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+  ctx.fillRect(20, 20, width - 40, height - 40);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // line1: House
-  ctx.fillStyle = "#444";
-  clipAndFillText(ctx, house, 320, width / 2, 48, "bold 24px Arial");
+  // House name (elegant, smaller font)
+  ctx.fillStyle = "#666";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
+  ctx.shadowBlur = 2;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+  clipAndFillText(ctx, house, width - 80, width / 2, 60, "italic 28px 'Palatino', serif");
+  
+  // Reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 
-  // line2: Name
-  ctx.fillStyle = "#000";
-  clipAndFillText(ctx, name, 320, width / 2, 100, "bold 32px Arial");
-
-  // separator
-  ctx.strokeStyle = "#4682b4";
+  // Decorative divider
+  const dividerGradient = ctx.createLinearGradient(width/4, 0, width*3/4, 0);
+  dividerGradient.addColorStop(0, "rgba(212, 175, 55, 0.3)"); // Transparent gold
+  dividerGradient.addColorStop(0.5, "rgba(212, 175, 55, 1)"); // Solid gold
+  dividerGradient.addColorStop(1, "rgba(212, 175, 55, 0.3)"); // Transparent gold
+  
+  ctx.strokeStyle = dividerGradient;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(width/4, 140);
-  ctx.lineTo(width*3/4, 140);
+  ctx.moveTo(width/4, 90);
+  ctx.lineTo(width*3/4, 90);
   ctx.stroke();
 
-  // line3
-  ctx.fillStyle = "#333";
-  clipAndFillText(ctx, line3, 320, width / 2, 180, "18px Arial");
+  // Perfume Name (larger, bold, central)
+  ctx.fillStyle = "#000";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+  clipAndFillText(ctx, name, width - 80, width / 2, 140, "bold 38px 'Palatino', serif");
+  
+  // Reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 
-  // line4
+  // Another decorative divider
+  ctx.strokeStyle = dividerGradient;
+  ctx.beginPath();
+  ctx.moveTo(width/4, 190);
+  ctx.lineTo(width*3/4, 190);
+  ctx.stroke();
+
+  // Position Info (clear, modern)
+  ctx.fillStyle = "#333";
+  clipAndFillText(ctx, line3, width - 80, width / 2, 230, "22px 'Arial', sans-serif");
+
+  // Additional Info (accent color)
   ctx.fillStyle = "#1E5AAB";
-  clipAndFillText(ctx, line4, 320, width / 2, 220, "bold 18px Arial");
+  clipAndFillText(ctx, line4, width - 80, width / 2, 270, "bold 22px 'Arial', sans-serif");
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
 
-  const boardGeo = new THREE.PlaneGeometry(64, 48);
+  // Larger board geometry to match the new texture size
+  const boardGeo = new THREE.PlaneGeometry(80, 60);
   const boardMat = new THREE.MeshBasicMaterial({
     map: tex,
     side: THREE.DoubleSide,
