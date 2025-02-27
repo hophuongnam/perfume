@@ -56,18 +56,37 @@ export function buildAllPlanes(config) {
         return;
       }
 
-      const rows    = rDef.rows;
+      const rows = rDef.rows;
       const columns = rDef.columns;
-      const { group: rackGroup, rowHeights } = createSteppedRack(rows, columns);
+      const { group: rackGroup, rowHeights } = createSteppedRack(rows, columns, planeNumber);
       const rackDepth = rows * SLOT_WIDTH_DEPTH;
 
       rackGroup.position.z = -rowStackOffset;
       planeGroup.add(rackGroup);
 
+      // Define gap size for plane 1 - 50% of column width for better visibility
+      const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * 0.5 : 0;
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < columns; c++) {
-          const totalWidth = columns * SLOT_WIDTH_DEPTH;
-          const slotCenterX = -(totalWidth / 2) + c*SLOT_WIDTH_DEPTH + SLOT_WIDTH_DEPTH/2;
+          // Calculate total width including gaps
+          let totalWidth = columns * SLOT_WIDTH_DEPTH;
+          
+          if (planeNumber === 1) {
+            // Add width for gaps (one gap after every 6 columns)
+            const numGaps = Math.floor((columns - 1) / 6);
+            totalWidth += numGaps * gapSize;
+          }
+          
+          // Calculate how many gaps come before this column
+          const gapsBefore = planeNumber === 1 ? Math.floor(c / 6) : 0;
+          
+          // Calculate slot X position with gaps
+          let slotCenterX = -(totalWidth / 2);  // Start at left edge
+          slotCenterX += c * SLOT_WIDTH_DEPTH;  // Add width for all columns
+          slotCenterX += gapsBefore * gapSize;  // Add width for any gaps before this column
+          slotCenterX += SLOT_WIDTH_DEPTH / 2;  // Center in slot
+          
           const slotCenterZ = (rackDepth / 2) - r*SLOT_WIDTH_DEPTH - (SLOT_WIDTH_DEPTH / 2);
           const worldX = slotCenterX;
           const worldY = currentPlaneY + rowHeights[r];
@@ -154,14 +173,22 @@ function createColumnLabelTexture(columnNumber) {
 /**
  * Creates a stepped rack Group for given row/column count
  */
-function createSteppedRack(numRows, numColumns) {
+function createSteppedRack(numRows, numColumns, planeNumber) {
   const group = new THREE.Group();
-  const totalWidth = numColumns * SLOT_WIDTH_DEPTH;
+  
+  // Gap size for plane 1 - 50% of column width
+  const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * 0.5 : 0;
+  
+  // Calculate extra width from gaps (one gap after every 6 columns)
+  const numGaps = planeNumber === 1 ? Math.floor((numColumns - 1) / 6) : 0;
+  const totalGapWidth = numGaps * gapSize;
+  
+  const totalWidth = numColumns * SLOT_WIDTH_DEPTH + totalGapWidth;
   const totalDepth = numRows * SLOT_WIDTH_DEPTH;
-  const rowHeight  = BOTTLE_HEIGHT / 2;
+  const rowHeight = BOTTLE_HEIGHT / 2;
   const wallThickness = 0.1;
-  const stepY     = rowHeight * 0.3;
-  const baseY     = wallThickness / 2;
+  const stepY = rowHeight * 0.3;
+  const baseY = wallThickness / 2;
 
   const mat = new THREE.MeshPhysicalMaterial({
     color: 0xe0e0e0,
@@ -200,15 +227,32 @@ function createSteppedRack(numRows, numColumns) {
 
     // vertical dividers
     for (let j = 1; j < numColumns; j++) {
-      const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
-      const divider = new THREE.Mesh(dividerGeom, mat);
-      const xPos = -totalWidth/2 + (totalWidth/numColumns)*j;
-      divider.position.set(
-        xPos,
-        rowBaseY + wallThickness + rowHeight/2,
-        centerZ
-      );
-      group.add(divider);
+      // Skip divider if this is where a gap should be (after every 6th column in plane 1)
+      const isGapPosition = planeNumber === 1 && j % 6 === 0;
+      
+      if (!isGapPosition) {
+        const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
+        const divider = new THREE.Mesh(dividerGeom, mat);
+        
+        // Calculate divider X position accounting for gaps
+        let xPos = -totalWidth/2;
+        
+        // Add position for this column
+        xPos += j * SLOT_WIDTH_DEPTH;
+        
+        // Add gap offset for plane 1
+        if (planeNumber === 1) {
+          const gapsBefore = Math.floor(j / 6);
+          xPos += gapsBefore * gapSize;
+        }
+        
+        divider.position.set(
+          xPos,
+          rowBaseY + wallThickness + rowHeight/2,
+          centerZ
+        );
+        group.add(divider);
+      }
     }
 
     // side walls
@@ -221,7 +265,7 @@ function createSteppedRack(numRows, numColumns) {
     );
     group.add(leftWall);
 
-    const rightWall  = new THREE.Mesh(sideGeom, mat);
+    const rightWall = new THREE.Mesh(sideGeom, mat);
     rightWall.position.set(
       totalWidth/2 - wallThickness/2,
       rowBaseY + wallThickness + rowHeight/2,
@@ -238,7 +282,7 @@ function createSteppedRack(numRows, numColumns) {
   group.add(frontWall);
 
   // back wall
-  const extraHeight  = (numRows - 1) * stepY;
+  const extraHeight = (numRows - 1) * stepY;
   const backWallGeom = createBeveledWall(totalWidth, rowHeight + extraHeight, wallThickness, 0.2, 0.05);
   const backWall = new THREE.Mesh(backWallGeom, mat);
   backWall.position.set(0, baseY, -totalDepth/2);
@@ -278,9 +322,16 @@ function createSteppedRack(numRows, numColumns) {
     
     const labelMesh = new THREE.Mesh(labelGeo, labelMat);
     
+    // Calculate X position accounting for gaps
+    let xPos = -totalWidth/2 + (c * SLOT_WIDTH_DEPTH) + SLOT_WIDTH_DEPTH/2;
+    
+    // Add gap offset for plane 1
+    if (planeNumber === 1) {
+      const gapsBefore = Math.floor(c / 6);
+      xPos += gapsBefore * gapSize;
+    }
+    
     // Position at the front of the column
-    const xPos = -totalWidth/2 + (totalWidth/numColumns)*(c + 0.5);
-    // Position at the front edge beyond the rack
     const zPos = totalDepth/2 + 2.5;
     // Position above the rack surface
     const yPos = baseY + wallThickness + 7.5;
