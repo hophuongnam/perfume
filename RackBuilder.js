@@ -125,8 +125,8 @@ export function parseSingleRack(rackId, definition) {
  */
 function createColumnLabelTexture(columnNumber) {
   const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 32;
+  canvas.width = 96;
+  canvas.height = 96;
   const ctx = canvas.getContext('2d');
   
   // Background with slight transparency
@@ -135,11 +135,11 @@ function createColumnLabelTexture(columnNumber) {
   
   // Border
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+  ctx.lineWidth = 3;
+  ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
   
   // Text
-  ctx.font = 'bold 20px Arial';
+  ctx.font = 'bold 60px Arial';
   ctx.fillStyle = '#000000';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -262,9 +262,9 @@ function createSteppedRack(numRows, numColumns) {
     const columnNumber = c + 1;
     const labelTexture = createColumnLabelTexture(columnNumber);
     
-    // Create small plane with column number
-    const labelWidth = 10;
-    const labelHeight = 5;
+    // Create medium-sized plane with column number
+    const labelWidth = 15;
+    const labelHeight = 15;
     const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
     const labelMat = new THREE.MeshStandardMaterial({
       map: labelTexture,
@@ -280,10 +280,10 @@ function createSteppedRack(numRows, numColumns) {
     
     // Position at the front of the column
     const xPos = -totalWidth/2 + (totalWidth/numColumns)*(c + 0.5);
-    // Position at the front edge slightly beyond the rack
-    const zPos = totalDepth/2 + 1.5;
-    // Position slightly above the rack surface
-    const yPos = baseY + wallThickness + 2;
+    // Position at the front edge beyond the rack
+    const zPos = totalDepth/2 + 2.5;
+    // Position above the rack surface
+    const yPos = baseY + wallThickness + 7.5;
     
     labelMesh.position.set(xPos, yPos, zPos);
     // Angle the label for better visibility from the default camera view
