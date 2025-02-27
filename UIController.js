@@ -894,71 +894,21 @@ function updateInfoBoard(bottle) {
   const data = bottle.userData.notionData;
   if (!data) return;
 
-  // Build HTML content
+  // Build simplified HTML content to match billboard style
   let html = `
-    <div class="info-row">
-      <div class="info-label">Name:</div>
-      <div class="info-value">${data.name || 'Unknown'}</div>
-    </div>
-    <div class="info-row">
-      <div class="info-label">House:</div>
-      <div class="info-value">${data.house || 'Unknown'}</div>
-    </div>
-    <div class="info-row">
-      <div class="info-label">Type:</div>
-      <div class="info-value">${data.type || 'Unknown'}</div>
-    </div>`;
-
-  // Add seasons if available
-  if (data.seasons && data.seasons.length > 0) {
-    html += `
-      <div class="info-row">
-        <div class="info-label">Seasons:</div>
-        <div class="info-value">
-          <div class="seasons-container">`;
-    
-    data.seasons.forEach(season => {
-      html += `<span class="season-tag ${season}">${season}</span>`;
-    });
-    
-    html += `
-          </div>
-        </div>
-      </div>`;
-  }
-
-  // Add accords if available
-  if (data.accords && data.accords.length > 0) {
-    html += `
-      <div class="info-row">
-        <div class="info-label">Accords:</div>
-        <div class="info-value">
-          <div class="accords-container">`;
-    
-    data.accords.forEach(accord => {
-      html += `<span class="accord-tag">${accord}</span>`;
-    });
-    
-    html += `
-          </div>
-        </div>
-      </div>`;
-  }
+    <div class="house-name">${data.house || 'Unknown House'}</div>
+    <div class="bottle-name">${data.name || 'No Name'}</div>
+    <div class="separator"></div>`;
 
   // Add volume info if available
   if (data.volume) {
-    html += `
-      <div class="info-row">
-        <div class="info-label">Volume:</div>
-        <div class="info-value">${data.volume} ml</div>
-      </div>`;
+    html += `<div class="info-detail">Volume: ${data.volume} ml</div>`;
   }
 
-  // Add position info
+  // Add position info (like line4 in billboard)
   html += `
-    <div class="info-row">
-      <div class="info-label">Position:</div>
-      <div class="info-value">Plane ${bottle.userData.plane}, Row ${bottle.userData.row}, Column ${bottle.userData.column}</div>
+    <div class="position-info">
+      Plane ${bottle.userData.plane}, Row ${bottle.userData.row}, Column ${bottle.userData.column}
     </div>`;
 
   content.innerHTML = html;
