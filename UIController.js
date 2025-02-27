@@ -205,6 +205,17 @@ function parseRackConfigs() {
 }
 
 /**
+ * Debounce utility function to limit the frequency of function calls
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+/**
  * Hook up event listeners for interactions
  */
 function setupEventListeners() {
@@ -214,7 +225,11 @@ function setupEventListeners() {
   if (!canvas) return;
 
   canvas.addEventListener('mousedown', onCanvasMouseDown);
-  canvas.addEventListener('mousemove', onCanvasMouseMove);
+  
+  // Debounced mouse move handler (~60fps)
+  const debouncedMouseMove = debounce(onCanvasMouseMove, 16);
+  canvas.addEventListener('mousemove', debouncedMouseMove);
+  
   canvas.addEventListener('mouseup', onCanvasMouseUp);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
@@ -321,7 +336,7 @@ function onCanvasMouseMove(event) {
   // Handle drag mode
   if (dragMode && draggingBottle) {
     event.preventDefault();
-    raycaster.setFromCamera(mouse, window._cameraOverride || undefined);
+    raycaster.setFromCamera(mouse, window._cameraOverride || camera);
 
     if (dragPlane) {
       if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
