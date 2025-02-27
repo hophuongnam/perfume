@@ -4,7 +4,7 @@
  */
 
 import * as THREE from 'three';
-import { scene, envMap } from './SceneManager.js';
+import { scene, envMap, csm } from './SceneManager.js';
 import { RectAreaLightHelper } from 'RectAreaLightHelper';
 
 /**
@@ -141,7 +141,9 @@ function createSteppedRack(numRows, numColumns) {
     side: THREE.DoubleSide,
     clearcoat: 0.3,
     clearcoatRoughness: 0.4,
-    envMapIntensity: 0.5
+    envMapIntensity: 0.5,
+    // CSM compatibility
+    customProgramCacheKey: () => 'MeshPhysicalMaterial'
     // Note: envMap is now set via scene.environment in SceneManager.js
   });
 

@@ -68,7 +68,9 @@ export function createBottleFromNotion(bData) {
       clearcoatRoughness: 0.05,
       transparent: true,
       opacity: 0.92,
-      reflectivity: 0.2
+      reflectivity: 0.2,
+      // Enable for CSM
+      customProgramCacheKey: () => 'MeshPhysicalMaterial' // Helps with CSM material compatibility
       // Note: envMap is now set via scene.environment in SceneManager.js
     });
     const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
