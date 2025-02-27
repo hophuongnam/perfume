@@ -526,12 +526,15 @@ function onKeyDown(e) {
         });
         hoveredBottle = null;
       }
+      // Hide info board when drag mode is activated
+      hideInfoBoard();
       dragIndicator.style.display = 'block';
     } else {
       dragIndicator.style.display = 'none';
     }
   } else if (!dragMode && key === 'f') {
     e.preventDefault();
+    hideInfoBoard();
     toggleFilterBox();
   } else if (dragMode && draggingBottle) {
     if (key === 'escape') {
@@ -547,6 +550,7 @@ function onKeyDown(e) {
       if (targetBottle) revertMark(targetBottle);
       sourceBottle = null;
       targetBottle = null;
+      hideInfoBoard();
     } else if (key === '1') {
       if (activeBottle && activeBottle.userData.flying) {
         markAsSource(activeBottle);
@@ -860,7 +864,122 @@ function handleActiveBottleNotice() {
   if (activeBottle && activeBottle.userData.flying) {
     noticeBar.textContent = `${activeBottle.userData.notionData.name || 'Unknown'} @ column ${activeBottle.userData.column}, row ${activeBottle.userData.row}`;
     noticeBar.style.display = 'inline-block';
+    
+    // Also update the info board
+    updateInfoBoard(activeBottle);
   } else {
     noticeBar.style.display = 'none';
+    
+    // Hide the info board
+    hideInfoBoard();
   }
 }
+
+/**
+ * Update the sliding info board with bottle information
+ */
+function updateInfoBoard(bottle) {
+  const infoBoard = document.getElementById('infoBoard');
+  const content = document.getElementById('infoBoardContent');
+  if (!infoBoard || !content) return;
+
+  const data = bottle.userData.notionData;
+  if (!data) return;
+
+  // Build HTML content
+  let html = `
+    <div class="info-row">
+      <div class="info-label">House:</div>
+      <div class="info-value">${data.house || 'Unknown'}</div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Type:</div>
+      <div class="info-value">${data.type || 'Unknown'}</div>
+    </div>`;
+
+  // Add seasons if available
+  if (data.seasons && data.seasons.length > 0) {
+    html += `
+      <div class="info-row">
+        <div class="info-label">Seasons:</div>
+        <div class="info-value">
+          <div class="seasons-container">`;
+    
+    data.seasons.forEach(season => {
+      html += `<span class="season-tag ${season}">${season}</span>`;
+    });
+    
+    html += `
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Add accords if available
+  if (data.accords && data.accords.length > 0) {
+    html += `
+      <div class="info-row">
+        <div class="info-label">Accords:</div>
+        <div class="info-value">
+          <div class="accords-container">`;
+    
+    data.accords.forEach(accord => {
+      html += `<span class="accord-tag">${accord}</span>`;
+    });
+    
+    html += `
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Add volume info if available
+  if (data.volume) {
+    html += `
+      <div class="info-row">
+        <div class="info-label">Volume:</div>
+        <div class="info-value">${data.volume} ml</div>
+      </div>`;
+  }
+
+  // Add position info
+  html += `
+    <div class="info-row">
+      <div class="info-label">Position:</div>
+      <div class="info-value">Plane ${bottle.userData.plane}, Row ${bottle.userData.row}, Column ${bottle.userData.column}</div>
+    </div>`;
+
+  // Add action buttons
+  html += `
+    <div class="bottle-actions">`;
+  
+  if (data.url) {
+    html += `<a href="${data.url}" target="_blank" class="bottle-action-link">View Online</a>`;
+  }
+  
+  html += `
+      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Gold')">Gold Cap</span>
+      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Silver')">Silver Cap</span>
+      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Black')">Black Cap</span>
+    </div>`;
+
+  content.innerHTML = html;
+  infoBoard.classList.add('visible');
+}
+
+/**
+ * Hide the info board
+ */
+function hideInfoBoard() {
+  const infoBoard = document.getElementById('infoBoard');
+  if (infoBoard) {
+    infoBoard.classList.remove('visible');
+  }
+}
+
+// Expose function to set cap color from the UI
+window.setCapColorUI = function(pageId, colorName) {
+  if (activeBottle && activeBottle.userData.notionData.id === pageId) {
+    setCapColor(activeBottle, colorName);
+  }
+};
