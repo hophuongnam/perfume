@@ -121,6 +121,37 @@ export function parseSingleRack(rackId, definition) {
 }
 
 /**
+ * Create column label texture for rack
+ */
+function createColumnLabelTexture(columnNumber) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  
+  // Background with slight transparency
+  ctx.fillStyle = 'rgba(240, 240, 240, 0.9)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Border
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+  
+  // Text
+  ctx.font = 'bold 20px Arial';
+  ctx.fillStyle = '#000000';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(columnNumber.toString(), canvas.width / 2, canvas.height / 2);
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
  * Creates a stepped rack Group for given row/column count
  */
 function createSteppedRack(numRows, numColumns) {
@@ -224,6 +255,41 @@ function createSteppedRack(numRows, numColumns) {
     const sharedWall = new THREE.Mesh(sharedGeom, mat);
     sharedWall.position.set(0, lowerY + overlapHeight/2, boundaryZ);
     group.add(sharedWall);
+  }
+
+  // Add column number labels at the front of the rack
+  for (let c = 0; c < numColumns; c++) {
+    const columnNumber = c + 1;
+    const labelTexture = createColumnLabelTexture(columnNumber);
+    
+    // Create small plane with column number
+    const labelWidth = 10;
+    const labelHeight = 5;
+    const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
+    const labelMat = new THREE.MeshStandardMaterial({
+      map: labelTexture,
+      transparent: true,
+      side: THREE.DoubleSide,
+      roughness: 0.5,
+      metalness: 0.0,
+      // CSM compatibility
+      customProgramCacheKey: () => 'MeshStandardMaterial'
+    });
+    
+    const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+    
+    // Position at the front of the column
+    const xPos = -totalWidth/2 + (totalWidth/numColumns)*(c + 0.5);
+    // Position at the front edge slightly beyond the rack
+    const zPos = totalDepth/2 + 1.5;
+    // Position slightly above the rack surface
+    const yPos = baseY + wallThickness + 2;
+    
+    labelMesh.position.set(xPos, yPos, zPos);
+    // Angle the label for better visibility from the default camera view
+    labelMesh.rotation.x = -Math.PI / 3;
+    
+    group.add(labelMesh);
   }
 
   return { group, rowHeights };
