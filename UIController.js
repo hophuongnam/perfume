@@ -575,6 +575,13 @@ function onKeyDown(e) {
       if (activeBottle && activeBottle.userData.flying) {
         setCapColor(activeBottle, 'Black');
       }
+    } else if (key === 'w') {
+      if (activeBottle && activeBottle.userData.flying) {
+        const url = activeBottle.userData.notionData.url;
+        if (url) {
+          window.open(url, '_blank');
+        }
+      }
     }
   }
 }
