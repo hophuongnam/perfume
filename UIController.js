@@ -946,20 +946,6 @@ function updateInfoBoard(bottle) {
       <div class="info-value">Plane ${bottle.userData.plane}, Row ${bottle.userData.row}, Column ${bottle.userData.column}</div>
     </div>`;
 
-  // Add action buttons
-  html += `
-    <div class="bottle-actions">`;
-  
-  if (data.url) {
-    html += `<a href="${data.url}" target="_blank" class="bottle-action-link">View Online</a>`;
-  }
-  
-  html += `
-      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Gold')">Gold Cap</span>
-      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Silver')">Silver Cap</span>
-      <span class="bottle-action-link" onclick="setCapColorUI('${bottle.userData.notionData.id}', 'Black')">Black Cap</span>
-    </div>`;
-
   content.innerHTML = html;
   infoBoard.classList.add('visible');
 }

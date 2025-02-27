@@ -10,6 +10,17 @@ import { planeLayouts, slotOccupants, SLOT_WIDTH_DEPTH, BOTTLE_HEIGHT } from './
 // List of all bottle groups that can be clicked
 export const clickableBottles = [];
 
+// Shared geometries for performance optimization
+const bottleWidth = 10;
+const bottleDepth = 10;
+const capHeight = 15;
+const capRadius = 5;
+
+// Create geometries once and reuse them for all bottles
+const sharedBottleGeo = new THREE.BoxGeometry(bottleWidth, BOTTLE_HEIGHT, bottleDepth);
+const sharedCapGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
+const sharedLabelGeo = new THREE.PlaneGeometry(bottleWidth, BOTTLE_HEIGHT / 2);
+
 /**
  * 1) Fetch all bottles from Notion
  */
@@ -44,14 +55,11 @@ export function createBottleFromNotion(bData) {
     }
 
     const bottleGroup = new THREE.Group();
-    const bottleWidth  = 10;
-    const bottleDepth  = 10;
+    // Use the pre-defined dimensions from shared geometries
+    // We still need bottleHeight defined for positioning calculations
     const bottleHeight = BOTTLE_HEIGHT;
-    const capHeight    = 15;
-    const capRadius    = 5;
-
-    // Bottle mesh
-    const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
+    
+    // Bottle mesh - use shared geometry
     const glassColorHex = getBottleGlassColor(bData);
   
     const bottleMat = new THREE.MeshPhysicalMaterial({
@@ -74,7 +82,7 @@ export function createBottleFromNotion(bData) {
       customProgramCacheKey: () => 'MeshPhysicalMaterial' // Helps with CSM material compatibility
       // Note: envMap is now set via scene.environment in SceneManager.js
     });
-    const bottleMesh = new THREE.Mesh(bottleGeo, bottleMat);
+    const bottleMesh = new THREE.Mesh(sharedBottleGeo, bottleMat);
     bottleMesh.position.set(0, bottleHeight/2, 0);
     bottleMesh.castShadow = true;
     bottleMesh.receiveShadow = true;
@@ -84,10 +92,7 @@ export function createBottleFromNotion(bData) {
     const fillPercentage = getFillPercentage(bData);
     addLiquidToBottle(bottleMesh, fillPercentage, liquidColor);
 
-    // Label
-    const labelWidth  = bottleWidth;
-    const labelHeight = bottleHeight / 2;
-    const labelGeo = new THREE.PlaneGeometry(labelWidth, labelHeight);
+    // Label - use shared geometry
     const labelTexture = createLabelTexture(name || "(No Name)");
     const labelMat = new THREE.MeshStandardMaterial({
       map: labelTexture,
@@ -96,12 +101,11 @@ export function createBottleFromNotion(bData) {
       roughness: 0.7,
       metalness: 0.0
     });
-    const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+    const labelMesh = new THREE.Mesh(sharedLabelGeo, labelMat);
     labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
     bottleMesh.add(labelMesh);
 
-    // Cap
-    const capGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
+    // Cap - use shared geometry
     let capMetalness = 1.0;
     let capRoughness = 0.2;
 
@@ -128,7 +132,7 @@ export function createBottleFromNotion(bData) {
         capMat.color.set(0xffd700);
       }
     }
-    const capMesh = new THREE.Mesh(capGeo, capMat);
+    const capMesh = new THREE.Mesh(sharedCapGeo, capMat);
     capMesh.position.set(0, bottleHeight + capHeight/2, 0);
     capMesh.castShadow = true;
     capMesh.receiveShadow = true;
@@ -407,6 +411,7 @@ function addLiquidToBottle(bottleMesh, fillPercentage = 0.75, liquidColor = 0xf5
   const bottleDepth = 9;
   const liquidHeight = BOTTLE_HEIGHT * fillPercentage;
   
+  // For liquids, we need to create individual geometries since the height varies based on fill percentage
   const liquidGeo = new THREE.BoxGeometry(bottleWidth, liquidHeight, bottleDepth);
   const liquidMat = new THREE.MeshPhysicalMaterial({
     color: liquidColor,
