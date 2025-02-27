@@ -882,6 +882,10 @@ function updateInfoBoard(bottle) {
   // Build HTML content
   let html = `
     <div class="info-row">
+      <div class="info-label">Name:</div>
+      <div class="info-value">${data.name || 'Unknown'}</div>
+    </div>
+    <div class="info-row">
       <div class="info-label">House:</div>
       <div class="info-value">${data.house || 'Unknown'}</div>
     </div>

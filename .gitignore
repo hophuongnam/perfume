@@ -8,6 +8,10 @@ Thumbs.db
 *.log         # Log files
 .vscode/      # VS Code settings (optional, but good to ignore if not shared)
 perfumeData.txt
+aider.key
+.aider.chat.history.md
+.aider.input.history
+cache.db
 
 # Node.js
 node_modules/
