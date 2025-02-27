@@ -53,7 +53,7 @@ export function createBottleFromNotion(bData) {
     // Bottle mesh
     const bottleGeo = new THREE.BoxGeometry(bottleWidth, bottleHeight, bottleDepth);
     const glassColorHex = getBottleGlassColor(bData);
-
+  
     const bottleMat = new THREE.MeshPhysicalMaterial({
       color: glassColorHex,
       metalness: 0.1,
@@ -78,6 +78,11 @@ export function createBottleFromNotion(bData) {
     bottleMesh.position.set(0, bottleHeight/2, 0);
     bottleMesh.castShadow = true;
     bottleMesh.receiveShadow = true;
+    
+    // Add liquid inside the bottle
+    const liquidColor = getLiquidColor(bData);
+    const fillPercentage = getFillPercentage(bData);
+    addLiquidToBottle(bottleMesh, fillPercentage, liquidColor);
 
     // Label
     const labelWidth  = bottleWidth;
@@ -269,6 +274,154 @@ function getBottleGlassColor(bottleData) {
     }
   }
   return glassColor;
+}
+
+/**
+ * Get the appropriate liquid color based on accords and type
+ */
+function getLiquidColor(bottleData) {
+  // Default liquid color (light amber)
+  let liquidColor = 0xf5e9d5;
+  
+  // Determine liquid color based on accords
+  if (bottleData.accords && bottleData.accords.length > 0) {
+    const liquidColorMap = {
+      'oud': 0x3a2710,        // Deep brown
+      'leather': 0x4d341e,    // Brown
+      'tobacco': 0x654321,    // Dark brown
+      'coffee': 0x3b2417,     // Coffee brown
+      'amber': 0xd4a76a,      // Amber
+      'vanilla': 0xf3e5ab,    // Cream vanilla
+      'woody': 0x9a7b4f,      // Medium brown
+      'caramel': 0xc68e3c,    // Caramel
+      'honey': 0xe8b923,      // Honey
+      'spicy': 0xb5651d,      // Spice brown
+      'warm spicy': 0xb76e2e, // Cinnamon
+      'citrus': 0xfff9c4,     // Light yellow
+      'fruity': 0xffcce5,     // Pink
+      'cherry': 0xcc0033,     // Cherry red
+      'floral': 0xffe6f2,     // Light pink
+      'rose': 0xff9999,       // Rose pink
+      'white floral': 0xf8f8ff, // White
+      'yellow floral': 0xfff9e0, // Pale yellow
+      'fresh': 0xe6f2ff,      // Light blue
+      'marine': 0xaee7f8,     // Aqua blue
+      'aquatic': 0xadd8e6,    // Light blue
+      'aromatic': 0xd6e8be,   // Light green
+      'green': 0xd9ead3,      // Pale green
+      'musky': 0xe6e6fa,      // Lavender
+      'powdery': 0xf5f5f5,    // Almost white
+      'iris': 0xdcd1f0,       // Pale purple
+      'salty': 0xf5f5f5,      // White
+      'metallic': 0xdfe2e3,   // Silver
+      'lavender': 0xe6e6fa,   // Lavender
+      'alcohol': 0xfffaf0,    // Clear
+      'ozonic': 0xf0f8ff,     // Very light blue
+      'balsamic': 0x8c6b3f,   // Dark honey
+      'animalic': 0x5e4e41,   // Dark taupe
+      'almond': 0xf0e6d8,     // Light almond
+      'mossy': 0x606e3c,      // Olive green
+      'earthy': 0x7d734a,     // Earth brown
+      'patchouli': 0x79553d,  // Dark amber
+      'anis': 0xd6e6d6        // Pale green
+    };
+    
+    for (const accord of bottleData.accords) {
+      const lowerAccord = accord.toLowerCase();
+      for (const [key, color] of Object.entries(liquidColorMap)) {
+        if (lowerAccord.includes(key)) {
+          liquidColor = color;
+          break;
+        }
+      }
+    }
+  }
+  
+  // Adjust based on perfume type
+  if (bottleData.type) {
+    const typeLower = bottleData.type.toLowerCase();
+    if (typeLower.includes('men')) {
+      // Slightly darken for men's fragrances
+      const color = new THREE.Color(liquidColor);
+      color.multiplyScalar(0.85);
+      liquidColor = color.getHex();
+    } else if (typeLower.includes('unisex')) {
+      // No adjustment for unisex
+    } else if (typeLower.includes('women')) {
+      // Slightly lighten for women's fragrances
+      const color = new THREE.Color(liquidColor);
+      color.multiplyScalar(1.15);
+      liquidColor = color.getHex();
+    }
+  }
+  
+  return liquidColor;
+}
+
+/**
+ * Determine fill percentage based on volume property or random value
+ */
+function getFillPercentage(bottleData) {
+  // Default fill level of 75%
+  let fillPercentage = 0.75;
+  
+  // If we have a volume, use that to determine fill level
+  if (bottleData.volume) {
+    // Smaller volumes (like samples) tend to be fuller
+    const volumeMap = {
+      '2': 0.9,
+      '5': 0.85,
+      '6': 0.85,
+      '7': 0.85,
+      '8': 0.8,
+      '9': 0.8,
+      '10': 0.8,
+      '12.5': 0.75,
+      '15': 0.75,
+      '20': 0.75,
+      '30': 0.75,
+      '35': 0.7,
+      '40': 0.7,
+      '45': 0.7,
+      '50': 0.7
+    };
+    
+    if (volumeMap[bottleData.volume]) {
+      fillPercentage = volumeMap[bottleData.volume];
+    }
+  } else {
+    // If no volume info, add a bit of randomness to make bottles look different
+    // Between 65% and 85% full
+    fillPercentage = 0.65 + Math.random() * 0.2;
+  }
+  
+  return fillPercentage;
+}
+
+/**
+ * Add liquid inside bottle
+ */
+function addLiquidToBottle(bottleMesh, fillPercentage = 0.75, liquidColor = 0xf5e9d5) {
+  // Create slightly smaller inner mesh for the liquid
+  const bottleWidth = 9;  // Slightly smaller than bottle
+  const bottleDepth = 9;
+  const liquidHeight = BOTTLE_HEIGHT * fillPercentage;
+  
+  const liquidGeo = new THREE.BoxGeometry(bottleWidth, liquidHeight, bottleDepth);
+  const liquidMat = new THREE.MeshPhysicalMaterial({
+    color: liquidColor,
+    metalness: 0.0,
+    roughness: 0.15,
+    transmission: 0.7,
+    ior: 1.33,  // Water/alcohol
+    envMapIntensity: 0.8
+  });
+  
+  const liquidMesh = new THREE.Mesh(liquidGeo, liquidMat);
+  liquidMesh.position.y = -BOTTLE_HEIGHT * (1 - fillPercentage) / 2;
+  bottleMesh.add(liquidMesh);
+  
+  return liquidMesh;
 }
 
 function createLabelTexture(text) {
