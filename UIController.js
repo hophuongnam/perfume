@@ -1064,6 +1064,22 @@ function suggestPerfumesForWeather() {
     return;
   }
   
+  // Clear all bottle status (color and flying) before entering suggestion mode
+  clickableBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+    
+    // Reset flying states for ALL bottles, including the active bottle
+    if (bottle.userData.flying) {
+      bottle.userData.flying = false;
+    }
+  });
+  
+  // Reset active bottle since we've stopped all flying bottles
+  activeBottle = null;
+  
   // Get current weather from the weather display
   const weatherInfo = document.getElementById('weatherInfo');
   let weatherCondition = 'clear'; // Default
@@ -1159,9 +1175,7 @@ function suggestPerfumesForWeather() {
   // Set active bottles from suggestions (map back to bottle objects)
   const suggestedBottleObjects = suggestedBottles.map(item => item.bottle);
   
-  // Highlight the suggested bottles
-  highlightSuggestedBottles(suggestedBottleObjects);
-  
+  // No longer highlight or make suggested bottles fly out
   // Display suggestions in the board
   displaySuggestionBoard(weatherCondition, currentSeason);
   
@@ -1173,39 +1187,21 @@ function suggestPerfumesForWeather() {
 }
 
 /**
- * Highlight the suggested bottles in yellow
- * @param {Array} bottleObjects - Array of bottle objects to highlight
+ * Placeholder for potential future customization of suggested bottles
+ * Currently we don't highlight or make bottles fly per requirements
+ * @param {Array} bottleObjects - Array of bottle objects
  */
 function highlightSuggestedBottles(bottleObjects) {
-  bottleObjects.forEach(bottle => {
-    const highlightables = bottle.userData.highlightables || [];
-    highlightables.forEach(h => {
-      // Store original color if not already stored
-      if (!h.originalSuggestionColor) {
-        h.originalSuggestionColor = h.mesh.material.color.clone();
-      }
-      
-      // Set to yellow
-      h.mesh.material.color.set(0xffff00); // Yellow highlight
-    });
-    
-    // Make the bottle fly to draw attention
-    if (!bottle.userData.flying) {
-      bottle.userData.flying = true;
-    }
-  });
+  // No highlighting or flying as per requirements
+  // Function kept as placeholder for future customization options
 }
 
 /**
  * Clear all suggestions and return bottles to original state
  */
 function clearSuggestions() {
-  // Get just the bottle objects from suggestions
-  const bottleObjects = suggestedBottles.map(item =>
-    item.bottle ? item.bottle : item
-  ).filter(bottle => bottle);
-  
-  bottleObjects.forEach(bottle => {
+  // Reset all bottles to their original state when exiting suggestion mode
+  clickableBottles.forEach(bottle => {
     const highlightables = bottle.userData.highlightables || [];
     highlightables.forEach(h => {
       // Restore original color
@@ -1294,15 +1290,17 @@ function displaySuggestionBoard(weatherCondition, season) {
     
     // Add click handler to focus on this bottle
     suggestionItem.addEventListener('click', () => {
-      // Make this bottle active and flying
+      // Make this bottle active and make it fly out
       if (activeBottle) {
         activeBottle.userData.flying = false;
       }
       
       activeBottle = bottle;
-      activeBottle.userData.flying = true;
+      activeBottle.userData.flying = true; // Make the bottle fly out when clicked
       
-      // Update position to make bottle visible
+      // Update the info board with this bottle's details
+      updateInfoBoard(bottle);
+      
       // This doesn't cancel suggestion mode, just focuses on one bottle
     });
     
