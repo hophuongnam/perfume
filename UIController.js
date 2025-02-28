@@ -375,6 +375,13 @@ function canHighlightBottle(bottle) {
  */
 function onCanvasMouseDown(event) {
   event.preventDefault();
+  
+  // If in suggestion mode, ignore regular bottle interactions
+  // except for those initiated from the suggestion board
+  if (suggestionActive) {
+    return;
+  }
+  
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
@@ -436,8 +443,8 @@ function onCanvasMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
-  // Skip hover effects if filter box is visible
-  if (isFilterBoxVisible()) return;
+  // Skip hover effects if filter box is visible or in suggestion mode
+  if (isFilterBoxVisible() || suggestionActive) return;
   
   // Handle drag mode
   if (dragMode && draggingBottle) {
@@ -517,7 +524,8 @@ function onCanvasMouseUp(event) {
     hoveredBottle = null;
   }
 
-  if (isFilterBoxVisible()) return;
+  // Skip if filter box visible or in suggestion mode
+  if (isFilterBoxVisible() || suggestionActive) return;
   if (!dragMode || !draggingBottle) return;
 
   event.preventDefault();
@@ -1050,6 +1058,12 @@ function hideInfoBoard() {
  * Suggest perfumes based on current weather
  */
 function suggestPerfumesForWeather() {
+  // Exit if already in suggestion mode
+  if (suggestionActive) {
+    clearSuggestions();
+    return;
+  }
+  
   // Get current weather from the weather display
   const weatherInfo = document.getElementById('weatherInfo');
   let weatherCondition = 'clear'; // Default
@@ -1130,7 +1144,8 @@ function suggestPerfumesForWeather() {
     if (matchScore >= 3) {
       suggestedBottles.push({
         bottle: bottle,
-        score: matchScore
+        score: matchScore,
+        data: bottleData
       });
     }
   });
@@ -1139,22 +1154,30 @@ function suggestPerfumesForWeather() {
   suggestedBottles.sort((a, b) => b.score - a.score);
   
   // Limit to top 5 suggestions
-  suggestedBottles = suggestedBottles.slice(0, 5).map(item => item.bottle);
+  suggestedBottles = suggestedBottles.slice(0, 5);
+  
+  // Set active bottles from suggestions (map back to bottle objects)
+  const suggestedBottleObjects = suggestedBottles.map(item => item.bottle);
   
   // Highlight the suggested bottles
-  highlightSuggestedBottles();
+  highlightSuggestedBottles(suggestedBottleObjects);
   
-  // Create notification for the user
-  showSuggestionNotification(weatherCondition, currentSeason);
+  // Display suggestions in the board
+  displaySuggestionBoard(weatherCondition, currentSeason);
   
+  // Set suggestion mode active - this will disable regular bottle interactions
   suggestionActive = true;
+  
+  // Hide info board if visible
+  hideInfoBoard();
 }
 
 /**
  * Highlight the suggested bottles in yellow
+ * @param {Array} bottleObjects - Array of bottle objects to highlight
  */
-function highlightSuggestedBottles() {
-  suggestedBottles.forEach(bottle => {
+function highlightSuggestedBottles(bottleObjects) {
+  bottleObjects.forEach(bottle => {
     const highlightables = bottle.userData.highlightables || [];
     highlightables.forEach(h => {
       // Store original color if not already stored
@@ -1177,7 +1200,12 @@ function highlightSuggestedBottles() {
  * Clear all suggestions and return bottles to original state
  */
 function clearSuggestions() {
-  suggestedBottles.forEach(bottle => {
+  // Get just the bottle objects from suggestions
+  const bottleObjects = suggestedBottles.map(item =>
+    item.bottle ? item.bottle : item
+  ).filter(bottle => bottle);
+  
+  bottleObjects.forEach(bottle => {
     const highlightables = bottle.userData.highlightables || [];
     highlightables.forEach(h => {
       // Restore original color
@@ -1199,70 +1227,90 @@ function clearSuggestions() {
   suggestedBottles = [];
   suggestionActive = false;
   
-  // Remove notification if visible
-  const notification = document.getElementById('suggestionNotification');
-  if (notification) {
-    document.body.removeChild(notification);
+  // Hide suggestion board
+  const suggestionBoard = document.getElementById('suggestionBoard');
+  if (suggestionBoard) {
+    suggestionBoard.style.display = 'none';
   }
 }
 
 /**
- * Show a notification with suggestion info
+ * Display suggestion board with suggestion info and perfume items
  */
-function showSuggestionNotification(weatherCondition, season) {
-  // Remove existing notification if present
-  const existingNotification = document.getElementById('suggestionNotification');
-  if (existingNotification) {
-    document.body.removeChild(existingNotification);
-  }
+function displaySuggestionBoard(weatherCondition, season) {
+  const suggestionBoard = document.getElementById('suggestionBoard');
+  const suggestionBoardContent = document.getElementById('suggestionBoardContent');
+  const suggestionBoardHeader = document.getElementById('suggestionBoardHeader');
   
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.id = 'suggestionNotification';
-  notification.style.cssText = `
-    position: absolute;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 255, 200, 0.9);
-    border: 2px solid #f0c040;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-family: sans-serif;
-    font-size: 16px;
-    color: #333;
-    z-index: 10000;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    max-width: 400px;
-    text-align: center;
-  `;
+  if (!suggestionBoard || !suggestionBoardContent || !suggestionBoardHeader) return;
+  
+  // Clear previous content
+  suggestionBoardContent.innerHTML = '';
   
   // Format weather condition for display
   const formattedWeather = weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1);
   
-  notification.innerHTML = `
-    <h3 style="margin-top: 0; margin-bottom: 8px; color: #333;">Perfume Suggestions</h3>
-    <p>Current Weather: <strong>${formattedWeather}</strong></p>
-    <p>Current Season: <strong>${season}</strong></p>
-    <p>Found <strong>${suggestedBottles.length}</strong> perfumes that match today's conditions.</p>
-    <p style="margin-bottom: 0;"><small>Press X again to clear suggestions</small></p>
-  `;
+  // Update header with weather and season info
+  suggestionBoardHeader.innerHTML = `Perfume Suggestions for ${formattedWeather} Weather - ${season} Season`;
   
-  document.body.appendChild(notification);
-  
-  // Auto-hide after 8 seconds
-  setTimeout(() => {
-    if (document.body.contains(notification)) {
-      notification.style.opacity = '0';
-      notification.style.transition = 'opacity 0.5s ease';
+  // Create suggestion items
+  suggestedBottles.forEach(item => {
+    const bottleData = item.data;
+    const bottle = item.bottle;
+    
+    const suggestionItem = document.createElement('div');
+    suggestionItem.className = 'suggestion-item';
+    suggestionItem.dataset.bottleId = bottle.id; // Store reference to the bottle
+    
+    // Add house and name
+    const house = document.createElement('div');
+    house.className = 'suggestion-house';
+    house.textContent = bottleData.house || 'Unknown House';
+    
+    const name = document.createElement('div');
+    name.className = 'suggestion-name';
+    name.textContent = bottleData.name || 'Unnamed Perfume';
+    
+    // Add accords if available
+    const accords = document.createElement('div');
+    accords.className = 'suggestion-accords';
+    
+    if (bottleData.accords && bottleData.accords.length > 0) {
+      // Take just first 3 accords to keep it compact
+      const topAccords = bottleData.accords.slice(0, 3);
       
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 500);
+      topAccords.forEach(accord => {
+        const accordTag = document.createElement('span');
+        accordTag.className = 'suggestion-accord';
+        accordTag.textContent = accord;
+        accords.appendChild(accordTag);
+      });
     }
-  }, 8000);
+    
+    // Build item
+    suggestionItem.appendChild(house);
+    suggestionItem.appendChild(name);
+    suggestionItem.appendChild(accords);
+    
+    // Add click handler to focus on this bottle
+    suggestionItem.addEventListener('click', () => {
+      // Make this bottle active and flying
+      if (activeBottle) {
+        activeBottle.userData.flying = false;
+      }
+      
+      activeBottle = bottle;
+      activeBottle.userData.flying = true;
+      
+      // Update position to make bottle visible
+      // This doesn't cancel suggestion mode, just focuses on one bottle
+    });
+    
+    suggestionBoardContent.appendChild(suggestionItem);
+  });
+  
+  // Show the board
+  suggestionBoard.style.display = 'block';
 }
 
 // Expose function to set cap color from the UI
