@@ -5,7 +5,7 @@
  */
 
 import * as THREE from 'three';
-import { initScene, animate, onWindowResize, camera } from './SceneManager.js';
+import { initScene, animate, onWindowResize, camera, updateSceneWeather } from './SceneManager.js';
 import { buildAllPlanes, parseSingleRack, planeLayouts, slotOccupants } from './RackBuilder.js';
 import { fetchAllNotionBottles, createBottleFromNotion, clickableBottles,
          updateBottleSlotOnServer, setCapColor, updateBottleCapColorOnServer,
@@ -233,7 +233,7 @@ async function updateWeather() {
       
       // Update the scene background based on weather
       if (weatherData.condition) {
-        updateSceneWeather(weatherData.condition);
+        handleWeatherChange(weatherData.condition);
       }
       
       // Update the UI weather display
@@ -247,35 +247,66 @@ async function updateWeather() {
 /**
  * Update scene based on new weather condition
  */
-function updateSceneWeather(newWeatherCondition) {
-  if (weatherCondition === newWeatherCondition) {
-    return; // No change needed
-  }
-  
-  weatherCondition = newWeatherCondition;
-  
-  // Update the background texture
-  const bgTexture = createGradientBackground(weatherCondition);
-  scene.background = bgTexture;
-  
-  // Update the environment map if pmremGenerator is available
-  if (pmremGenerator) {
-    const environmentTexture = generateEnvironmentTexture(weatherCondition);
-    const envRT = pmremGenerator.fromEquirectangular(environmentTexture);
-    const newEnvMap = envRT.texture;
-    
-    scene.environment = newEnvMap;
-    
-    // Dispose old envMap if it exists
-    if (envMap) envMap.dispose();
-    envMap = newEnvMap;
-    
-    environmentTexture.dispose();
-  }
+function handleWeatherChange(newWeatherCondition) {
+  // Update the scene weather using the imported function
+  updateSceneWeather(newWeatherCondition);
   
   // Clear any existing suggestions as weather has changed
   if (suggestionActive) {
     clearSuggestions();
+  }
+}
+
+/**
+ * Update the UI with weather information
+ */
+function updateWeatherDisplay(weatherData) {
+  const weatherInfo = document.getElementById('weatherInfo');
+  if (!weatherInfo) return;
+  
+  // Format the weather information
+  let weatherText = '';
+  
+  if (weatherData.condition) {
+    // Capitalize first letter of condition
+    const condition = weatherData.condition.charAt(0).toUpperCase() +
+                     weatherData.condition.slice(1);
+    weatherText += condition;
+  }
+  
+  // Check for temperature (server sends as "temp" but we handle both names)
+  const temperature = weatherData.temp !== undefined ? weatherData.temp : weatherData.temperature;
+  if (temperature !== undefined) {
+    weatherText += weatherText ? ', ' : '';
+    weatherText += `${temperature}°`;
+    
+    // Add unit if provided
+    if (weatherData.unit) {
+      weatherText += weatherData.unit;
+    } else {
+      weatherText += 'C'; // Default to Celsius
+    }
+  }
+  
+  // Add humidity if available
+  if (weatherData.humidity !== undefined) {
+    weatherText += weatherText ? ', ' : '';
+    weatherText += `Humidity: ${weatherData.humidity}%`;
+  }
+  
+  // Update the weather info element
+  weatherInfo.textContent = weatherText || 'Weather data unavailable';
+  
+  // You might want to add weather icons or classes based on condition
+  const weatherIcon = document.getElementById('weatherIcon');
+  if (weatherIcon) {
+    // Remove existing classes
+    weatherIcon.className = 'weather-icon';
+    
+    // Add class based on condition
+    if (weatherData.condition) {
+      weatherIcon.classList.add(`weather-${weatherData.condition.toLowerCase()}`);
+    }
   }
 }
 
