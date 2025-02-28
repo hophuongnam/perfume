@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
+const fetch = require('node-fetch');
     
 const fs = require('fs');
 
@@ -36,6 +37,90 @@ app.get('/', (req, res) => {
 // Provide config data to the frontend
 app.get('/api/config', (req, res) => {
   res.json(config);
+});
+
+// Weather API endpoint
+app.get('/api/weather', async (req, res) => {
+  try {
+    const apiKey = process.env.WEATHER_API_KEY || '';
+    const location = process.env.DEFAULT_LOCATION || 'Hanoi,VN';
+    
+    // Fallback weather data
+    const fallbackWeather = {
+      condition: 'Clear',
+      description: 'Clear sky',
+      icon: '01d',
+      temp: 22,
+      humidity: 50,
+      windSpeed: 5,
+      location: 'Hanoi, Vietnam',
+      time: new Date().toISOString()
+    };
+    
+    if (!apiKey) {
+      console.log('No Weather API key configured. Using fallback data.');
+      return res.json({
+        ...fallbackWeather,
+        error: 'Weather API key not configured'
+      });
+    }
+    
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`
+    );
+    
+    // Check response status before parsing JSON
+    if (!response.ok) {
+      // Log more details about the error
+      const errorText = await response.text().catch(() => '');
+      console.error(`Weather API error (${response.status}): ${errorText}`);
+      
+      if (response.status === 401) {
+        console.error('API Key is invalid or unauthorized. Please check your WEATHER_API_KEY in .env file.');
+        return res.json({
+          ...fallbackWeather,
+          error: 'Weather API key is invalid'
+        });
+      }
+      
+      // For other errors, still return fallback data
+      return res.json({
+        ...fallbackWeather,
+        error: `Weather API responded with status ${response.status}`
+      });
+    }
+    
+    // Only parse JSON after confirming response is OK
+    const data = await response.json();
+  
+    // Extract relevant weather info
+    const weather = {
+      condition: data.weather[0].main, // e.g., "Clear", "Clouds", "Rain"
+      description: data.weather[0].description,
+      icon: data.weather[0].icon,
+      temp: data.main.temp,
+      humidity: data.main.humidity,
+      windSpeed: data.wind.speed,
+      location: data.name,
+      time: new Date().toISOString()
+    };
+    
+    res.json(weather);
+  } catch (err) {
+    console.error('/api/weather error:', err);
+    // Return fallback data with HTTP 200 to not break the UI
+    res.json({
+      error: err.message,
+      condition: 'Clear',
+      description: 'Clear sky (fallback)',
+      icon: '01d',
+      temp: 22,
+      humidity: 50,
+      windSpeed: 5,
+      location: 'Hanoi, Vietnam',
+      time: new Date().toISOString()
+    });
+  }
 });
 
 // Serve static files (CSS, JS, etc.) from the same directory

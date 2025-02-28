@@ -33,6 +33,7 @@ let dragPlane = null;
 let dragPlaneIntersect = null;
 const raycaster = new THREE.Raycaster();
 const mouse     = new THREE.Vector2();
+let weatherUpdateInterval = null;
 
 let sourceBottle = null;
 let targetBottle = null;
@@ -154,6 +155,9 @@ export async function initApp() {
 
     // Setup UI events after scene is built
     setupEventListeners();
+    
+    // Setup weather updates
+    setupWeatherUpdates();
 
     // Start animation
     animate(() => {
@@ -213,6 +217,59 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(this, args), wait);
   };
+}
+
+/**
+ * Update the weather data and scene
+ */
+async function updateWeather() {
+  try {
+    const response = await fetch('/api/weather');
+    if (response.ok) {
+      const weatherData = await response.json();
+      console.log('Weather updated:', weatherData);
+      
+      // Update the scene background based on weather
+      updateSceneWeather(weatherData.condition);
+      
+      // Update the UI weather display
+      updateWeatherDisplay(weatherData);
+    }
+  } catch (err) {
+    console.warn('Failed to update weather:', err);
+  }
+}
+
+/**
+ * Update the weather display in the UI
+ */
+function updateWeatherDisplay(weatherData) {
+  const weatherIcon = document.getElementById('weatherIcon');
+  const weatherInfo = document.getElementById('weatherInfo');
+  
+  if (!weatherIcon || !weatherInfo) return;
+  
+  // Set weather icon
+  if (weatherData.icon) {
+    weatherIcon.style.backgroundImage = `url(https://openweathermap.org/img/wn/${weatherData.icon}@2x.png)`;
+  }
+  
+  // Set weather info text
+  weatherInfo.innerHTML = `
+    <div>${weatherData.description}</div>
+    <div>${Math.round(weatherData.temp)}°C | ${weatherData.location}</div>
+  `;
+}
+
+/**
+ * Set up periodic weather updates
+ */
+function setupWeatherUpdates() {
+  // Initial weather update
+  updateWeather();
+  
+  // Update weather every 15 minutes (900000 ms)
+  weatherUpdateInterval = setInterval(updateWeather, 900000);
 }
 
 /**
@@ -931,3 +988,10 @@ window.setCapColorUI = function(pageId, colorName) {
     setCapColor(activeBottle, colorName);
   }
 };
+
+// Clean up weather interval when window is unloaded
+window.addEventListener('beforeunload', () => {
+  if (weatherUpdateInterval) {
+    clearInterval(weatherUpdateInterval);
+  }
+});
