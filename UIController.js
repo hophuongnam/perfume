@@ -40,6 +40,8 @@ let targetBottle = null;
 let activeBottle = null;
 let hoveredBottle = null;
 let lastFilterMatches = [];
+let suggestedBottles = []; // Track bottles suggested for the weather
+let suggestionActive = false; // Track if suggestion mode is active
 const hoverIntensity = 0.15; // Brightness increase for hover effect
 
 // A minimal class from original code for a multi-step loading UI
@@ -230,7 +232,9 @@ async function updateWeather() {
       console.log('Weather updated:', weatherData);
       
       // Update the scene background based on weather
-      updateSceneWeather(weatherData.condition);
+      if (weatherData.condition) {
+        updateSceneWeather(weatherData.condition);
+      }
       
       // Update the UI weather display
       updateWeatherDisplay(weatherData);
@@ -241,24 +245,38 @@ async function updateWeather() {
 }
 
 /**
- * Update the weather display in the UI
+ * Update scene based on new weather condition
  */
-function updateWeatherDisplay(weatherData) {
-  const weatherIcon = document.getElementById('weatherIcon');
-  const weatherInfo = document.getElementById('weatherInfo');
-  
-  if (!weatherIcon || !weatherInfo) return;
-  
-  // Set weather icon
-  if (weatherData.icon) {
-    weatherIcon.style.backgroundImage = `url(https://openweathermap.org/img/wn/${weatherData.icon}@2x.png)`;
+function updateSceneWeather(newWeatherCondition) {
+  if (weatherCondition === newWeatherCondition) {
+    return; // No change needed
   }
   
-  // Set weather info text
-  weatherInfo.innerHTML = `
-    <div>${weatherData.description}</div>
-    <div>${Math.round(weatherData.temp)}°C | ${weatherData.location}</div>
-  `;
+  weatherCondition = newWeatherCondition;
+  
+  // Update the background texture
+  const bgTexture = createGradientBackground(weatherCondition);
+  scene.background = bgTexture;
+  
+  // Update the environment map if pmremGenerator is available
+  if (pmremGenerator) {
+    const environmentTexture = generateEnvironmentTexture(weatherCondition);
+    const envRT = pmremGenerator.fromEquirectangular(environmentTexture);
+    const newEnvMap = envRT.texture;
+    
+    scene.environment = newEnvMap;
+    
+    // Dispose old envMap if it exists
+    if (envMap) envMap.dispose();
+    envMap = newEnvMap;
+    
+    environmentTexture.dispose();
+  }
+  
+  // Clear any existing suggestions as weather has changed
+  if (suggestionActive) {
+    clearSuggestions();
+  }
 }
 
 /**
@@ -598,6 +616,10 @@ function onKeyDown(e) {
         });
         hoveredBottle = null;
       }
+      // Clear suggestions when entering drag mode
+      if (suggestionActive) {
+        clearSuggestions();
+      }
       // Hide info board when drag mode is activated
       hideInfoBoard();
       dragIndicator.style.display = 'block';
@@ -623,6 +645,10 @@ function onKeyDown(e) {
       sourceBottle = null;
       targetBottle = null;
       hideInfoBoard();
+      // Also clear suggestions if active
+      if (suggestionActive) {
+        clearSuggestions();
+      }
     } else if (key === '1') {
       if (activeBottle && activeBottle.userData.flying) {
         markAsSource(activeBottle);
@@ -657,6 +683,13 @@ function onKeyDown(e) {
         if (url) {
           window.open(url, '_blank');
         }
+      }
+    } else if (key === 'x') {
+      // Toggle suggestions mode
+      if (suggestionActive) {
+        clearSuggestions();
+      } else {
+        suggestPerfumesForWeather();
       }
     }
   }
@@ -980,6 +1013,225 @@ function hideInfoBoard() {
   if (infoBoard) {
     infoBoard.classList.remove('visible');
   }
+}
+
+/**
+ * Suggest perfumes based on current weather
+ */
+function suggestPerfumesForWeather() {
+  // Get current weather from the weather display
+  const weatherInfo = document.getElementById('weatherInfo');
+  let weatherCondition = 'clear'; // Default
+  
+  if (weatherInfo && weatherInfo.textContent) {
+    const weatherText = weatherInfo.textContent.toLowerCase();
+    
+    if (weatherText.includes('cloud')) {
+      weatherCondition = 'clouds';
+    } else if (weatherText.includes('rain') || weatherText.includes('drizzle')) {
+      weatherCondition = 'rain';
+    } else if (weatherText.includes('snow')) {
+      weatherCondition = 'snow';
+    } else if (weatherText.includes('thunder')) {
+      weatherCondition = 'thunderstorm';
+    } else if (weatherText.includes('fog') || weatherText.includes('mist') || weatherText.includes('haze')) {
+      weatherCondition = 'mist';
+    } else if (weatherText.includes('clear')) {
+      weatherCondition = 'clear';
+    }
+  }
+  
+  // Determine current season based on Northern Hemisphere (can be customized by region)
+  const now = new Date();
+  const month = now.getMonth(); // 0-11
+  let currentSeason;
+  
+  if (month >= 2 && month <= 4) {
+    currentSeason = 'Spring';
+  } else if (month >= 5 && month <= 7) {
+    currentSeason = 'Summer';
+  } else if (month >= 8 && month <= 10) {
+    currentSeason = 'Fall';
+  } else {
+    currentSeason = 'Winter';
+  }
+  
+  // Map weather conditions to appropriate fragrance accords
+  const weatherAccordMap = {
+    'clear': ['fresh', 'citrus', 'fresh spicy', 'aromatic', 'fruity', 'green'],
+    'clouds': ['woody', 'amber', 'musky', 'powdery', 'earthy'],
+    'rain': ['marine', 'aquatic', 'ozonic', 'fresh', 'green'],
+    'thunderstorm': ['woody', 'earthy', 'oud', 'smoky', 'leather'],
+    'snow': ['vanilla', 'warm spicy', 'almond', 'balsamic', 'powdery'],
+    'mist': ['musky', 'marine', 'ozonic', 'metallic', 'salty']
+  };
+  
+  // Get suggested accords based on weather
+  const suggestedAccords = weatherAccordMap[weatherCondition] || ['fresh', 'woody', 'citrus'];
+  
+  // Find perfumes that match the weather condition and current season
+  suggestedBottles = [];
+  
+  clickableBottles.forEach(bottle => {
+    const bottleData = bottle.userData.notionData;
+    if (!bottleData) return;
+    
+    const bottleAccords = bottleData.accords || [];
+    const bottleSeasons = bottleData.seasons || [];
+    
+    // Calculate match score - higher is better
+    let matchScore = 0;
+    
+    // Accord matching
+    for (const accord of bottleAccords) {
+      const accordLower = accord.toLowerCase();
+      if (suggestedAccords.some(sa => accordLower.includes(sa))) {
+        matchScore += 3; // Strong match with weather-appropriate accord
+      }
+    }
+    
+    // Season matching
+    if (bottleSeasons.includes(currentSeason)) {
+      matchScore += 5; // Strong boost for matching the current season
+    }
+    
+    // If we have a decent match, add to suggestions
+    if (matchScore >= 3) {
+      suggestedBottles.push({
+        bottle: bottle,
+        score: matchScore
+      });
+    }
+  });
+  
+  // Sort by score (highest first)
+  suggestedBottles.sort((a, b) => b.score - a.score);
+  
+  // Limit to top 5 suggestions
+  suggestedBottles = suggestedBottles.slice(0, 5).map(item => item.bottle);
+  
+  // Highlight the suggested bottles
+  highlightSuggestedBottles();
+  
+  // Create notification for the user
+  showSuggestionNotification(weatherCondition, currentSeason);
+  
+  suggestionActive = true;
+}
+
+/**
+ * Highlight the suggested bottles in yellow
+ */
+function highlightSuggestedBottles() {
+  suggestedBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      // Store original color if not already stored
+      if (!h.originalSuggestionColor) {
+        h.originalSuggestionColor = h.mesh.material.color.clone();
+      }
+      
+      // Set to yellow
+      h.mesh.material.color.set(0xffff00); // Yellow highlight
+    });
+    
+    // Make the bottle fly to draw attention
+    if (!bottle.userData.flying) {
+      bottle.userData.flying = true;
+    }
+  });
+}
+
+/**
+ * Clear all suggestions and return bottles to original state
+ */
+function clearSuggestions() {
+  suggestedBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      // Restore original color
+      if (h.originalSuggestionColor) {
+        h.mesh.material.color.copy(h.originalSuggestionColor);
+        delete h.originalSuggestionColor;
+      } else {
+        h.mesh.material.color.copy(h.originalColor);
+      }
+    });
+    
+    // Stop flying unless it's the active bottle
+    if (bottle.userData.flying && bottle !== activeBottle) {
+      bottle.userData.flying = false;
+    }
+  });
+  
+  // Clear the array
+  suggestedBottles = [];
+  suggestionActive = false;
+  
+  // Remove notification if visible
+  const notification = document.getElementById('suggestionNotification');
+  if (notification) {
+    document.body.removeChild(notification);
+  }
+}
+
+/**
+ * Show a notification with suggestion info
+ */
+function showSuggestionNotification(weatherCondition, season) {
+  // Remove existing notification if present
+  const existingNotification = document.getElementById('suggestionNotification');
+  if (existingNotification) {
+    document.body.removeChild(existingNotification);
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.id = 'suggestionNotification';
+  notification.style.cssText = `
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 200, 0.9);
+    border: 2px solid #f0c040;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-family: sans-serif;
+    font-size: 16px;
+    color: #333;
+    z-index: 10000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    max-width: 400px;
+    text-align: center;
+  `;
+  
+  // Format weather condition for display
+  const formattedWeather = weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1);
+  
+  notification.innerHTML = `
+    <h3 style="margin-top: 0; margin-bottom: 8px; color: #333;">Perfume Suggestions</h3>
+    <p>Current Weather: <strong>${formattedWeather}</strong></p>
+    <p>Current Season: <strong>${season}</strong></p>
+    <p>Found <strong>${suggestedBottles.length}</strong> perfumes that match today's conditions.</p>
+    <p style="margin-bottom: 0;"><small>Press X again to clear suggestions</small></p>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-hide after 8 seconds
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.5s ease';
+      
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 500);
+    }
+  }, 8000);
 }
 
 // Expose function to set cap color from the UI
