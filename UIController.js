@@ -914,6 +914,9 @@ function applyFilter(searchText) {
     const topNotesTokens = (notionData.topNotes || [])
       .map(note => fold(note).split(/\s+/))
       .flat();
+    const timeTokens = (notionData.time || [])
+      .map(timeValue => fold(timeValue).split(/\s+/))
+      .flat();
     const notesTokens = (notionData.notes || [])
       .map(note => fold(note).split(/\s+/))
       .flat();
@@ -927,6 +930,7 @@ function applyFilter(searchText) {
       ...baseNotesTokens,
       ...middleNotesTokens,
       ...topNotesTokens,
+      ...timeTokens,
       ...notesTokens
     ];
 
@@ -1050,23 +1054,45 @@ function updateInfoBoard(bottle) {
     html += `<div class="info-detail">Volume: ${data.volume} ml</div>`;
   }
   
-  // Add notes breakdown if available
+  // Start the notes section with a two-column layout
+  html += `<div class="notes-container">`;
+  
+  // Add notes breakdown if available in a two-column format
   if (data.topNotes && data.topNotes.length > 0) {
-    html += `<div class="info-detail"><strong>Top Notes:</strong> ${data.topNotes.join(', ')}</div>`;
+    html += `
+      <div class="notes-row">
+        <div class="notes-label">Top Notes:</div>
+        <div class="notes-content">${data.topNotes.join(', ')}</div>
+      </div>`;
   }
   
   if (data.middleNotes && data.middleNotes.length > 0) {
-    html += `<div class="info-detail"><strong>Middle Notes:</strong> ${data.middleNotes.join(', ')}</div>`;
+    html += `
+      <div class="notes-row">
+        <div class="notes-label">Middle Notes:</div>
+        <div class="notes-content">${data.middleNotes.join(', ')}</div>
+      </div>`;
   }
   
   if (data.baseNotes && data.baseNotes.length > 0) {
-    html += `<div class="info-detail"><strong>Base Notes:</strong> ${data.baseNotes.join(', ')}</div>`;
+    html += `
+      <div class="notes-row">
+        <div class="notes-label">Base Notes:</div>
+        <div class="notes-content">${data.baseNotes.join(', ')}</div>
+      </div>`;
   }
   
   // Add Notes if available
   if (data.notes && data.notes.length > 0) {
-    html += `<div class="info-detail"><strong>Notes:</strong> ${data.notes.join(', ')}</div>`;
+    html += `
+      <div class="notes-row">
+        <div class="notes-label">Notes:</div>
+        <div class="notes-content">${data.notes.join(', ')}</div>
+      </div>`;
   }
+  
+  // Close the notes container
+  html += `</div>`;
 
   // Add position info (like line4 in billboard)
   html += `
@@ -1151,6 +1177,17 @@ function suggestPerfumesForWeather() {
     currentSeason = 'Winter';
   }
   
+  // Determine current time of day - only Day and Night options
+  const hour = now.getHours();
+  let currentTimeOfDay;
+  
+  // Day is considered from 6 AM to 6 PM, Night is from 6 PM to 6 AM
+  if (hour >= 6 && hour < 18) {
+    currentTimeOfDay = 'Day';
+  } else {
+    currentTimeOfDay = 'Night';
+  }
+  
   // Map weather conditions to appropriate fragrance accords
   const weatherAccordMap = {
     'clear': ['fresh', 'citrus', 'fresh spicy', 'aromatic', 'fruity', 'green'],
@@ -1181,6 +1218,15 @@ function suggestPerfumesForWeather() {
   // Find perfumes that match the weather condition and current season
   suggestedBottles = [];
   
+  // Map time of day to preferred fragrance times - simplified for Day/Night only
+  const timePreferenceMap = {
+    'Day': ['Day', 'Daytime', 'Office', 'Work', 'Sport', 'Casual', 'Spring', 'Summer'],
+    'Night': ['Night', 'Evening', 'Date', 'Dinner', 'Clubbing', 'Special Occasion', 'Fall', 'Winter']
+  };
+  
+  // Get suggested times based on current time of day
+  const suggestedTimes = timePreferenceMap[currentTimeOfDay] || [];
+  
   clickableBottles.forEach(bottle => {
     const bottleData = bottle.userData.notionData;
     if (!bottleData) return;
@@ -1191,6 +1237,7 @@ function suggestPerfumesForWeather() {
     const bottleMiddleNotes = bottleData.middleNotes || [];
     const bottleBaseNotes = bottleData.baseNotes || [];
     const bottleNotes = bottleData.notes || [];
+    const bottleTimes = bottleData.time || [];
     
     // Calculate match score - higher is better
     let matchScore = 0;
@@ -1245,6 +1292,15 @@ function suggestPerfumesForWeather() {
       matchScore += 5; // Strong boost for matching the current season
     }
     
+    // Time of day matching
+    for (const time of bottleTimes) {
+      if (suggestedTimes.some(suggestedTime =>
+          time.toLowerCase().includes(suggestedTime.toLowerCase()))) {
+        matchScore += 4; // Boost for appropriate time of day
+        break;
+      }
+    }
+    
     // If we have a decent match, add to suggestions
     if (matchScore >= 3) {
       suggestedBottles.push({
@@ -1266,7 +1322,7 @@ function suggestPerfumesForWeather() {
   
   // No longer highlight or make suggested bottles fly out
   // Display suggestions in the board
-  displaySuggestionBoard(weatherCondition, currentSeason);
+  displaySuggestionBoard(weatherCondition, currentSeason, currentTimeOfDay);
   
   // Set suggestion mode active - this will disable regular bottle interactions
   suggestionActive = true;
@@ -1322,7 +1378,7 @@ function clearSuggestions() {
 /**
  * Display suggestion board with suggestion info and perfume items
  */
-function displaySuggestionBoard(weatherCondition, season) {
+function displaySuggestionBoard(weatherCondition, season, timeOfDay) {
   const suggestionBoard = document.getElementById('suggestionBoard');
   const suggestionBoardContent = document.getElementById('suggestionBoardContent');
   const suggestionBoardHeader = document.getElementById('suggestionBoardHeader');
@@ -1335,8 +1391,8 @@ function displaySuggestionBoard(weatherCondition, season) {
   // Format weather condition for display
   const formattedWeather = weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1);
   
-  // Update header with weather and season info
-  suggestionBoardHeader.innerHTML = `Perfume Suggestions for ${formattedWeather} Weather - ${season} Season`;
+  // Update header with weather, season, and time of day info
+  suggestionBoardHeader.innerHTML = `Perfume Suggestions for ${formattedWeather} Weather - ${season} Season - ${timeOfDay} Time`;
   
   // Create suggestion items
   suggestedBottles.forEach(item => {
@@ -1356,55 +1412,9 @@ function displaySuggestionBoard(weatherCondition, season) {
     name.className = 'suggestion-name';
     name.textContent = bottleData.name || 'Unnamed Perfume';
     
-    // Add notes information with accords
-    const accords = document.createElement('div');
-    accords.className = 'suggestion-accords';
-    
-    // Create an array to hold the most relevant notes based on the weather
-    let relevantNotes = [];
-    
-    // Choose which notes to show based on weather condition
-    // For clear, sunny days - show top notes
-    if (weatherCondition === 'clear' && bottleData.topNotes && bottleData.topNotes.length > 0) {
-      relevantNotes = bottleData.topNotes.slice(0, 2).map(note => ({text: note, type: 'top'}));
-    }
-    // For stormy or cold weather - prioritize base notes
-    else if ((weatherCondition === 'thunderstorm' || weatherCondition === 'snow') &&
-             bottleData.baseNotes && bottleData.baseNotes.length > 0) {
-      relevantNotes = bottleData.baseNotes.slice(0, 2).map(note => ({text: note, type: 'base'}));
-    }
-    // For other weather conditions - prioritize middle notes
-    else if (bottleData.middleNotes && bottleData.middleNotes.length > 0) {
-      relevantNotes = bottleData.middleNotes.slice(0, 2).map(note => ({text: note, type: 'middle'}));
-    }
-    
-    // If we don't have notes based on weather preference, fall back to regular accords
-    if (relevantNotes.length === 0 && bottleData.accords && bottleData.accords.length > 0) {
-      // Take just first 3 accords to keep it compact
-      const topAccords = bottleData.accords.slice(0, 3);
-      
-      topAccords.forEach(accord => {
-        const accordTag = document.createElement('span');
-        accordTag.className = 'suggestion-accord';
-        accordTag.textContent = accord;
-        accords.appendChild(accordTag);
-      });
-    } else {
-      // Display the relevant notes
-      relevantNotes.forEach(note => {
-        const noteTag = document.createElement('span');
-        noteTag.className = `suggestion-accord note-${note.type}`;
-        noteTag.textContent = note.text;
-        // Add a small indicator of the note type
-        noteTag.title = `${note.type.charAt(0).toUpperCase() + note.type.slice(1)} Note`;
-        accords.appendChild(noteTag);
-      });
-    }
-    
-    // Build item
+    // Build item (notes display removed as requested)
     suggestionItem.appendChild(house);
     suggestionItem.appendChild(name);
-    suggestionItem.appendChild(accords);
     
     // Add click handler to focus on this bottle
     suggestionItem.addEventListener('click', () => {

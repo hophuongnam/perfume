@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-03-01T04:33:46.845Z
+Retrieved at: 2025-03-01T07:58:59.629Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -41,6 +41,9 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 
 ## Field: Cap Color
 **Type**: select
+
+## Field: Time
+**Type**: multi_select
 
 ## Field: Type
 **Type**: select
