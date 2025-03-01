@@ -177,6 +177,9 @@ app.get('/api/bottles', async (req, res) => {
         const accordsProp   = page.properties["Accords"];
         const seasonsProp   = page.properties["Seasons"];
         const urlProp       = page.properties["URL"];
+        const baseNotesProp = page.properties["Base Notes"];
+        const middleNotesProp = page.properties["Middle Notes"];
+        const topNotesProp  = page.properties["Top Notes"];
 
         // Parse fields
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
@@ -189,6 +192,9 @@ app.get('/api/bottles', async (req, res) => {
         const accordsVal  = accordsProp?.multi_select?.map(opt => opt.name) || [];
         const seasonsVal  = seasonsProp?.multi_select?.map(opt => opt.name) || [];
         const urlVal      = urlProp?.url || "";
+        const baseNotesVal = baseNotesProp?.multi_select?.map(opt => opt.name) || [];
+        const middleNotesVal = middleNotesProp?.multi_select?.map(opt => opt.name) || [];
+        const topNotesVal = topNotesProp?.multi_select?.map(opt => opt.name) || [];
 
         return {
           id: page.id,
@@ -201,7 +207,10 @@ app.get('/api/bottles', async (req, res) => {
           type: typeVal,
           accords: accordsVal,
           seasons: seasonsVal,
-          url: urlVal
+          url: urlVal,
+          baseNotes: baseNotesVal,
+          middleNotes: middleNotesVal,
+          topNotes: topNotesVal
         };
       });
 
@@ -277,4 +286,3 @@ app.listen(port, () => {
 
 
  
-

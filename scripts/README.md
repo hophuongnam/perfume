@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-02-22T13:15:42.345Z
+Retrieved at: 2025-03-01T03:54:47.729Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -47,6 +47,171 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
         "id": "fe0b8f23-6f36-4202-a554-5214c26a4a10",
         "name": "Spring",
         "color": "green",
+        "description": null
+      }
+    ]
+  }
+}
+```
+
+## Field: Base Notes
+**Type**: multi_select
+
+```json
+{
+  "id": "C%5BKM",
+  "name": "Base Notes",
+  "type": "multi_select",
+  "multi_select": {
+    "options": [
+      {
+        "id": "a491eb59-ed09-4527-ae10-f1557a8fe443",
+        "name": "Agarwood (Oud)",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "6e57e07b-ab62-4bed-9f96-6f46d7794e2a",
+        "name": "Benzoin",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "a6882ef6-730d-4130-88e8-100213148fd7",
+        "name": "Amber",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "8e442251-2823-43d0-a204-5cdc9d9d7265",
+        "name": "Woodsy Notes",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "fe0fc74c-c780-48ab-9e32-cfdd123b1ed9",
+        "name": "Musk",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "ecdaf5d6-4b92-4445-86d0-9bf98dbc2d68",
+        "name": "Vanilla Absolute",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "207c9472-0d60-4236-9560-d969e17dc115",
+        "name": "White Musk",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "14b5e32e-4864-4f88-9bc8-eb1be4848657",
+        "name": "Palo Santo",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "f6fe8c72-0e19-4e64-8f35-2f18194f3170",
+        "name": "Lactones",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "0d1f2564-1f29-47dc-85ec-bcb5f6b61e61",
+        "name": "Coconut",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "0c7e7265-42f6-467c-b5dc-6c12008ca866",
+        "name": "Raspberry",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "01159bc9-f492-49fc-98d6-94cdbfa1bad3",
+        "name": "Blackberry",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "e86eec8b-73af-4a3c-9255-0e23c9c33f97",
+        "name": "Ambrettolide",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "53a7831f-55de-4826-9b1a-9b4048542c48",
+        "name": "Ambroxan",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "98387f64-31a2-4c97-b4b2-10fb0d9b37f8",
+        "name": "Oakmoss",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "b314d59f-54f0-4957-990e-c6f142be9767",
+        "name": "Honey",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "092c8e8e-0977-4519-9889-ea9f58a2fdf1",
+        "name": "Woody Notes",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "d9c9acdf-6039-40ed-b053-f762fb8c6519",
+        "name": "Tonka Bean",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "042f10d2-4b05-4113-a323-25e9ce504a28",
+        "name": "Patchouli",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "61c4c853-cde5-4ed0-8d4c-e3a7805aa0fc",
+        "name": "Vanilla",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "bd795716-baed-4c15-b912-957c1d5abf4e",
+        "name": "Myrrh",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "7934e5b5-1fa1-4a96-99e5-2d0a325aaa65",
+        "name": "Cedar",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "20d0aaba-ead0-4511-a459-b454f747710d",
+        "name": "Gurjan balsam",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "a1c89881-845d-488f-b938-96f2f91644f6",
+        "name": "Leather",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "86b01b88-3f04-41fb-b7a5-0df721f7288c",
+        "name": "Incense",
+        "color": "pink",
         "description": null
       }
     ]
@@ -120,6 +285,159 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 }
 ```
 
+## Field: Top Notes
+**Type**: multi_select
+
+```json
+{
+  "id": "RiYd",
+  "name": "Top Notes",
+  "type": "multi_select",
+  "multi_select": {
+    "options": [
+      {
+        "id": "da8b9c6a-15e2-434f-8fd9-ab4ff5ead71a",
+        "name": "Orange",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "1145f542-40d2-47f3-8196-c9ea1d1b1178",
+        "name": "Calone",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "878d3969-016f-4b01-ae67-1a3e333b4f99",
+        "name": "Artemisia",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "610cd6fa-dfdc-4b40-8f87-a061641ab032",
+        "name": "Bergamot",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "158bf266-e102-4bd5-ab2a-8f1208a365b3",
+        "name": "Petitgrain",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "7bf2f62a-645f-4b86-921b-0f3516d780ce",
+        "name": "Coconut Powder",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "245bba61-43f8-470c-a509-51e57a9d652b",
+        "name": "Heliotrope",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "701893e3-d506-4741-9dc2-e762fc82d72d",
+        "name": "Cranberry",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "624d5108-b1e4-49d9-9f58-cb0f90ebead9",
+        "name": "White Peach",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "c72dfa29-5d2c-4e93-9e5e-52f2e6b5818b",
+        "name": "Citruses",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "7b646644-dae5-4b06-923b-57d32c537487",
+        "name": "Virginia Cedar",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "8f4a8f3d-afa9-4ad5-9d40-03798e49efb0",
+        "name": "Metallic notes",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "0412a1a0-62fc-4e9a-b1ea-9f19c0e9ac6d",
+        "name": "Aldehydes",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "8f4baebc-8a04-415e-ac42-5163268c7d82",
+        "name": "Cardamon",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "a86bf719-e636-427c-914d-b15fd7452562",
+        "name": "Black Pepper",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "7729953f-3343-46bf-80fb-f17b1057c69f",
+        "name": "Water Notes",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "ec71779c-1df2-4f4e-bf5c-2dd3deb2d1df",
+        "name": "Violet Leaf",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "a0352096-4b08-4cb8-9817-f232ffb7570e",
+        "name": "Ginger",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "c12a8577-7dd8-438b-bb53-5e8ce29c65df",
+        "name": "Neroli",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "e27c8f4d-3b40-4030-93ff-65c501c08820",
+        "name": "Plum",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "fdc134cd-d522-4589-a0ac-4ccdba654d6c",
+        "name": "Cardamom",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "f2ee7b09-b299-4250-a453-62c4268faaf4",
+        "name": "Lavender",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "5a0aab4f-0a1b-4ab6-9227-6d4e858a0169",
+        "name": "Green Notes",
+        "color": "brown",
+        "description": null
+      }
+    ]
+  }
+}
+```
+
 ## Field: Ignore?
 **Type**: checkbox
 
@@ -129,357 +447,6 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
   "name": "Ignore?",
   "type": "checkbox",
   "checkbox": {}
-}
-```
-
-## Field: Accords
-**Type**: multi_select
-
-```json
-{
-  "id": "%5CxAe",
-  "name": "Accords",
-  "type": "multi_select",
-  "multi_select": {
-    "options": [
-      {
-        "id": "e3ab8de6-0b64-4fe1-80b2-81fad32ee5cf",
-        "name": "leather",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "7625aa96-eb2c-492a-87e9-e041d282e83f",
-        "name": "green",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "111963b8-2f5f-42eb-9f89-ad09addde010",
-        "name": "smoky",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "914ba44f-1124-452a-b0f7-0d5434a58c63",
-        "name": "fresh spicy",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "4a7b6902-2e77-44fa-8c81-ba0bbbffa88f",
-        "name": "amber",
-        "color": "red",
-        "description": null
-      },
-      {
-        "id": "e78fc19d-dba0-43b4-accc-b5c39e29bb3b",
-        "name": "sweet",
-        "color": "red",
-        "description": null
-      },
-      {
-        "id": "c357c1c6-8986-4393-a0f8-d1b9698b5590",
-        "name": "aromatic",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "5220e200-826d-462f-8045-e63a3fa19e26",
-        "name": "warm spicy",
-        "color": "pink",
-        "description": null
-      },
-      {
-        "id": "d3b92df1-f80b-4d7e-bc97-645eacafdb5a",
-        "name": "fruity",
-        "color": "red",
-        "description": null
-      },
-      {
-        "id": "58b8f368-93e6-4c73-8973-4cd0d9d3d307",
-        "name": "woody",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "f1efefa0-281c-415d-91cb-ad7b3dc45fdc",
-        "name": "citrus",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "790bb5c3-f44d-4183-a901-5be01b9402ec",
-        "name": "musky",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "ad96303c-9246-4e31-9e97-168087dbf985",
-        "name": "vanilla",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "21c7ff89-9a62-4f87-a833-c8c1545f2445",
-        "name": "white floral",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "ac3920b4-b110-4690-83d6-1bebd09e7fcc",
-        "name": "Fougere",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "4f075801-8c69-4b03-ab93-20c7ae8f8e84",
-        "name": "lavender",
-        "color": "purple",
-        "description": null
-      },
-      {
-        "id": "f5563fe6-2397-49b2-a092-fb5a0d380ccd",
-        "name": "patchouli",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "53ca127f-4046-42c4-a7a2-b33578de9194",
-        "name": "earthy",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "cbd88afb-dbc1-4718-b12a-54bcfd79479f",
-        "name": "mossy",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "2ee3ce24-4977-42d6-b493-c6fe7d24ce08",
-        "name": "herbal",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "7264ff3f-100a-4d97-b331-804b7b00c545",
-        "name": "caramel",
-        "color": "orange",
-        "description": null
-      },
-      {
-        "id": "3515b338-f419-49a3-8d10-0490b52c1872",
-        "name": "balsamic",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "c98ea53a-20de-452a-83c2-ef943c9bc6d9",
-        "name": "floral",
-        "color": "pink",
-        "description": null
-      },
-      {
-        "id": "ef6b2095-dd49-4b1e-bc92-3fa4d1762edd",
-        "name": "Oriental",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "3dfdcea1-76b2-4dfa-95e0-3ec8e709e42a",
-        "name": "powdery",
-        "color": "pink",
-        "description": null
-      },
-      {
-        "id": "11a463d6-e3c0-4d3d-8884-ad1c2a2b64e6",
-        "name": "oud",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "853689cb-253f-4714-a347-9a0e3c8e249a",
-        "name": "animalic",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "40fdbc93-6bb8-4a74-b232-cd68346a0351",
-        "name": "tobacco",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "2b87360b-b303-495f-90d7-7a718959c951",
-        "name": "Spicy",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "70d9f926-989f-4def-b33e-4f0a7c85cda6",
-        "name": "rose",
-        "color": "pink",
-        "description": null
-      },
-      {
-        "id": "0bb24760-92b8-4123-a82e-3c46e88ff6c2",
-        "name": "cacao",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "5bc7de1f-ab28-44de-b6e4-0e3ee9e35a1f",
-        "name": "fresh",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "d400b73d-a723-41fc-8e7a-565abcdd8993",
-        "name": "honey",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "9aec1e4a-3bd1-4ca8-8016-2fa2e3bb7ffb",
-        "name": "yellow floral",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "0edea415-9a48-40af-87c1-a765a922a0bb",
-        "name": "cherry",
-        "color": "red",
-        "description": null
-      },
-      {
-        "id": "644e1bf7-0109-4e90-b152-84159d5df16b",
-        "name": "Gourmand",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "686194e6-c5ad-4cb8-addf-cf9361c5fc1f",
-        "name": "Chypre",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "077c9a29-dc6f-4e32-8e4d-7106a8e17008",
-        "name": "iris",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "98c4dceb-2459-4ce6-bdd1-7ae1f5a13562",
-        "name": "cinnamon",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "a8cd8a8c-15c5-42b1-a3ee-433038be84f7",
-        "name": "tuberose",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "8be97fd0-e21e-47c0-a75a-2834701967b0",
-        "name": "cannabis",
-        "color": "green",
-        "description": null
-      },
-      {
-        "id": "1aa0b988-6fc1-4bf4-9ad5-4533328ed948",
-        "name": "Musk",
-        "color": "default",
-        "description": null
-      },
-      {
-        "id": "b70dd751-52b8-4b19-b664-49a2af15e22e",
-        "name": "soft spicy",
-        "color": "brown",
-        "description": null
-      },
-      {
-        "id": "e4ce590b-252e-443b-b6e0-7cf5a204ee5f",
-        "name": "ozonic",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "a05409ec-82cd-4ccf-9914-cc9f3a569076",
-        "name": "almond",
-        "color": "orange",
-        "description": null
-      },
-      {
-        "id": "da541026-a799-479f-ab58-ea012225b220",
-        "name": "aldehydic",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "e53d44c3-16ba-428a-8d70-412d1de5ca45",
-        "name": "anis",
-        "color": "pink",
-        "description": null
-      },
-      {
-        "id": "ad08877f-b4fb-4948-85c2-925cec99a5e0",
-        "name": "aquatic",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "4c3e5b9f-b698-401d-8340-b82d64f1db8c",
-        "name": "coconut",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "cbbc660e-befb-44ef-963d-153f386baa3d",
-        "name": "rum",
-        "color": "red",
-        "description": null
-      },
-      {
-        "id": "82801006-db29-49b2-a4eb-61bc43cbcd93",
-        "name": "lactonic",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "de6dec18-996a-4bcf-aae4-e185967bf53b",
-        "name": "metallic",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "7b3b6df8-f18f-480a-abc5-3539da98822f",
-        "name": "tropical",
-        "color": "yellow",
-        "description": null
-      },
-      {
-        "id": "c974d792-d04b-43e5-9251-22ba522ce16e",
-        "name": "salty",
-        "color": "blue",
-        "description": null
-      },
-      {
-        "id": "99474d67-ba57-4c19-b832-6d70223885cb",
-        "name": "vodka",
-        "color": "gray",
-        "description": null
-      },
-      {
-        "id": "afffcc94-896f-4b79-900b-5a6473270728",
-        "name": "nutty",
-        "color": "gray",
-        "description": null
-      }
-    ]
-  }
 }
 ```
 
@@ -581,6 +548,141 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
         "id": "OwLq",
         "name": "Women",
         "color": "purple",
+        "description": null
+      }
+    ]
+  }
+}
+```
+
+## Field: Middle Notes
+**Type**: multi_select
+
+```json
+{
+  "id": "rsAd",
+  "name": "Middle Notes",
+  "type": "multi_select",
+  "multi_select": {
+    "options": [
+      {
+        "id": "f3f02436-7cc0-4ecb-8790-4fd465f138ad",
+        "name": "Neroli",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "996c9a82-9dd9-4061-93c2-c3a1bfc52c84",
+        "name": "Jasmine",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "d73063d7-bcf8-453c-b3ec-dbebb2d8dec5",
+        "name": "Orange Blossom",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "d20eec01-1304-45b1-8ad1-0c9fb17ee881",
+        "name": "Geranium",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "b11abeb0-49f5-4584-8488-13620cbb4e6a",
+        "name": "Madagascar Vanilla",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "c2328913-8374-4ac2-a8be-634cc3e577aa",
+        "name": "Bulgarian Rose",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "8b549e7a-085a-4e26-9eb8-88b989adf8dc",
+        "name": "Iris",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "9b95a954-a713-489a-b79a-16fe6be37e5f",
+        "name": "Patchouli Leaf",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "623a47ca-8836-4b1b-acc4-2023b6f1d00a",
+        "name": "Indian Jasmine",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "0e6e817a-a465-4d64-a125-732889c888a4",
+        "name": "Ambrette (Musk Mallow)",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "8756e009-3d21-4204-9daf-686fbc90147f",
+        "name": "Lavender",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "33e2192b-3d8e-4077-838b-aeceae390068",
+        "name": "Beeswax",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "635c6016-0f3f-4f29-a264-d0dd57eae865",
+        "name": "Leather",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "f20a707e-c886-417d-a6a1-5724ce8cf073",
+        "name": "Lime (Linden Blossom)",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "f371bd25-87b0-49a9-a5a3-9fdb4144acca",
+        "name": "Cyclamen",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "3242159a-755c-4d88-bff1-e51de4b17a7c",
+        "name": "Nutmeg",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "ee4ec454-209f-41bc-87dd-d9dc1b1c7607",
+        "name": "Cinnamon",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "5d9f383f-0b84-403e-b0cc-39c4fdd70ad3",
+        "name": "Rose",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "150ad397-1790-4375-8802-e3a756187890",
+        "name": "Cumin",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "1d818c71-3b03-443d-bce4-4a3070db6795",
+        "name": "Violet",
+        "color": "orange",
         "description": null
       }
     ]
@@ -703,6 +805,183 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
       {
         "id": "b00a7a4a-3f15-4ce0-8b3c-d9245bd8386e",
         "name": "7",
+        "color": "gray",
+        "description": null
+      }
+    ]
+  }
+}
+```
+
+## Field: Accords
+**Type**: multi_select
+
+```json
+{
+  "id": "vxuW",
+  "name": "Accords",
+  "type": "multi_select",
+  "multi_select": {
+    "options": [
+      {
+        "id": "f763b5f8-7308-4551-b9e8-1169c520156f",
+        "name": "citrus",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "d4778b40-a88e-4480-9257-1cc2d01a55cd",
+        "name": "white floral",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "0d53bc3e-0cf0-4ca8-89c3-5ee9fa6cc57a",
+        "name": "fresh spicy",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "c93af5b5-558a-43ae-a119-15d1335c69cc",
+        "name": "amber",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "f60ca949-221e-4322-a3ea-19d7963e827a",
+        "name": "aromatic",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "65cd8133-d4dd-4c8d-9899-9641ce51d528",
+        "name": "fresh",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "4eb405c7-1d76-4422-b4e5-d30a46e6221b",
+        "name": "herbal",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "5917f054-ad95-4bb4-99a1-37e00b23ad9d",
+        "name": "oud",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "092c4693-ae60-490e-b710-9273fb71304a",
+        "name": "woody",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "983f7c3f-d7fa-470c-9d01-426fa0adbc53",
+        "name": "ozonic",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "e1f1aa6f-e4b9-4d2f-822e-513a62255a36",
+        "name": "vanilla",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "2a766e1b-c4fe-4238-bf75-23d496f8c3dc",
+        "name": "powdery",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "b7b26193-7fc5-4c19-b59b-557436e143f0",
+        "name": "musky",
+        "color": "gray",
+        "description": null
+      },
+      {
+        "id": "117fd2ec-7ac1-4207-a49f-22b25cea51cd",
+        "name": "sweet",
+        "color": "brown",
+        "description": null
+      },
+      {
+        "id": "e68ef9dc-cbfb-4eb4-a545-619b8d3c0a47",
+        "name": "fruity",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "947dd4ca-48dc-403e-9c4a-06122f722372",
+        "name": "rose",
+        "color": "orange",
+        "description": null
+      },
+      {
+        "id": "c7890e29-f7bc-4998-8c7a-096f1f4c3bd4",
+        "name": "iris",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "99699dcd-7acf-4b2a-847b-98a28ff6b733",
+        "name": "patchouli",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "831b6684-8938-4296-8211-d521dc8d3ec6",
+        "name": "floral",
+        "color": "pink",
+        "description": null
+      },
+      {
+        "id": "6be67708-9547-4c3f-853f-8ef69094ccc0",
+        "name": "lavender",
+        "color": "blue",
+        "description": null
+      },
+      {
+        "id": "946590fa-b8a3-4134-a106-909c4e4c3d56",
+        "name": "honey",
+        "color": "default",
+        "description": null
+      },
+      {
+        "id": "af914531-c57f-48fa-bff8-5c9d3f976524",
+        "name": "metallic",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "739f725c-ce18-4ae7-8d85-1d7cda2a6cb8",
+        "name": "warm spicy",
+        "color": "yellow",
+        "description": null
+      },
+      {
+        "id": "9ba63c53-b793-455b-8983-d75b80f9449a",
+        "name": "animalic",
+        "color": "green",
+        "description": null
+      },
+      {
+        "id": "0b86ecad-3646-4cc5-8481-e93fc063ee51",
+        "name": "leather",
+        "color": "purple",
+        "description": null
+      },
+      {
+        "id": "0d18634a-d41b-435d-860b-67fcaa92ec5b",
+        "name": "smoky",
+        "color": "red",
+        "description": null
+      },
+      {
+        "id": "dce5d907-4081-44f7-a0d6-2c34c199be83",
+        "name": "balsamic",
         "color": "gray",
         "description": null
       }

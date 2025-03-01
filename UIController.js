@@ -905,13 +905,25 @@ function applyFilter(searchText) {
       .map(s => fold(s).split(/\s+/))
       .flat();
     const typeTokens = fold(notionData.type || '').split(/\s+/);
+    const baseNotesTokens = (notionData.baseNotes || [])
+      .map(note => fold(note).split(/\s+/))
+      .flat();
+    const middleNotesTokens = (notionData.middleNotes || [])
+      .map(note => fold(note).split(/\s+/))
+      .flat();
+    const topNotesTokens = (notionData.topNotes || [])
+      .map(note => fold(note).split(/\s+/))
+      .flat();
 
     const bottleTokens = [
       ...nameTokens,
       ...houseTokens,
       ...accordsTokens,
       ...seasonTokens,
-      ...typeTokens
+      ...typeTokens,
+      ...baseNotesTokens,
+      ...middleNotesTokens,
+      ...topNotesTokens
     ];
 
     const foundAll = searchTokens.every(t => bottleTokens.includes(t));
@@ -1033,6 +1045,19 @@ function updateInfoBoard(bottle) {
   if (data.volume) {
     html += `<div class="info-detail">Volume: ${data.volume} ml</div>`;
   }
+  
+  // Add notes breakdown if available
+  if (data.topNotes && data.topNotes.length > 0) {
+    html += `<div class="info-detail"><strong>Top Notes:</strong> ${data.topNotes.join(', ')}</div>`;
+  }
+  
+  if (data.middleNotes && data.middleNotes.length > 0) {
+    html += `<div class="info-detail"><strong>Middle Notes:</strong> ${data.middleNotes.join(', ')}</div>`;
+  }
+  
+  if (data.baseNotes && data.baseNotes.length > 0) {
+    html += `<div class="info-detail"><strong>Base Notes:</strong> ${data.baseNotes.join(', ')}</div>`;
+  }
 
   // Add position info (like line4 in billboard)
   html += `
@@ -1127,6 +1152,20 @@ function suggestPerfumesForWeather() {
     'mist': ['musky', 'marine', 'ozonic', 'metallic', 'salty']
   };
   
+  // Map weather conditions to preferred note types
+  const weatherNoteTypePreference = {
+    'clear': { top: 2, middle: 1, base: 0 },     // Prefer top notes for clear weather
+    'clouds': { top: 1, middle: 2, base: 1 },    // Prefer middle notes for cloudy weather
+    'rain': { top: 1, middle: 2, base: 1 },      // Prefer middle notes for rainy weather
+    'thunderstorm': { top: 0, middle: 1, base: 2 }, // Prefer base notes for stormy weather
+    'snow': { top: 0, middle: 1, base: 2 },      // Prefer base notes for snowy weather
+    'mist': { top: 1, middle: 2, base: 1 }       // Prefer middle notes for misty weather
+  };
+  
+  // Get the note type preference for current weather
+  const notePreference = weatherNoteTypePreference[weatherCondition] ||
+    { top: 1, middle: 1, base: 1 }; // Default equal preference
+  
   // Get suggested accords based on weather
   const suggestedAccords = weatherAccordMap[weatherCondition] || ['fresh', 'woody', 'citrus'];
   
@@ -1139,6 +1178,9 @@ function suggestPerfumesForWeather() {
     
     const bottleAccords = bottleData.accords || [];
     const bottleSeasons = bottleData.seasons || [];
+    const bottleTopNotes = bottleData.topNotes || [];
+    const bottleMiddleNotes = bottleData.middleNotes || [];
+    const bottleBaseNotes = bottleData.baseNotes || [];
     
     // Calculate match score - higher is better
     let matchScore = 0;
@@ -1148,6 +1190,34 @@ function suggestPerfumesForWeather() {
       const accordLower = accord.toLowerCase();
       if (suggestedAccords.some(sa => accordLower.includes(sa))) {
         matchScore += 3; // Strong match with weather-appropriate accord
+      }
+    }
+    
+    // Note type matching based on weather preference
+    if (bottleTopNotes.length > 0) {
+      // Consider top notes with appropriate weight
+      const hasMatchingTopNotes = bottleTopNotes.some(note =>
+        suggestedAccords.some(sa => note.toLowerCase().includes(sa.toLowerCase())));
+      if (hasMatchingTopNotes) {
+        matchScore += notePreference.top;
+      }
+    }
+    
+    if (bottleMiddleNotes.length > 0) {
+      // Consider middle notes with appropriate weight
+      const hasMatchingMiddleNotes = bottleMiddleNotes.some(note =>
+        suggestedAccords.some(sa => note.toLowerCase().includes(sa.toLowerCase())));
+      if (hasMatchingMiddleNotes) {
+        matchScore += notePreference.middle;
+      }
+    }
+    
+    if (bottleBaseNotes.length > 0) {
+      // Consider base notes with appropriate weight
+      const hasMatchingBaseNotes = bottleBaseNotes.some(note =>
+        suggestedAccords.some(sa => note.toLowerCase().includes(sa.toLowerCase())));
+      if (hasMatchingBaseNotes) {
+        matchScore += notePreference.base;
       }
     }
     
@@ -1267,11 +1337,30 @@ function displaySuggestionBoard(weatherCondition, season) {
     name.className = 'suggestion-name';
     name.textContent = bottleData.name || 'Unnamed Perfume';
     
-    // Add accords if available
+    // Add notes information with accords
     const accords = document.createElement('div');
     accords.className = 'suggestion-accords';
     
-    if (bottleData.accords && bottleData.accords.length > 0) {
+    // Create an array to hold the most relevant notes based on the weather
+    let relevantNotes = [];
+    
+    // Choose which notes to show based on weather condition
+    // For clear, sunny days - show top notes
+    if (weatherCondition === 'clear' && bottleData.topNotes && bottleData.topNotes.length > 0) {
+      relevantNotes = bottleData.topNotes.slice(0, 2).map(note => ({text: note, type: 'top'}));
+    }
+    // For stormy or cold weather - prioritize base notes
+    else if ((weatherCondition === 'thunderstorm' || weatherCondition === 'snow') &&
+             bottleData.baseNotes && bottleData.baseNotes.length > 0) {
+      relevantNotes = bottleData.baseNotes.slice(0, 2).map(note => ({text: note, type: 'base'}));
+    }
+    // For other weather conditions - prioritize middle notes
+    else if (bottleData.middleNotes && bottleData.middleNotes.length > 0) {
+      relevantNotes = bottleData.middleNotes.slice(0, 2).map(note => ({text: note, type: 'middle'}));
+    }
+    
+    // If we don't have notes based on weather preference, fall back to regular accords
+    if (relevantNotes.length === 0 && bottleData.accords && bottleData.accords.length > 0) {
       // Take just first 3 accords to keep it compact
       const topAccords = bottleData.accords.slice(0, 3);
       
@@ -1280,6 +1369,16 @@ function displaySuggestionBoard(weatherCondition, season) {
         accordTag.className = 'suggestion-accord';
         accordTag.textContent = accord;
         accords.appendChild(accordTag);
+      });
+    } else {
+      // Display the relevant notes
+      relevantNotes.forEach(note => {
+        const noteTag = document.createElement('span');
+        noteTag.className = `suggestion-accord note-${note.type}`;
+        noteTag.textContent = note.text;
+        // Add a small indicator of the note type
+        noteTag.title = `${note.type.charAt(0).toUpperCase() + note.type.slice(1)} Note`;
+        accords.appendChild(noteTag);
       });
     }
     
