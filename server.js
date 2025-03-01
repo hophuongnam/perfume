@@ -272,76 +272,9 @@ app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
 
-const dataFilePath = path.join(__dirname, 'perfumeData.txt');
 
-/**
- * Reads perfumeData.txt, updates Notion for any new/unupdated records,
- * and marks them so they won't be updated again.
- */
-async function updatePerfumeData() {
-  try {
-    if (!fs.existsSync(dataFilePath)) {
-      return;
-    }
 
-    const rawData = fs.readFileSync(dataFilePath, 'utf8').trim();
-    if (!rawData) {
-      return;
-    }
 
-    // Split into lines, dropping empty lines
-    const lines = rawData.split('\n').map(line => line.trim()).filter(Boolean);
-
-    // We expect at least 2 lines: (accords...) + final line for URL
-    if (lines.length < 2) {
-      console.log('perfumeData.txt does not contain enough lines for accords and URL.');
-      return;
-    }
-
-    // The last line is the URL; preceding lines are the accords
-    const url = lines.pop();
-    const accords = lines;
-
-    // Query Notion for the page with this URL
-    const resp = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID,
-      filter: {
-        property: 'URL',
-        url: {
-          equals: url
-        }
-      }
-    });
-
-    if (resp.results.length === 0) {
-      console.log(`No matching page found for URL: ${url}`);
-      return;
-    }
-
-    const page = resp.results[0];
-    // Update Accords on Notion
-    await notion.pages.update({
-      page_id: page.id,
-      properties: {
-        Accords: {
-          multi_select: accords.map(a => ({ name: a }))
-        }
-      }
-    });
-
-    console.log(`Notion updated for URL: ${url}`);
-
-    // Mark the file so that next time it won't update again
-    fs.writeFileSync(dataFilePath, '', 'utf8');
-    console.log('perfumeData.txt is cleared to prevent re-update');
-  } catch (error) {
-    console.error('Error updating Notion from file:', error);
-  }
-}
 
  
 
-// Periodically update Notion from the file every minute
-setInterval(() => {
-  updatePerfumeData();
-}, 60000);
