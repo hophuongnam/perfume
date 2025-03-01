@@ -34,10 +34,6 @@ Below is a listing of all properties in the Notion database (ID: ${databaseId}).
       docContent += `## Field: ${propName}
 **Type**: ${prop.type}
 
-\`\`\`json
-${JSON.stringify(prop, null, 2)}
-\`\`\`
-
 `;
     }
 

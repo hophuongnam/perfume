@@ -914,6 +914,9 @@ function applyFilter(searchText) {
     const topNotesTokens = (notionData.topNotes || [])
       .map(note => fold(note).split(/\s+/))
       .flat();
+    const notesTokens = (notionData.notes || [])
+      .map(note => fold(note).split(/\s+/))
+      .flat();
 
     const bottleTokens = [
       ...nameTokens,
@@ -923,7 +926,8 @@ function applyFilter(searchText) {
       ...typeTokens,
       ...baseNotesTokens,
       ...middleNotesTokens,
-      ...topNotesTokens
+      ...topNotesTokens,
+      ...notesTokens
     ];
 
     const foundAll = searchTokens.every(t => bottleTokens.includes(t));
@@ -1058,6 +1062,11 @@ function updateInfoBoard(bottle) {
   if (data.baseNotes && data.baseNotes.length > 0) {
     html += `<div class="info-detail"><strong>Base Notes:</strong> ${data.baseNotes.join(', ')}</div>`;
   }
+  
+  // Add Notes if available
+  if (data.notes && data.notes.length > 0) {
+    html += `<div class="info-detail"><strong>Notes:</strong> ${data.notes.join(', ')}</div>`;
+  }
 
   // Add position info (like line4 in billboard)
   html += `
@@ -1181,6 +1190,7 @@ function suggestPerfumesForWeather() {
     const bottleTopNotes = bottleData.topNotes || [];
     const bottleMiddleNotes = bottleData.middleNotes || [];
     const bottleBaseNotes = bottleData.baseNotes || [];
+    const bottleNotes = bottleData.notes || [];
     
     // Calculate match score - higher is better
     let matchScore = 0;
@@ -1190,6 +1200,15 @@ function suggestPerfumesForWeather() {
       const accordLower = accord.toLowerCase();
       if (suggestedAccords.some(sa => accordLower.includes(sa))) {
         matchScore += 3; // Strong match with weather-appropriate accord
+      }
+    }
+    
+    // Check Notes for matches with suggested accords
+    if (bottleNotes.length > 0) {
+      const hasMatchingNotes = bottleNotes.some(note =>
+        suggestedAccords.some(sa => note.toLowerCase().includes(sa.toLowerCase())));
+      if (hasMatchingNotes) {
+        matchScore += 2; // Moderate boost for matching notes
       }
     }
     

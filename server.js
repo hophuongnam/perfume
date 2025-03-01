@@ -180,6 +180,7 @@ app.get('/api/bottles', async (req, res) => {
         const baseNotesProp = page.properties["Base Notes"];
         const middleNotesProp = page.properties["Middle Notes"];
         const topNotesProp  = page.properties["Top Notes"];
+  const notesProp     = page.properties["Notes"];
 
         // Parse fields
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
@@ -195,6 +196,7 @@ app.get('/api/bottles', async (req, res) => {
         const baseNotesVal = baseNotesProp?.multi_select?.map(opt => opt.name) || [];
         const middleNotesVal = middleNotesProp?.multi_select?.map(opt => opt.name) || [];
         const topNotesVal = topNotesProp?.multi_select?.map(opt => opt.name) || [];
+  const notesVal    = notesProp?.multi_select?.map(opt => opt.name) || [];
 
         return {
           id: page.id,
@@ -210,7 +212,8 @@ app.get('/api/bottles', async (req, res) => {
           url: urlVal,
           baseNotes: baseNotesVal,
           middleNotes: middleNotesVal,
-          topNotes: topNotesVal
+          topNotes: topNotesVal,
+          notes: notesVal
         };
       });
 
