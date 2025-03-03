@@ -41,7 +41,9 @@ let activeBottle = null;
 let hoveredBottle = null;
 let lastFilterMatches = [];
 let suggestedBottles = []; // Track bottles suggested for the weather
+let layeringSuggestions = []; // Track perfume layering suggestions
 let suggestionActive = false; // Track if suggestion mode is active
+let layeringActive = false; // Track if layering suggestion mode is active
 const hoverIntensity = 0.15; // Brightness increase for hover effect
 
 // A minimal class from original code for a multi-step loading UI
@@ -294,6 +296,12 @@ function updateWeatherDisplay(weatherData) {
     weatherText += `Humidity: ${weatherData.humidity}%`;
   }
   
+  // Add location
+  if (weatherData.location) {
+    weatherText += weatherText ? ' | ' : '';
+    weatherText += `Location: ${weatherData.location}`;
+  }
+  
   // Update the weather info element
   weatherInfo.textContent = weatherText || 'Weather data unavailable';
   
@@ -347,6 +355,17 @@ function setupEventListeners() {
       applyFilter(ev.target.value);
     });
   }
+  
+  // Add help about layering in the help window
+  const helpWindow = document.getElementById('helpWindow');
+  if (helpWindow) {
+    const helpList = helpWindow.querySelector('ul');
+    if (helpList) {
+      const layeringHelpItem = document.createElement('li');
+      layeringHelpItem.innerHTML = '<strong>l</strong>: Toggle perfume layering suggestions';
+      helpList.appendChild(layeringHelpItem);
+    }
+  }
 }
 
 /**
@@ -376,9 +395,9 @@ function canHighlightBottle(bottle) {
 function onCanvasMouseDown(event) {
   event.preventDefault();
   
-  // If in suggestion mode, ignore regular bottle interactions
+  // If in suggestion mode or layering mode, ignore regular bottle interactions
   // except for those initiated from the suggestion board
-  if (suggestionActive) {
+  if (suggestionActive || layeringActive) {
     return;
   }
   
@@ -443,8 +462,8 @@ function onCanvasMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
-  // Skip hover effects if filter box is visible or in suggestion mode
-  if (isFilterBoxVisible() || suggestionActive) return;
+  // Skip hover effects if filter box is visible, suggestion mode, or layering mode
+  if (isFilterBoxVisible() || suggestionActive || layeringActive) return;
   
   // Handle drag mode
   if (dragMode && draggingBottle) {
@@ -524,8 +543,8 @@ function onCanvasMouseUp(event) {
     hoveredBottle = null;
   }
 
-  // Skip if filter box visible or in suggestion mode
-  if (isFilterBoxVisible() || suggestionActive) return;
+  // Skip if filter box visible, suggestion mode, or layering mode
+  if (isFilterBoxVisible() || suggestionActive || layeringActive) return;
   if (!dragMode || !draggingBottle) return;
 
   event.preventDefault();
@@ -729,6 +748,13 @@ function onKeyDown(e) {
         clearSuggestions();
       } else {
         suggestPerfumesForWeather();
+      }
+    } else if (key === 'l') {
+      // Toggle layering suggestions mode
+      if (layeringActive) {
+        clearLayeringSuggestions();
+      } else {
+        suggestPerfumeLayering();
       }
     }
   }
@@ -1124,6 +1150,11 @@ function suggestPerfumesForWeather() {
     return;
   }
   
+  // If layering mode is active, clear it first
+  if (layeringActive) {
+    clearLayeringSuggestions();
+  }
+  
   // Clear all bottle status (color and flying) before entering suggestion mode
   clickableBottles.forEach(bottle => {
     const highlightables = bottle.userData.highlightables || [];
@@ -1368,11 +1399,715 @@ function clearSuggestions() {
   suggestedBottles = [];
   suggestionActive = false;
   
+  // If layering mode is active, also clear it
+  if (layeringActive) {
+    clearLayeringSuggestions();
+  }
+  
   // Hide suggestion board
   const suggestionBoard = document.getElementById('suggestionBoard');
   if (suggestionBoard) {
     suggestionBoard.style.display = 'none';
   }
+}
+
+/**
+ * Suggest perfume layering combinations
+ */
+function suggestPerfumeLayering() {
+  // Exit if already in layering mode
+  if (layeringActive) {
+    clearLayeringSuggestions();
+    return;
+  }
+  
+  // Clear all bottle status (color and flying) before entering layering mode
+  clickableBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+    
+    // Reset flying states for ALL bottles, including the active bottle
+    if (bottle.userData.flying) {
+      bottle.userData.flying = false;
+    }
+  });
+  
+  // Reset active bottle since we've stopped all flying bottles
+  activeBottle = null;
+  
+  // Clear weather suggestions if active
+  if (suggestionActive) {
+    clearSuggestions();
+  }
+  
+  // Get current weather from the weather display
+  const weatherInfo = document.getElementById('weatherInfo');
+  let weatherCondition = 'clear'; // Default
+  let currentTemperature = null;
+  
+  if (weatherInfo && weatherInfo.textContent) {
+    const weatherText = weatherInfo.textContent.toLowerCase();
+    
+    // Extract weather condition
+    if (weatherText.includes('cloud')) {
+      weatherCondition = 'clouds';
+    } else if (weatherText.includes('rain') || weatherText.includes('drizzle')) {
+      weatherCondition = 'rain';
+    } else if (weatherText.includes('snow')) {
+      weatherCondition = 'snow';
+    } else if (weatherText.includes('thunder')) {
+      weatherCondition = 'thunderstorm';
+    } else if (weatherText.includes('fog') || weatherText.includes('mist') || weatherText.includes('haze')) {
+      weatherCondition = 'mist';
+    } else if (weatherText.includes('clear')) {
+      weatherCondition = 'clear';
+    }
+    
+    // Try to extract temperature
+    const tempMatch = weatherText.match(/(\d+)°/);
+    if (tempMatch && tempMatch[1]) {
+      currentTemperature = parseInt(tempMatch[1], 10);
+    }
+  }
+  
+  // Determine current season based on Northern Hemisphere
+  const now = new Date();
+  const month = now.getMonth(); // 0-11
+  let currentSeason;
+  
+  if (month >= 2 && month <= 4) {
+    currentSeason = 'Spring';
+  } else if (month >= 5 && month <= 7) {
+    currentSeason = 'Summer';
+  } else if (month >= 8 && month <= 10) {
+    currentSeason = 'Fall';
+  } else {
+    currentSeason = 'Winter';
+  }
+  
+  // Determine current time of day
+  const hour = now.getHours();
+  let currentTimeOfDay;
+  
+  if (hour >= 6 && hour < 12) {
+    currentTimeOfDay = 'Morning';
+  } else if (hour >= 12 && hour < 18) {
+    currentTimeOfDay = 'Afternoon';
+  } else if (hour >= 18 && hour < 22) {
+    currentTimeOfDay = 'Evening';
+  } else {
+    currentTimeOfDay = 'Night';
+  }
+  
+  // Initialize array with valid perfume bottles
+  const validBottles = clickableBottles.filter(bottle => {
+    const bottleData = bottle.userData.notionData;
+    return bottleData && (
+      (bottleData.accords && bottleData.accords.length > 0) ||
+      (bottleData.notes && bottleData.notes.length > 0) ||
+      (bottleData.topNotes && bottleData.topNotes.length > 0) ||
+      (bottleData.middleNotes && bottleData.middleNotes.length > 0) ||
+      (bottleData.baseNotes && bottleData.baseNotes.length > 0)
+    );
+  });
+  
+  // If we don't have enough bottles for layering, show a message
+  if (validBottles.length < 2) {
+    alert("Not enough perfumes with notes/accords information to suggest layering combinations.");
+    return;
+  }
+  
+  // Define complementary note categories (base pairings)
+  const complementaryCategories = {
+    // Fresh notes pair well with warm/sweet notes
+    'fresh': ['vanilla', 'amber', 'woody', 'sweet', 'warm spicy'],
+    'citrus': ['vanilla', 'woody', 'amber', 'spicy'],
+    'marine': ['woody', 'amber', 'vanilla'],
+    'aromatic': ['sweet', 'vanilla', 'amber'],
+    'green': ['floral', 'woody', 'fruity'],
+    
+    // Warm/spicy notes pair well with sweet/woody notes
+    'spicy': ['vanilla', 'amber', 'sweet', 'woody'],
+    'warm spicy': ['vanilla', 'amber', 'sweet', 'fruity'],
+    
+    // Woody notes pair well with many categories
+    'woody': ['floral', 'citrus', 'fresh', 'vanilla', 'spicy', 'leather'],
+    'oud': ['rose', 'vanilla', 'floral', 'spicy'],
+    'sandalwood': ['rose', 'vanilla', 'floral', 'citrus'],
+    
+    // Floral notes pair well with fruity/fresh/woody notes
+    'floral': ['fruity', 'fresh', 'woody', 'green', 'citrus'],
+    'rose': ['oud', 'woody', 'patchouli'],
+    'jasmine': ['vanilla', 'fruity', 'woody'],
+    
+    // Sweet notes pair well with fresh/spicy notes
+    'sweet': ['fresh', 'spicy', 'woody', 'citrus'],
+    'vanilla': ['fruity', 'spicy', 'woody', 'fresh', 'floral'],
+    'amber': ['citrus', 'fresh', 'floral'],
+    
+    // Fruity notes pair well with floral/fresh notes
+    'fruity': ['floral', 'fresh', 'vanilla', 'sweet'],
+    
+    // Earthy notes pair well with woody/spicy notes
+    'earthy': ['woody', 'spicy', 'citrus', 'leather'],
+    'patchouli': ['rose', 'vanilla', 'citrus', 'woody'],
+    'leather': ['spicy', 'woody', 'citrus', 'fresh']
+  };
+  
+  // Define weather-specific preferred note pairings
+  const weatherLayeringPreferences = {
+    'clear': {
+      baseNotes: ['citrus', 'fresh', 'light', 'green'],
+      complementsTo: ['floral', 'aromatic', 'woody'],
+      description: 'Fresh and bright combinations for clear weather'
+    },
+    'clouds': {
+      baseNotes: ['amber', 'warm spicy', 'woody', 'musky'],
+      complementsTo: ['vanilla', 'sweet', 'fruity'],
+      description: 'Cozy layering for cloudy days'
+    },
+    'rain': {
+      baseNotes: ['petrichor', 'green', 'woody', 'earthy'],
+      complementsTo: ['marine', 'ozonic', 'aromatic'],
+      description: 'Rain-amplifying combinations'
+    },
+    'thunderstorm': {
+      baseNotes: ['woody', 'earthy', 'smoky', 'oud'],
+      complementsTo: ['leather', 'incense', 'spicy'],
+      description: 'Dramatic scents for stormy weather'
+    },
+    'snow': {
+      baseNotes: ['vanilla', 'amber', 'warm spicy'],
+      complementsTo: ['woody', 'balsamic', 'sweet'],
+      description: 'Warming layers for cold weather'
+    },
+    'mist': {
+      baseNotes: ['musky', 'ozonic', 'clean'],
+      complementsTo: ['marine', 'dewy', 'light floral'],
+      description: 'Ethereal combinations for misty days'
+    }
+  };
+  
+  // Define season-specific preferred notes
+  const seasonLayeringPreferences = {
+    'Spring': {
+      preferred: ['floral', 'green', 'fresh', 'light', 'dewy', 'fruity'],
+      description: 'Fresh Spring combinations'
+    },
+    'Summer': {
+      preferred: ['citrus', 'aquatic', 'light', 'coconut', 'fresh', 'aromatic'],
+      description: 'Refreshing Summer layers'
+    },
+    'Fall': {
+      preferred: ['woody', 'spicy', 'amber', 'warm', 'leathery', 'smoky'],
+      description: 'Cozy Autumn pairings'
+    },
+    'Winter': {
+      preferred: ['vanilla', 'warm spicy', 'gourmand', 'balsamic', 'sweet', 'resinous'],
+      description: 'Rich Winter combinations'
+    }
+  };
+  
+  // Define time of day preferences
+  const timeOfDayPreferences = {
+    'Morning': {
+      preferred: ['citrus', 'fresh', 'green', 'aromatic', 'light'],
+      description: 'Energizing morning combination'
+    },
+    'Afternoon': {
+      preferred: ['floral', 'fruity', 'fresh', 'clean', 'bright'],
+      description: 'Balanced afternoon pairing'
+    },
+    'Evening': {
+      preferred: ['amber', 'woody', 'spicy', 'warm', 'sweet'],
+      description: 'Sophisticated evening blend'
+    },
+    'Night': {
+      preferred: ['oud', 'vanilla', 'incense', 'musky', 'sensual', 'rich'],
+      description: 'Intimate nighttime layering'
+    }
+  };
+  
+  // Current context for layering suggestions
+  const currentContext = {
+    weather: weatherCondition,
+    season: currentSeason,
+    timeOfDay: currentTimeOfDay,
+    temperature: currentTemperature
+  };
+  
+  // Calculate layering score for each potential pair
+  const pairs = [];
+  
+  for (let i = 0; i < validBottles.length; i++) {
+    for (let j = i + 1; j < validBottles.length; j++) {
+      const bottle1 = validBottles[i];
+      const bottle2 = validBottles[j];
+      const data1 = bottle1.userData.notionData;
+      const data2 = bottle2.userData.notionData;
+      
+      // Get all notes and accords for bottle 1
+      const bottle1Notes = [
+        ...(data1.accords || []),
+        ...(data1.notes || []),
+        ...(data1.topNotes || []),
+        ...(data1.middleNotes || []),
+        ...(data1.baseNotes || [])
+      ].map(note => note.toLowerCase());
+      
+      // Get all notes and accords for bottle 2
+      const bottle2Notes = [
+        ...(data2.accords || []),
+        ...(data2.notes || []),
+        ...(data2.topNotes || []),
+        ...(data2.middleNotes || []),
+        ...(data2.baseNotes || [])
+      ].map(note => note.toLowerCase());
+      
+      let layeringScore = 0;
+      let contextualBoost = "";
+      
+      // 1. Check for complementary notes (base scoring)
+      for (const note1 of bottle1Notes) {
+        for (const [category, complementaryList] of Object.entries(complementaryCategories)) {
+          // If bottle1 has a note in this category
+          if (note1.includes(category)) {
+            // Check if bottle2 has any complementary notes
+            for (const note2 of bottle2Notes) {
+              if (complementaryList.some(comp => note2.includes(comp))) {
+                layeringScore += 3;
+              }
+            }
+          }
+        }
+      }
+      
+      // 2. Check for overlap in notes (some overlap is good, but too much is redundant)
+      const commonNotes = bottle1Notes.filter(note =>
+        bottle2Notes.some(n2 => n2.includes(note) || note.includes(n2))
+      );
+      
+      // Some common notes are good for coherence
+      if (commonNotes.length > 0 && commonNotes.length <= 3) {
+        layeringScore += 2;
+      } else if (commonNotes.length > 3) {
+        // Too much overlap is redundant
+        layeringScore -= (commonNotes.length - 3);
+      }
+      
+      // 3. Weather-based scoring
+      const weatherPref = weatherLayeringPreferences[weatherCondition];
+      if (weatherPref) {
+        // First bottle has weather-appropriate base notes
+        const hasWeatherBaseNotes = bottle1Notes.some(note =>
+          weatherPref.baseNotes.some(wn => note.includes(wn)));
+          
+        // Second bottle has weather-appropriate complements
+        const hasWeatherComplements = bottle2Notes.some(note =>
+          weatherPref.complementsTo.some(wc => note.includes(wc)));
+          
+        if (hasWeatherBaseNotes && hasWeatherComplements) {
+          layeringScore += 8;
+          contextualBoost = weatherPref.description;
+        } else if (hasWeatherBaseNotes || hasWeatherComplements) {
+          layeringScore += 4;
+          contextualBoost = weatherPref.description;
+        }
+        
+        // Also check the reverse combination (bottle2 base + bottle1 complements)
+        const hasReverseBaseNotes = bottle2Notes.some(note =>
+          weatherPref.baseNotes.some(wn => note.includes(wn)));
+          
+        const hasReverseComplements = bottle1Notes.some(note =>
+          weatherPref.complementsTo.some(wc => note.includes(wc)));
+          
+        if (hasReverseBaseNotes && hasReverseComplements) {
+          layeringScore += 8;
+          contextualBoost = weatherPref.description;
+        } else if (hasReverseBaseNotes || hasReverseComplements) {
+          layeringScore += 4;
+          contextualBoost = weatherPref.description;
+        }
+      }
+      
+      // 4. Season-based scoring
+      const seasonPref = seasonLayeringPreferences[currentSeason];
+      if (seasonPref) {
+        // Check if either bottle has notes preferred for this season
+        const bottle1SeasonMatch = bottle1Notes.some(note =>
+          seasonPref.preferred.some(sp => note.includes(sp)));
+          
+        const bottle2SeasonMatch = bottle2Notes.some(note =>
+          seasonPref.preferred.some(sp => note.includes(sp)));
+          
+        if (bottle1SeasonMatch && bottle2SeasonMatch) {
+          layeringScore += 6;
+          if (!contextualBoost) contextualBoost = seasonPref.description;
+        } else if (bottle1SeasonMatch || bottle2SeasonMatch) {
+          layeringScore += 3;
+          if (!contextualBoost) contextualBoost = seasonPref.description;
+        }
+        
+        // Also check against bottle data's seasons if available
+        if (data1.seasons && data1.seasons.includes(currentSeason)) {
+          layeringScore += 3;
+        }
+        
+        if (data2.seasons && data2.seasons.includes(currentSeason)) {
+          layeringScore += 3;
+        }
+      }
+      
+      // 5. Time of day scoring
+      const timePref = timeOfDayPreferences[currentTimeOfDay];
+      if (timePref) {
+        // Check if either bottle has notes preferred for this time of day
+        const bottle1TimeMatch = bottle1Notes.some(note =>
+          timePref.preferred.some(tp => note.includes(tp)));
+          
+        const bottle2TimeMatch = bottle2Notes.some(note =>
+          timePref.preferred.some(tp => note.includes(tp)));
+          
+        if (bottle1TimeMatch && bottle2TimeMatch) {
+          layeringScore += 4;
+          if (!contextualBoost) contextualBoost = timePref.description;
+        } else if (bottle1TimeMatch || bottle2TimeMatch) {
+          layeringScore += 2;
+          if (!contextualBoost) contextualBoost = timePref.description;
+        }
+      }
+      
+      // 6. Temperature adjustments (if available)
+      if (currentTemperature !== null) {
+        // For higher temperatures, favor fresh/light combinations
+        if (currentTemperature > 25) { // Above 25°C/77°F
+          const hasFreshNotes = bottle1Notes.some(note =>
+            ['fresh', 'citrus', 'light', 'aquatic', 'marine'].some(n => note.includes(n))) ||
+            bottle2Notes.some(note =>
+            ['fresh', 'citrus', 'light', 'aquatic', 'marine'].some(n => note.includes(n)));
+            
+          if (hasFreshNotes) {
+            layeringScore += 3;
+            if (!contextualBoost) contextualBoost = "Refreshing for warm temperature";
+          }
+        }
+        // For lower temperatures, favor warm/spicy combinations
+        else if (currentTemperature < 15) { // Below 15°C/59°F
+          const hasWarmNotes = bottle1Notes.some(note =>
+            ['warm', 'spicy', 'vanilla', 'amber', 'woody'].some(n => note.includes(n))) ||
+            bottle2Notes.some(note =>
+            ['warm', 'spicy', 'vanilla', 'amber', 'woody'].some(n => note.includes(n)));
+            
+          if (hasWarmNotes) {
+            layeringScore += 3;
+            if (!contextualBoost) contextualBoost = "Warming for cool temperature";
+          }
+        }
+      }
+      
+      // 7. Adjust score based on perfume type contrast
+      if (data1.type && data2.type) {
+        // Different types often layer well (men's + women's)
+        if (data1.type !== data2.type) {
+          layeringScore += 2;
+        }
+      }
+      
+      // 8. If houses are different, slightly increase score for variety
+      if (data1.house && data2.house && data1.house !== data2.house) {
+        layeringScore += 1;
+      }
+      
+      // 9. If both have concentrations, consider them
+      if (data1.concentration && data2.concentration) {
+        // EDP + EDT often layer well (different evaporation rates)
+        if (
+          (data1.concentration.includes('Parfum') && data2.concentration.includes('Toilette')) ||
+          (data1.concentration.includes('Toilette') && data2.concentration.includes('Parfum'))
+        ) {
+          layeringScore += 2;
+        }
+      }
+      
+      // The contextual boost will be stored when creating the pair object
+      
+      // Only include pairs with positive scores
+      if (layeringScore > 0) {
+        // Create the pair object with all relevant information
+        const pairObject = {
+          bottle1,
+          bottle2,
+          score: layeringScore,
+          commonNotes: commonNotes,
+          description: generateLayeringDescription(bottle1Notes, bottle2Notes, commonNotes),
+          weatherContext: {
+            condition: weatherCondition,
+            season: currentSeason,
+            timeOfDay: currentTimeOfDay,
+            temperature: currentTemperature
+          }
+        };
+        
+        // Add contextual boost if available
+        if (contextualBoost) {
+          pairObject.contextBoost = contextualBoost;
+        }
+        
+        pairs.push(pairObject);
+      }
+    }
+  }
+  
+  // Sort by score (highest first)
+  pairs.sort((a, b) => b.score - a.score);
+  
+  // Store top layering suggestions
+  layeringSuggestions = pairs.slice(0, 4);
+  
+  // Display layering suggestions in the board
+  displayLayeringSuggestionBoard();
+  
+  // Set layering mode active
+  layeringActive = true;
+  
+  // Hide info board if visible
+  hideInfoBoard();
+}
+
+/**
+ * Generate a description of why these perfumes layer well together
+ */
+function generateLayeringDescription(notes1, notes2, commonNotes) {
+  // Categories to highlight in the description
+  const categories = [
+    { name: 'fresh', keywords: ['fresh', 'citrus', 'marine', 'aquatic', 'green', 'ozonic'] },
+    { name: 'floral', keywords: ['floral', 'rose', 'jasmine', 'lily', 'lavender', 'violet'] },
+    { name: 'woody', keywords: ['woody', 'sandalwood', 'cedar', 'vetiver', 'pine', 'oud'] },
+    { name: 'sweet', keywords: ['sweet', 'vanilla', 'honey', 'caramel', 'amber', 'coconut'] },
+    { name: 'spicy', keywords: ['spicy', 'warm spicy', 'cinnamon', 'pepper', 'cardamom', 'clove'] },
+    { name: 'fruity', keywords: ['fruity', 'apple', 'pear', 'cherry', 'peach', 'berry'] },
+    { name: 'earthy', keywords: ['earthy', 'patchouli', 'moss', 'soil', 'petrichor', 'mushroom'] }
+  ];
+  
+  // Find categories for each perfume
+  const categories1 = findCategories(notes1, categories);
+  const categories2 = findCategories(notes2, categories);
+  
+  // Generate different kinds of descriptions
+  const descriptions = [];
+  
+  // Common notes
+  if (commonNotes.length > 0) {
+    descriptions.push(`Shared ${commonNotes.length === 1 ? 'note' : 'notes'} of ${joinWithAnd(commonNotes)} creates harmony`);
+  }
+  
+  // Complementary categories
+  const uniqueCategories1 = categories1.filter(c => !categories2.includes(c));
+  const uniqueCategories2 = categories2.filter(c => !categories1.includes(c));
+  
+  if (uniqueCategories1.length > 0 && uniqueCategories2.length > 0) {
+    descriptions.push(`${joinWithAnd(uniqueCategories1)} meets ${joinWithAnd(uniqueCategories2)}`);
+  }
+  
+  // If no specific description generated, use a generic one
+  if (descriptions.length === 0) {
+    descriptions.push("Complementary note profiles");
+  }
+  
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+}
+
+/**
+ * Find categories that apply to a set of notes
+ */
+function findCategories(notes, categories) {
+  const foundCategories = [];
+  
+  for (const category of categories) {
+    for (const note of notes) {
+      if (category.keywords.some(keyword => note.includes(keyword))) {
+        if (!foundCategories.includes(category.name)) {
+          foundCategories.push(category.name);
+        }
+      }
+    }
+  }
+  
+  return foundCategories;
+}
+
+/**
+ * Helper function to join array elements with commas and "and"
+ */
+function joinWithAnd(arr) {
+  if (arr.length === 0) return '';
+  if (arr.length === 1) return arr[0];
+  if (arr.length === 2) return `${arr[0]} and ${arr[1]}`;
+  
+  return arr.slice(0, -1).join(', ') + ', and ' + arr[arr.length - 1];
+}
+
+/**
+ * Display layering suggestion board with perfume pairs
+ */
+function displayLayeringSuggestionBoard() {
+  const suggestionBoard = document.getElementById('suggestionBoard');
+  const suggestionBoardContent = document.getElementById('suggestionBoardContent');
+  const suggestionBoardHeader = document.getElementById('suggestionBoardHeader');
+  const suggestionBoardFooter = document.getElementById('suggestionBoardFooter');
+  
+  if (!suggestionBoard || !suggestionBoardContent || !suggestionBoardHeader) return;
+  
+  // Clear previous content
+  suggestionBoardContent.innerHTML = '';
+  
+  // Update header with current context
+  if (layeringSuggestions.length > 0 && layeringSuggestions[0].weatherContext) {
+    const context = layeringSuggestions[0].weatherContext;
+    suggestionBoardHeader.innerHTML = `Perfume Layering Suggestions • ${context.condition.charAt(0).toUpperCase() + context.condition.slice(1)} • ${context.season} • ${context.timeOfDay}`;
+  } else {
+    suggestionBoardHeader.innerHTML = 'Perfume Layering Suggestions';
+  }
+  
+  // Update footer
+  if (suggestionBoardFooter) {
+    suggestionBoardFooter.textContent = 'Press L to exit layering mode';
+  }
+  
+  // Create layering suggestion items
+  layeringSuggestions.forEach(suggestion => {
+    const data1 = suggestion.bottle1.userData.notionData;
+    const data2 = suggestion.bottle2.userData.notionData;
+    
+    const suggestionItem = document.createElement('div');
+    suggestionItem.className = 'suggestion-item layering-suggestion';
+    suggestionItem.style.display = 'flex';
+    suggestionItem.style.flexDirection = 'column';
+    suggestionItem.style.width = '300px';
+    suggestionItem.style.maxWidth = '300px';
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'layering-title';
+    titleDiv.innerHTML = `<strong>${data1.house || ''} ${data1.name || ''}</strong><br>+<br><strong>${data2.house || ''} ${data2.name || ''}</strong>`;
+    titleDiv.style.marginBottom = '8px';
+    
+    const descriptionDiv = document.createElement('div');
+    descriptionDiv.className = 'layering-description';
+    
+    // Use contextBoost if available, otherwise use general description
+    if (suggestion.contextBoost) {
+      descriptionDiv.textContent = suggestion.contextBoost;
+      descriptionDiv.style.color = '#1E5AAB'; // Highlight context-specific suggestions
+    } else {
+      descriptionDiv.textContent = suggestion.description || 'Complementary notes';
+      descriptionDiv.style.color = '#555';
+    }
+    
+    descriptionDiv.style.fontSize = '12px';
+    descriptionDiv.style.fontStyle = 'italic';
+    
+    const commonNotesDiv = document.createElement('div');
+    commonNotesDiv.className = 'layering-common-notes';
+    if (suggestion.commonNotes && suggestion.commonNotes.length > 0) {
+      commonNotesDiv.innerHTML = `<span style="font-size:12px; color:#777;">Common notes: ${suggestion.commonNotes.join(', ')}</span>`;
+    }
+    
+    suggestionItem.appendChild(titleDiv);
+    suggestionItem.appendChild(descriptionDiv);
+    suggestionItem.appendChild(commonNotesDiv);
+    
+    // Add click handler to select both bottles
+    suggestionItem.addEventListener('click', () => {
+      // Determine if we need to return any previously flying bottles
+      const previousSource = sourceBottle;
+      const previousTarget = targetBottle;
+      
+      // Clear any active bottle
+      if (activeBottle) {
+        activeBottle.userData.flying = false;
+        activeBottle = null;
+      }
+      
+      // Return previous bottles if they're not part of the new selection
+      if (previousSource &&
+          previousSource !== suggestion.bottle1 &&
+          previousSource !== suggestion.bottle2) {
+        previousSource.userData.flying = false;
+        revertMark(previousSource);
+      }
+      
+      if (previousTarget &&
+          previousTarget !== suggestion.bottle1 &&
+          previousTarget !== suggestion.bottle2) {
+        previousTarget.userData.flying = false;
+        revertMark(previousTarget);
+      }
+      
+      // Mark the two bottles as source and target
+      markAsSource(suggestion.bottle1);
+      markAsTarget(suggestion.bottle2);
+      
+      // Make both bottles fly
+      suggestion.bottle1.userData.flying = true;
+      suggestion.bottle2.userData.flying = true;
+      
+      // Update the info board for the first bottle
+      updateInfoBoard(suggestion.bottle1);
+    });
+    
+    suggestionBoardContent.appendChild(suggestionItem);
+  });
+  
+  // Show the board
+  suggestionBoard.style.display = 'block';
+}
+
+/**
+ * Clear all layering suggestions and return bottles to original state
+ */
+function clearLayeringSuggestions() {
+  // Reset all bottles to their original state
+  clickableBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+    
+    // Stop flying and return to original position
+    if (bottle.userData.flying) {
+      bottle.userData.flying = false;
+      // Make sure the bottle is at its original position
+      if (bottle.userData.initialY !== undefined) {
+        bottle.position.y = bottle.userData.initialY;
+      }
+    }
+  });
+  
+  // Clear source and target bottles
+  if (sourceBottle) {
+    revertMark(sourceBottle);
+    sourceBottle = null;
+  }
+  
+  if (targetBottle) {
+    revertMark(targetBottle);
+    targetBottle = null;
+  }
+  
+  // Clear the suggestions array
+  layeringSuggestions = [];
+  layeringActive = false;
+  
+  // Hide suggestion board
+  const suggestionBoard = document.getElementById('suggestionBoard');
+  if (suggestionBoard) {
+    suggestionBoard.style.display = 'none';
+  }
+  
+  // Hide info board
+  hideInfoBoard();
 }
 
 /**
