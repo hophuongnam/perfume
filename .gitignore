@@ -1,4 +1,5 @@
 # General
+venv/
 .sync/
 .DS_Store
 Thumbs.db
@@ -11,6 +12,7 @@ perfumeData.txt
 aider.key
 .aider.chat.history.md
 .aider.input.history
+.aider.tags.cache.v3/
 cache.db
 
 # Node.js
