@@ -1,0 +1,55 @@
+Perfume Bottle Seasonal Swaps - Spring 2025
+
+Total bottles in plane 1: 231
+More suitable for spring/summer: 161
+Less suitable for spring/summer: 70
+Misplaced bottles: 67 (22 in front rows, 45 in back rows)
+
+Recommended Swaps (Front Row to Back Row):
+
+1. From: Russian Tea (Masque Milano) - Row 1, Column 9
+   To: Vodka on the Rocks (Kilian) - Row 8, Column 28
+
+2. From: Oud Ispahan (Dior) - Row 1, Column 28
+   To: Renaissance (Xerjoff) - Row 8, Column 12
+
+3. From: Le Lion (Chanel) - Row 1, Column 18
+   To: Megamare (Orto Parisi) - Row 8, Column 15
+
+4. From: Kouros (Yves Saint Laurent) - Row 2, Column 18
+   To: Torino21 (Xerjoff) - Row 8, Column 29
+
+5. From: Patchouli Absolu (Tom Ford) - Row 2, Column 15
+   To: Escentric 05 (Escentric Molecules) - Row 6, Column 26
+
+6. From: Coromandel (Chanel) - Row 2, Column 12
+   To: Squid (Zoologist) - Row 5, Column 28
+
+7. From: Back to Black (Kilian) - Row 2, Column 11
+   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Row 8, Column 14
+
+8. From: Delina Exclusif (Parfums de Marly) - Row 3, Column 23
+   To: H24 (Hermès) - Row 5, Column 13
+
+9. From: Blanche Bête (Les Liquides Imaginaires) - Row 3, Column 24
+   To: Percival (Parfums de Marly) - Row 4, Column 7
+
+10. From: More Than Words (Xerjoff) - Row 3, Column 28
+    To: Himalaya (Creed) - Row 5, Column 10
+
+11. From: Material (Amouage) - Row 3, Column 3
+    To: Fiero (Xerjoff) - Row 8, Column 2
+
+12. From: Black Gold (Mancera) - Row 5, Column 24
+    To: Imagination (Louis Vuitton) - Row 1, Column 20
+
+13. From: Ivory Route (Xerjoff) - Row 6, Column 25
+    To: Wulóng Chá (Nishane) - Row 2, Column 23
+
+14. From: Italica (Xerjoff) - Row 6, Column 23
+    To: Sicily (Mancera) - Row 2, Column 22
+
+15. From: Lira (Xerjoff) - Row 6, Column 21
+    To: Aoud Lemon Mint (Mancera) - Row 2, Column 19
+
+Notes: This swap plan is based on analysis of bottles in plane 1. It focuses on swapping less seasonally suitable bottles in the front rows with more suitable bottles in the back rows. Front rows are 1-4, back rows are 5-8. The goal is to have spring/summer appropriate bottles in the front rows for easier access during the current season.
