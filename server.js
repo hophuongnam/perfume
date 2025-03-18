@@ -34,6 +34,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'perfume.html'));
 });
 
+// Serve bottle-swaps.html for swap management
+app.get('/swaps', (req, res) => {
+  res.sendFile(path.join(__dirname, 'bottle-swaps.html'));
+});
+
 // Provide config data to the frontend
 app.get('/api/config', (req, res) => {
   res.json(config);

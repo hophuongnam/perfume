@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Perfume Bottle Swaps</title>
+  <style>
+    :root {
+      --primary-color: #4F7CAC;
+      --secondary-color: #8BBCCC;
+      --dark-bg: #162239;
+      --light-bg: #f8f9fa;
+      --success-color: #28a745;
+      --pending-color: #ffc107;
+      --text-color: #333;
+      --light-text: #f8f9fa;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--light-bg);
+      padding: 1rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: var(--dark-bg);
+      color: var(--light-text);
+      border-radius: 8px;
+    }
+    
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+    
+    .stat-item {
+      text-align: center;
+      flex: 1 1 auto;
+      min-width: 100px;
+    }
+    
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+    
+    .swap-container {
+      max-width: 100%;
+    }
+    
+    .swap-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .swap-card.completed {
+      background-color: rgba(40, 167, 69, 0.1);
+      border-left: 4px solid var(--success-color);
+    }
+    
+    .swap-card.in-progress {
+      background-color: rgba(255, 193, 7, 0.1);
+      border-left: 4px solid var(--pending-color);
+    }
+    
+    .swap-header {
+      padding: 0.8rem;
+      background-color: #f1f5f9;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .swap-number {
+      background-color: var(--primary-color);
+      color: white;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      font-size: 0.9rem;
+    }
+    
+    .swap-body {
+      padding: 0.8rem;
+    }
+    
+    .swap-item {
+      margin-bottom: 0.8rem;
+      position: relative;
+    }
+    
+    .swap-direction {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.3rem;
+      font-weight: bold;
+    }
+    
+    .direction-label {
+      background-color: var(--dark-bg);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+    }
+    
+    .perfume-name {
+      font-weight: bold;
+    }
+    
+    .perfume-house {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    
+    .location {
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 0.2rem;
+    }
+    
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      gap: 0.5rem;
+    }
+    
+    button {
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+      flex: 1;
+    }
+    
+    .btn-primary:hover {
+      background-color: #3a5d82;
+    }
+    
+    .btn-secondary {
+      background-color: #e9ecef;
+      color: #495057;
+      flex: 0 0 auto;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #dde2e6;
+    }
+    
+    .swap-arrow {
+      display: flex;
+      justify-content: center;
+      margin: 0.5rem 0;
+      color: var(--secondary-color);
+    }
+    
+    .swap-arrow svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.3s ease;
+      visibility: hidden;
+      opacity: 0;
+    }
+    
+    .loading-overlay.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .toast.success {
+      background-color: var(--success-color);
+    }
+    
+    .toast.error {
+      background-color: #dc3545;
+    }
+    
+    .toast.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Media Queries for larger screens */
+    @media (min-width: 768px) {
+      body {
+        padding: 2rem;
+      }
+      
+      .swap-container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      
+      .swap-card {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .swap-body {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .swap-items {
+        display: flex;
+        gap: 1rem;
+      }
+      
+      .swap-item {
+        flex: 1;
+      }
+      
+      .swap-arrow {
+        transform: rotate(90deg);
+      }
+      
+      @media (min-width: 768px) {
+        .swap-arrow {
+          transform: rotate(0);
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Perfume Bottle Swaps</h1>
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="total-bottles">-</div>
+        <div class="stat-label">Total Bottles</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="spring-suitable">-</div>
+        <div class="stat-label">Spring Suitable</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="less-suitable">-</div>
+        <div class="stat-label">Less Suitable</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="misplaced">-</div>
+        <div class="stat-label">Misplaced</div>
+      </div>
+    </div>
+  </header>
+  
+  <main class="swap-container" id="swap-list">
+    <!-- Swap cards will be inserted here dynamically -->
+    <div class="loading-message">Loading swaps...</div>
+  </main>
+  
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // DOM elements
+      const swapList = document.getElementById('swap-list');
+      const loadingOverlay = document.getElementById('loading-overlay');
+      const toast = document.getElementById('toast');
+      
+      // Stats elements
+      const totalBottlesEl = document.getElementById('total-bottles');
+      const springSuitableEl = document.getElementById('spring-suitable');
+      const lessSuitableEl = document.getElementById('less-suitable');
+      const misplacedEl = document.getElementById('misplaced');
+      
+      // State to track completed swaps
+      const completedSwaps = new Set();
+      
+      // Function to show loading overlay
+      function showLoading() {
+        loadingOverlay.classList.add('visible');
+      }
+      
+      // Function to hide loading overlay
+      function hideLoading() {
+        loadingOverlay.classList.remove('visible');
+      }
+      
+      // Function to show toast notifications
+      function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' visible';
+        
+        setTimeout(() => {
+          toast.classList.remove('visible');
+        }, 3000);
+      }
+      
+      // Function to fetch and parse the bottleSwaps.txt file
+      async function fetchSwapsList() {
+        try {
+          showLoading();
+          const response = await fetch('bottleSwaps.txt');
+          if (!response.ok) {
+            throw new Error('Failed to load swap list');
+          }
+          
+          const text = await response.text();
+          const swaps = parseSwapsText(text);
+          renderSwapList(swaps);
+          hideLoading();
+        } catch (error) {
+          console.error('Error fetching swaps:', error);
+          showToast('Failed to load swap list: ' + error.message, 'error');
+          hideLoading();
+        }
+      }
+      
+      // Function to parse the bottleSwaps.txt content
+      function parseSwapsText(text) {
+        const lines = text.split('\n');
+        const swaps = [];
+        let stats = {
+          totalBottles: 0,
+          springSuitable: 0,
+          lessSuitable: 0,
+          misplaced: 0
+        };
+        
+        let currentSwap = null;
+        
+        lines.forEach(line => {
+          // Parse stats
+          if (line.startsWith('Total bottles')) {
+            stats.totalBottles = parseInt(line.match(/\d+/)[0]) || 0;
+          } else if (line.startsWith('More suitable')) {
+            stats.springSuitable = parseInt(line.match(/\d+/)[0]) || 0;
+          } else if (line.startsWith('Less suitable')) {
+            stats.lessSuitable = parseInt(line.match(/\d+/)[0]) || 0;
+          } else if (line.startsWith('Misplaced bottles')) {
+            stats.misplaced = parseInt(line.match(/\d+/)[0]) || 0;
+          }
+          
+          // Parse swap entries
+          const swapNumberMatch = line.match(/^\d+\.\s+From:/);
+          if (swapNumberMatch) {
+            if (currentSwap) {
+              swaps.push(currentSwap);
+            }
+            
+            const swapNumber = parseInt(line.match(/^\d+/)[0]);
+            currentSwap = {
+              number: swapNumber,
+              from: { name: '', house: '', location: '' },
+              to: { name: '', house: '', location: '' }
+            };
+            
+            // Parse the "From" perfume
+            const fromMatch = line.match(/From:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            if (fromMatch) {
+              const fullName = fromMatch[1];
+              const nameMatch = fullName.match(/(.*)\s+\((.*)\)/);
+              
+              if (nameMatch) {
+                currentSwap.from.name = nameMatch[1].trim();
+                currentSwap.from.house = nameMatch[2].trim();
+              } else {
+                currentSwap.from.name = fullName.trim();
+              }
+              
+              currentSwap.from.location = {
+                row: parseInt(fromMatch[2]),
+                column: parseInt(fromMatch[3])
+              };
+            }
+          } else if (line.match(/^\s+To:/)) {
+            // Parse the "To" perfume
+            const toMatch = line.match(/To:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            if (toMatch && currentSwap) {
+              const fullName = toMatch[1];
+              const nameMatch = fullName.match(/(.*)\s+\((.*)\)/);
+              
+              if (nameMatch) {
+                currentSwap.to.name = nameMatch[1].trim();
+                currentSwap.to.house = nameMatch[2].trim();
+              } else {
+                currentSwap.to.name = fullName.trim();
+              }
+              
+              currentSwap.to.location = {
+                row: parseInt(toMatch[2]),
+                column: parseInt(toMatch[3])
+              };
+            }
+          }
+        });
+        
+        // Add the last swap if exists
+        if (currentSwap) {
+          swaps.push(currentSwap);
+        }
+        
+        // Update the stats in the UI
+        updateStats(stats);
+        
+        return swaps;
+      }
+      
+      // Function to update the stats in the UI
+      function updateStats(stats) {
+        totalBottlesEl.textContent = stats.totalBottles;
+        springSuitableEl.textContent = stats.springSuitable;
+        lessSuitableEl.textContent = stats.lessSuitable;
+        misplacedEl.textContent = stats.misplaced;
+      }
+      
+      // Function to render the swap list in the UI
+      function renderSwapList(swaps) {
+        if (!swaps || swaps.length === 0) {
+          swapList.innerHTML = '<p>No swaps available.</p>';
+          return;
+        }
+        
+        swapList.innerHTML = '';
+        
+        swaps.forEach(swap => {
+          const isCompleted = completedSwaps.has(swap.number);
+          const swapCard = document.createElement('div');
+          swapCard.className = `swap-card ${isCompleted ? 'completed' : ''}`;
+          swapCard.dataset.swapId = swap.number;
+          
+          swapCard.innerHTML = `
+            <div class="swap-header">
+              <div class="swap-number">${swap.number}</div>
+              <div>${isCompleted ? 'Completed' : 'Pending'}</div>
+            </div>
+            <div class="swap-body">
+              <div class="swap-items">
+                <div class="swap-item">
+                  <div class="swap-direction">
+                    <span class="direction-label">FROM</span>
+                    Front Rows
+                  </div>
+                  <div class="perfume-name">${swap.from.name}</div>
+                  <div class="perfume-house">${swap.from.house}</div>
+                  <div class="location">Row ${swap.from.location.row}, Column ${swap.from.location.column}</div>
+                </div>
+                
+                <div class="swap-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </div>
+                
+                <div class="swap-item">
+                  <div class="swap-direction">
+                    <span class="direction-label">TO</span>
+                    Back Rows
+                  </div>
+                  <div class="perfume-name">${swap.to.name}</div>
+                  <div class="perfume-house">${swap.to.house}</div>
+                  <div class="location">Row ${swap.to.location.row}, Column ${swap.to.location.column}</div>
+                </div>
+              </div>
+              
+              <div class="actions">
+                <button class="btn-primary swap-button" ${isCompleted ? 'disabled' : ''}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4v16h16"></path>
+                    <path d="M4 20l7-7"></path>
+                    <path d="M22 6l-3-3-7 7"></path>
+                    <path d="M14 4h5v5"></path>
+                  </svg>
+                  ${isCompleted ? 'Completed' : 'Execute Swap'}
+                </button>
+                <button class="btn-secondary details-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          `;
+          
+          swapList.appendChild(swapCard);
+          
+          // Add event listener to the swap button
+          const swapButton = swapCard.querySelector('.swap-button');
+          if (swapButton && !isCompleted) {
+            swapButton.addEventListener('click', () => {
+              executeSwap(swap);
+            });
+          }
+          
+          // Add event listener to the details button
+          const detailsButton = swapCard.querySelector('.details-button');
+          if (detailsButton) {
+            detailsButton.addEventListener('click', () => {
+              showSwapDetails(swap);
+            });
+          }
+        });
+      }
+      
+      // Function to execute a bottle swap
+      async function executeSwap(swap) {
+        try {
+          showLoading();
+          
+          // First, get all bottles from Notion to find the correct IDs
+          const bottles = await fetchAllBottles();
+          
+          // Find the bottles to swap based on location
+          const fromBottle = findBottleByLocation(bottles, 1, swap.from.location.row, swap.from.location.column);
+          const toBottle = findBottleByLocation(bottles, 1, swap.to.location.row, swap.to.location.column);
+          
+          if (!fromBottle || !toBottle) {
+            throw new Error('One or both bottles not found in Notion database');
+          }
+          
+          // Perform the swap in Notion
+          await updateBottleLocation(fromBottle.id, 1, swap.to.location.row, swap.to.location.column);
+          await updateBottleLocation(toBottle.id, 1, swap.from.location.row, swap.from.location.column);
+          
+          // Mark as completed
+          completedSwaps.add(swap.number);
+          
+          // Refresh the UI
+          const swapCard = document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`);
+          if (swapCard) {
+            swapCard.classList.add('completed');
+            const swapButton = swapCard.querySelector('.swap-button');
+            if (swapButton) {
+              swapButton.textContent = 'Completed';
+              swapButton.disabled = true;
+            }
+          }
+          
+          showToast(`Swap #${swap.number} completed successfully`);
+        } catch (error) {
+          console.error('Error executing swap:', error);
+          showToast('Failed to execute swap: ' + error.message, 'error');
+        } finally {
+          hideLoading();
+        }
+      }
+      
+      // Function to fetch all bottles from Notion
+      async function fetchAllBottles() {
+        const response = await fetch('/api/bottles');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch bottles: ${response.status}`);
+        }
+        return await response.json();
+      }
+      
+      // Function to find a bottle by its location in a specific plane
+      function findBottleByLocation(bottles, plane, row, column) {
+        return bottles.find(bottle => 
+          bottle.plane === plane && 
+          bottle.row === row && 
+          bottle.column === column
+        );
+      }
+      
+      // Function to update a bottle's location in Notion
+      async function updateBottleLocation(pageId, plane, row, column) {
+        const response = await fetch('/api/updateBottleSlot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ pageId, plane, row, column })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Failed to update bottle: ${response.status}`);
+        }
+        
+        return await response.json();
+      }
+      
+      // Function to show swap details (could be expanded in the future)
+      function showSwapDetails(swap) {
+        alert(`Swap Details:\n\nFrom: ${swap.from.name} (${swap.from.house})\nTo: ${swap.to.name} (${swap.to.house})\n\nThis will move front row perfumes that are less suitable for spring/summer to the back rows, and bring more suitable perfumes to the front for easier access.`);
+      }
+      
+      // Initialize by fetching the swaps list
+      fetchSwapsList();
+    });
+  </script>
+</body>
+</html>

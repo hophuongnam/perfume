@@ -5,6 +5,7 @@
 ├── RackBuilder.js
 ├── SceneManager.js
 ├── UIController.js
+├── bottleSwaps.txt
 ├── codemcp.toml
 ├── package-lock.json
 ├── package.json
@@ -20,17 +21,17 @@
 
 --- File Tree Summary ---
 Total Directories: 1
-Total Files: 16
-Total Size: 222881 bytes
+Total Files: 17
+Total Size: 225029 bytes
 
 File Type Distribution:
-  JavaScript: 8 files (50.0%, 154478 bytes)
-  Markdown: 2 files (12.5%, 1088 bytes)
-  JSON: 2 files (12.5%, 45267 bytes)
-  TOML: 1 files (6.2%, 843 bytes)
-  HTML: 1 files (6.2%, 15939 bytes)
-  Text: 1 files (6.2%, 4676 bytes)
-  Shell Script: 1 files (6.2%, 590 bytes)
+  JavaScript: 8 files (47.1%, 154478 bytes)
+  Markdown: 2 files (11.8%, 1088 bytes)
+  Text: 2 files (11.8%, 6824 bytes)
+  JSON: 2 files (11.8%, 45267 bytes)
+  TOML: 1 files (5.9%, 843 bytes)
+  HTML: 1 files (5.9%, 15939 bytes)
+  Shell Script: 1 files (5.9%, 590 bytes)
 </file_map>
 
 <dependency_map>
