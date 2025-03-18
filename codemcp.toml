@@ -1,0 +1,15 @@
+project_prompt = """
+Before beginning work, run the project analysis and read file "project_analysis.txt".
+This file's content is a file map and a codebase dependency map that shows the structure of my project, including:
+- Files and their locations
+- Classes and functions defined in each file
+- Import relationships between files
+- Which files import other files
+Please:
+1. Analyze the code structure to understand the relationships between components
+2. Identify which specific files you need to see to complete the task
+"""
+
+[commands.project_analysis]
+command = ["./project_analyzer.sh"]
+doc = "This command will do a project analysis and output to project_analysis.txt"
