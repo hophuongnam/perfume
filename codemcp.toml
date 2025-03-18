@@ -15,5 +15,5 @@ command = ["./project_analyzer.sh"]
 doc = "This command will do a project analysis and output to project_analysis.txt"
 
 [commands.get_all_bottles]
-command = ["node scripts/getBottles.js"
+command = ["node", "scripts/getBottles.js"]
 doc = "This command will get all bottles from Notion"

@@ -14,22 +14,23 @@
 ├── scripts/
 │   ├── README.md
 │   ├── assignSlots.js
+│   ├── getBottles.js
 │   └── getDatabaseFields.js
 └── server.js
 
 --- File Tree Summary ---
 Total Directories: 1
-Total Files: 15
-Total Size: 217548 bytes
+Total Files: 16
+Total Size: 220012 bytes
 
 File Type Distribution:
-  JavaScript: 7 files (46.7%, 149625 bytes)
-  Markdown: 2 files (13.3%, 1088 bytes)
-  JSON: 2 files (13.3%, 45267 bytes)
-  TOML: 1 files (6.7%, 676 bytes)
-  HTML: 1 files (6.7%, 15939 bytes)
-  Text: 1 files (6.7%, 4363 bytes)
-  Shell Script: 1 files (6.7%, 590 bytes)
+  JavaScript: 8 files (50.0%, 151653 bytes)
+  Markdown: 2 files (12.5%, 1088 bytes)
+  JSON: 2 files (12.5%, 45267 bytes)
+  TOML: 1 files (6.2%, 799 bytes)
+  HTML: 1 files (6.2%, 15939 bytes)
+  Text: 1 files (6.2%, 4676 bytes)
+  Shell Script: 1 files (6.2%, 590 bytes)
 </file_map>
 
 <dependency_map>
@@ -78,6 +79,12 @@ UIController.js:
 scripts/assignSlots.js:
   defines:
     - functions: ['parseRackDefinition', 'parsePlaneDefinition', 'buildAllPlanesFromEnv', 'main', 'isSlotValid', 'findFirstFreeSlot', 'updateBottleSlotInNotion', 'fetchAllNotionPages']
+  imports:
+    - @notionhq/client: ['Client']
+
+scripts/getBottles.js:
+  defines:
+    - functions: ['fetchAllBottles', 'fetchAllNotionPages', 'fetchAllBottles']
   imports:
     - @notionhq/client: ['Client']
 
