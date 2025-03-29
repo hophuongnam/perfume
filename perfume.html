@@ -530,17 +530,17 @@
     </div>
   </div>
 
-  <!-- Import map for Three.js and other modules -->
+  <!-- Import map for Three.js and other modules (using local files to avoid CDN issues) -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@latest/build/three.module.js",
-      "OrbitControls": "https://unpkg.com/three@latest/examples/jsm/controls/OrbitControls.js",
-      "RGBELoader": "https://unpkg.com/three@latest/examples/jsm/loaders/RGBELoader.js",
-      "HDRCubeTextureLoader": "https://unpkg.com/three@latest/examples/jsm/loaders/HDRCubeTextureLoader.js",
-      "RectAreaLightUniformsLib": "https://unpkg.com/three@latest/examples/jsm/lights/RectAreaLightUniformsLib.js",
-      "RectAreaLightHelper": "https://unpkg.com/three@latest/examples/jsm/helpers/RectAreaLightHelper.js",
-      "CSM": "https://unpkg.com/three@latest/examples/jsm/csm/CSM.js"
+      "three": "./lib/three/build/three.module.js",
+      "OrbitControls": "./lib/three/examples/jsm/controls/OrbitControls.js",
+      "RGBELoader": "./lib/three/examples/jsm/loaders/RGBELoader.js",
+      "HDRCubeTextureLoader": "./lib/three/examples/jsm/loaders/HDRCubeTextureLoader.js",
+      "RectAreaLightUniformsLib": "./lib/three/examples/jsm/lights/RectAreaLightUniformsLib.js",
+      "RectAreaLightHelper": "./lib/three/examples/jsm/helpers/RectAreaLightHelper.js",
+      "CSM": "./lib/three/examples/jsm/csm/CSM.js"
     }
   }
   </script>
