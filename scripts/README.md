@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-03-01T07:58:59.629Z
+Retrieved at: 2025-04-01T01:07:20.251Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -38,6 +38,9 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 
 ## Field: Concentration 
 **Type**: select
+
+## Field: Location
+**Type**: rich_text
 
 ## Field: Cap Color
 **Type**: select
