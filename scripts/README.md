@@ -1,5 +1,5 @@
 # Notion Database Schema
-Retrieved at: 2025-04-01T01:07:20.251Z
+Retrieved at: 2025-04-01T01:43:32.990Z
 
 Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bde88ee9200d117e019).
 
@@ -18,14 +18,8 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 ## Field: Notes
 **Type**: multi_select
 
-## Field: Row
-**Type**: number
-
 ## Field: Purchase Date
 **Type**: date
-
-## Field: Plane
-**Type**: number
 
 ## Field: Price
 **Type**: number
@@ -65,9 +59,6 @@ Below is a listing of all properties in the Notion database (ID: c1096d72b0ff4bd
 
 ## Field: Away?
 **Type**: checkbox
-
-## Field: Column
-**Type**: number
 
 ## Field: House
 **Type**: select

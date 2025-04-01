@@ -27,12 +27,17 @@ async function fetchAllBottles() {
 
     // Transform to a simpler format with additional fields for seasonal info
     const mappedBottles = bottles.map(page => {
+      // Extract location
+      const locationVal = page.properties["Location"]?.rich_text?.[0]?.plain_text || "0-0-0";
+      // Parse location into plane, row, and column (format: x-y-z)
+      const [planeVal, rowVal, colVal] = locationVal.split('-').map(num => parseInt(num, 10) || 0);
+      
       return {
         name: page.properties["Name"]?.title?.[0]?.plain_text || "(No name)",
         house: page.properties["House"]?.select?.name || "Unknown House",
-        plane: page.properties["Plane"]?.number || 0,
-        row: page.properties["Row"]?.number || 0,
-        column: page.properties["Column"]?.number || 0,
+        plane: planeVal,
+        row: rowVal,
+        column: colVal,
         seasons: page.properties["Seasons"]?.multi_select?.map(s => s.name) || [],
         accords: page.properties["Accords"]?.multi_select?.map(a => a.name) || [],
         notes: page.properties["Notes"]?.multi_select?.map(n => n.name) || [],

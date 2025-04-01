@@ -137,10 +137,10 @@ async function main() {
     for (const page of filtered) {
       const pageId = page.id;
 
-      // parse plane, row, col from Notion
-      const planeVal = page.properties["Plane"]?.number || 0;
-      const rowVal   = page.properties["Row"]?.number || 0;
-      const colVal   = page.properties["Column"]?.number || 0;
+      // parse location from Notion
+      const locationVal = page.properties["Location"]?.rich_text?.[0]?.plain_text || "0-0-0";
+      // Parse location into plane, row, and column (format: x-y-z)
+      const [planeVal, rowVal, colVal] = locationVal.split('-').map(num => parseInt(num, 10) || 0);
       let plane = planeVal;
       let row   = rowVal;
       let column= colVal;
@@ -210,24 +210,26 @@ function findFirstFreeSlot() {
   return null; // no free slot
 }
 
-/** Update the Notion page's plane, row, column fields */
+/** Update the Notion page's Location field */
 async function updateBottleSlotInNotion(pageId, plane, row, column) {
   try {
+    // Create Location string in format "x-y-z"
+    const locationString = `${plane}-${row}-${column}`;
     await notion.pages.update({
       page_id: pageId,
       properties: {
-        Plane: {
-          number: plane
-        },
-        Row: {
-          number: row
-        },
-        Column: {
-          number: column
+        Location: {
+          rich_text: [
+            {
+              text: {
+                content: locationString
+              }
+            }
+          ]
         }
       }
     });
-    console.log(`Page ${pageId} => plane=${plane}, row=${row}, column=${column}`);
+    console.log(`Page ${pageId} => Location=${locationString} (plane=${plane}, row=${row}, column=${column})`);
   } catch (err) {
     console.error(`Failed to update Notion page ${pageId}: ${err.message}`);
   }

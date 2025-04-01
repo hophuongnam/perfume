@@ -175,9 +175,7 @@ app.get('/api/bottles', async (req, res) => {
         const nameProp      = page.properties["Name"];
         const capColorProp  = page.properties["Cap Color"];
         const houseProp     = page.properties["House"];
-        const planeProp     = page.properties["Plane"];
-        const rowProp       = page.properties["Row"];
-        const columnProp    = page.properties["Column"];
+        const locationProp  = page.properties["Location"];
         const typeProp      = page.properties["Type"];
         const accordsProp   = page.properties["Accords"];
         const seasonsProp   = page.properties["Seasons"];
@@ -192,9 +190,9 @@ app.get('/api/bottles', async (req, res) => {
         const nameVal     = nameProp?.title?.[0]?.plain_text || "(No name)";
         const capColorVal = capColorProp?.select?.name || "Gold";
         const houseVal    = houseProp?.select?.name || "Unknown House";
-        const planeVal    = planeProp?.number || 0;
-        const rowVal      = rowProp?.number || 0;
-        const colVal      = columnProp?.number || 0;
+        const locationVal = locationProp?.rich_text?.[0]?.plain_text || "0-0-0";
+        // Parse location into plane, column, and row (format: x-y-z)
+        const [planeVal, columnVal, rowVal] = locationVal.split('-').map(num => parseInt(num, 10) || 0);
         const typeVal     = typeProp?.select?.name || "Unknown Type";
         const accordsVal  = accordsProp?.multi_select?.map(opt => opt.name) || [];
         const seasonsVal  = seasonsProp?.multi_select?.map(opt => opt.name) || [];
@@ -212,7 +210,7 @@ app.get('/api/bottles', async (req, res) => {
           house: houseVal,
           plane: planeVal,
           row: rowVal,
-          column: colVal,
+          column: columnVal,
           type: typeVal,
           accords: accordsVal,
           seasons: seasonsVal,
@@ -243,17 +241,19 @@ app.post('/api/updateBottleSlot', async (req, res) => {
     if (!pageId) {
       return res.status(400).json({ error: 'Missing pageId' });
     }
+    // Create Location string in format "x-y-z" from plane, column, row values
+    const locationString = `${plane}-${column}-${row}`;
     await notion.pages.update({
       page_id: pageId,
       properties: {
-        Plane: {
-          number: plane
-        },
-        Row: {
-          number: row
-        },
-        Column: {
-          number: column
+        Location: {
+          rich_text: [
+            {
+              text: {
+                content: locationString
+              }
+            }
+          ]
         }
       }
     });
