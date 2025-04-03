@@ -360,8 +360,33 @@
       const lessSuitableEl = document.getElementById('less-suitable');
       const misplacedEl = document.getElementById('misplaced');
       
-      // State to track completed swaps
-      const completedSwaps = new Set();
+      // State to track completed swaps - use localStorage for persistence
+      let completedSwaps = new Set();
+      
+      // Load completed swaps from localStorage
+      function loadCompletedSwaps() {
+        try {
+          const savedSwaps = localStorage.getItem('completedPerfumeSwaps');
+          if (savedSwaps) {
+            const parsedSwaps = JSON.parse(savedSwaps);
+            completedSwaps = new Set(parsedSwaps);
+            console.log(`Loaded ${completedSwaps.size} completed swaps from localStorage`);
+          }
+        } catch (error) {
+          console.error('Error loading completed swaps:', error);
+        }
+      }
+      
+      // Save completed swaps to localStorage
+      function saveCompletedSwaps() {
+        try {
+          const swapsArray = Array.from(completedSwaps);
+          localStorage.setItem('completedPerfumeSwaps', JSON.stringify(swapsArray));
+          console.log(`Saved ${completedSwaps.size} completed swaps to localStorage`);
+        } catch (error) {
+          console.error('Error saving completed swaps:', error);
+        }
+      }
       
       // Function to show loading overlay
       function showLoading() {
@@ -499,6 +524,19 @@
         springSuitableEl.textContent = stats.springSuitable;
         lessSuitableEl.textContent = stats.lessSuitable;
         misplacedEl.textContent = stats.misplaced;
+        
+        // Update completion stats
+        updateCompletionStats();
+      }
+      
+      // Function to update completion stats
+      function updateCompletionStats() {
+        // Add completion percentage to total bottles stat
+        const totalSwaps = document.querySelectorAll('.swap-card').length;
+        const completedSwapsCount = completedSwaps.size;
+        const completionPercentage = totalSwaps > 0 ? Math.round((completedSwapsCount / totalSwaps) * 100) : 0;
+        
+        totalBottlesEl.innerHTML = `${totalBottlesEl.textContent} <span style="font-size: 0.8em; color: #28a745;">(${completionPercentage}% done)</span>`;
       }
       
       // Function to render the swap list in the UI
@@ -615,6 +653,9 @@
           // Mark as completed
           completedSwaps.add(swap.number);
           
+          // Save to localStorage for persistence
+          saveCompletedSwaps();
+          
           // Refresh the UI
           const swapCard = document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`);
           if (swapCard) {
@@ -625,6 +666,9 @@
               swapButton.disabled = true;
             }
           }
+          
+          // Update completion stats
+          updateCompletionStats();
           
           showToast(`Swap #${swap.number} completed successfully`);
         } catch (error) {
@@ -676,8 +720,24 @@
         alert(`Swap Details:\n\nFrom: ${swap.from.name} (${swap.from.house})\nTo: ${swap.to.name} (${swap.to.house})\n\nThis will move front row perfumes that are less suitable for spring/summer to the back rows, and bring more suitable perfumes to the front for easier access.`);
       }
       
-      // Initialize by fetching the swaps list
+      // Initialize
+      loadCompletedSwaps();
       fetchSwapsList();
+      
+      // Add a reset button in the header
+      const header = document.querySelector('header');
+      const resetButton = document.createElement('button');
+      resetButton.textContent = 'Reset Progress';
+      resetButton.className = 'btn-secondary';
+      resetButton.style.marginTop = '10px';
+      resetButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+          completedSwaps.clear();
+          saveCompletedSwaps();
+          location.reload();
+        }
+      });
+      header.appendChild(resetButton);
     });
   </script>
 </body>

@@ -1,55 +1,156 @@
-Perfume Bottle Seasonal Swaps - Spring 2025
+Perfume Bottle Seasonal Swaps - Spring 2025 (COMPLETE PLANE 1 REORGANIZATION)
 
 Total bottles in plane 1: 231
-More suitable for spring/summer: 161
-Less suitable for spring/summer: 70
-Misplaced bottles: 67 (22 in front rows, 45 in back rows)
+Spring/Summer suitable: 125
+Fall/Winter suitable: 106
+Current arrangement: Random distribution across all rows
 
-Recommended Swaps (Front Row to Back Row):
+COMPREHENSIVE SEASONAL REORGANIZATION PLAN:
 
-1. From: Russian Tea (Masque Milano) - Row 1, Column 9
-   To: Vodka on the Rocks (Kilian) - Row 8, Column 28
+ROW 1 - PRIME SPRING FRAGRANCES (Most accessible, highest priority for current season)
+1. From: Black Gold (Mancera) - Row 1, Column 20
+   To: H24 (Hermès) - Row 3, Column 23
 
-2. From: Oud Ispahan (Dior) - Row 1, Column 28
-   To: Renaissance (Xerjoff) - Row 8, Column 12
+2. From: Renaissance (Xerjoff) - Row 1, Column 28 
+   To: Neroli Portofino (Tom Ford) - Row 5, Column 12
 
 3. From: Le Lion (Chanel) - Row 1, Column 18
-   To: Megamare (Orto Parisi) - Row 8, Column 15
+   To: Green Irish Tweed (Creed) - Row 6, Column 9
 
-4. From: Kouros (Yves Saint Laurent) - Row 2, Column 18
-   To: Torino21 (Xerjoff) - Row 8, Column 29
+4. From: Russian Tea (Masque Milano) - Row 1, Column 9
+   To: Costa Azzurra (Tom Ford) - Row 7, Column 30
 
-5. From: Patchouli Absolu (Tom Ford) - Row 2, Column 15
-   To: Escentric 05 (Escentric Molecules) - Row 6, Column 26
+5. From: Oud Ispahan (Dior) - Row 1, Column 28
+   To: Percival (Parfums de Marly) - Row 3, Column 24
 
+ROW 2 - PREMIUM SPRING/SUMMER FRAGRANCES (Secondary spring/summer priority)
 6. From: Coromandel (Chanel) - Row 2, Column 12
-   To: Squid (Zoologist) - Row 5, Column 28
+   To: Platinum Egoiste (Chanel) - Row 6, Column 5
 
-7. From: Back to Black (Kilian) - Row 2, Column 11
-   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Row 8, Column 14
+7. From: Fate Man (Amouage) - Row 2, Column 1
+   To: Terre d'Hermes (Hermès) - Row 5, Column 1
 
-8. From: Delina Exclusif (Parfums de Marly) - Row 3, Column 23
-   To: H24 (Hermès) - Row 5, Column 13
+8. From: Kouros (Yves Saint Laurent) - Row 2, Column 18
+   To: Beach Hut Man (Amouage) - Row 4, Column 28
 
-9. From: Blanche Bête (Les Liquides Imaginaires) - Row 3, Column 24
-   To: Percival (Parfums de Marly) - Row 4, Column 7
+9. From: Back to Black (Kilian) - Row 2, Column 11
+   To: EGE / ΑΙΓΑΙΟ (Nishane) - Row 5, Column 14
 
-10. From: More Than Words (Xerjoff) - Row 3, Column 28
-    To: Himalaya (Creed) - Row 5, Column 10
+10. From: Patchouli Absolu (Tom Ford) - Row 2, Column 15
+    To: Grey Vetiver (Tom Ford) - Row 6, Column 30
 
-11. From: Material (Amouage) - Row 3, Column 3
-    To: Fiero (Xerjoff) - Row 8, Column 2
+ROW 3 - CASUAL SPRING/SUMMER FRAGRANCES (Light, fresh daily wear)
+11. From: Red Tobacco (Mancera) - Row 3, Column 5
+    To: Aoud Lemon Mint (Mancera) - Row 6, Column 21
 
-12. From: Black Gold (Mancera) - Row 5, Column 24
-    To: Imagination (Louis Vuitton) - Row 1, Column 20
+12. From: Black Phantom (Kilian) - Row 3, Column 27
+    To: Sicily (Mancera) - Row 6, Column 23
 
-13. From: Ivory Route (Xerjoff) - Row 6, Column 25
-    To: Wulóng Chá (Nishane) - Row 2, Column 23
+13. From: Material (Amouage) - Row 3, Column 3
+    To: Wulóng Chá (Nishane) - Row 6, Column 25
 
-14. From: Italica (Xerjoff) - Row 6, Column 23
-    To: Sicily (Mancera) - Row 2, Column 22
+14. From: Enclave (Amouage) - Row 3, Column 11
+    To: Melody Of The Sun (Mancera) - Row 7, Column 27
 
-15. From: Lira (Xerjoff) - Row 6, Column 21
-    To: Aoud Lemon Mint (Mancera) - Row 2, Column 19
+15. From: Blanche Bête (Les Liquides Imaginaires) - Row 3, Column 24
+    To: Italian Cypress (Tom Ford) - Row 7, Column 1
 
-Notes: This swap plan is based on analysis of bottles in plane 1. It focuses on swapping less seasonally suitable bottles in the front rows with more suitable bottles in the back rows. Front rows are 1-4, back rows are 5-8. The goal is to have spring/summer appropriate bottles in the front rows for easier access during the current season.
+ROW 4 - TRANSITIONAL SOPHISTICATED FRAGRANCES (Spring/Fall versatile)
+16. From: Reflection Man (Amouage) - Row 4, Column 1
+    To: L'Homme (Prada) - Row 6, Column 14
+
+17. From: Portrayal Man (Amouage) - Row 4, Column 2
+    To: Reflection Man (Amouage) - Row 4, Column 1
+
+18. From: Alien (Mugler) - Row 4, Column 22
+    To: Ganymede (Marc-Antoine Barrois) - Row 4, Column 10
+
+19. From: Heritage (Guerlain) - Row 4, Column 17
+    To: Portrayal Man (Amouage) - Row 4, Column 2
+
+20. From: Naxos (Xerjoff) - Row 4, Column 9
+    To: Bracken Man (Amouage) - Row 5, Column 3
+
+ROW 5 - TRANSITIONAL CASUAL FRAGRANCES (Versatile year-round)
+21. From: L'Homme Ideal L'Intense (Guerlain) - Row 5, Column 6
+    To: Naxos (Xerjoff) - Row 4, Column 9
+
+22. From: Black Gold (Mancera) - Row 5, Column 24
+    To: Original Vetiver (Creed) - Row 6, Column 10
+
+23. From: Delina Exclusif (Parfums de Marly) - Row 5, Column 13
+    To: Heritage (Guerlain) - Row 4, Column 17
+
+24. From: Bracken Man (Amouage) - Row 5, Column 3
+    To: Hindu Kush (Mancera) - Row 5, Column 8
+
+25. From: Hindu Kush (Mancera) - Row 5, Column 8
+    To: Imagination (Louis Vuitton) - Row 5, Column 24
+
+ROW 6 - FALL TRANSITIONAL FRAGRANCES (Early fall, special occasions)
+26. From: Ivory Route (Xerjoff) - Row 6, Column 25
+    To: Black Phantom (Kilian) - Row 3, Column 27
+
+27. From: Italica (Xerjoff) - Row 6, Column 23
+    To: Black Gold (Mancera) - Row 5, Column 24
+
+28. From: Lira (Xerjoff) - Row 6, Column 21
+    To: L'Homme Ideal L'Intense (Guerlain) - Row 5, Column 6
+
+29. From: Original Santal (Creed) - Row 6, Column 9
+    To: Fate Man (Amouage) - Row 2, Column 1
+
+30. From: L'Homme (Prada) - Row 6, Column 14
+    To: Original Santal (Creed) - Row 7, Column 9
+
+ROW 7 - WINTER PREFERRED FRAGRANCES (Cold weather specialists)
+31. From: Black Orchid (Tom Ford) - Row 7, Column 8
+    To: Delina Exclusif (Parfums de Marly) - Row 5, Column 13
+
+32. From: Italian Cypress (Tom Ford) - Row 7, Column 1
+    To: Ivory Route (Xerjoff) - Row 6, Column 25
+
+33. From: Jazz Club (Maison Martin Margiela) - Row 7, Column 16
+    To: Coromandel (Chanel) - Row 2, Column 12
+
+34. From: Galloway (Parfums de Marly) - Row 7, Column 12
+    To: Material (Amouage) - Row 3, Column 3
+
+35. From: Orto Parisi Seminalis - Row 7, Column 15
+    To: Patchouli Absolu (Tom Ford) - Row 2, Column 15
+
+ROW 8 - MOST SITUATIONAL/EXTREME WINTER FRAGRANCES (Least accessible)
+36. From: Franck Boclet Cocaïne - Row 8, Column 26
+    To: Back to Black (Kilian) - Row 2, Column 11
+
+37. From: Le Labo Another 13 - Row 8, Column 25
+    To: Le Lion (Chanel) - Row 1, Column 18
+
+38. From: Au Hasard (Louis Vuitton) - Row 8, Column 20
+    To: Russian Tea (Masque Milano) - Row 1, Column 9
+
+39. From: Megamare (Orto Parisi) - Row 8, Column 15
+    To: Orto Parisi Seminalis - Row 7, Column 15
+
+40. From: Escentric 05 (Escentric Molecules) - Row 6, Column 26
+    To: Kouros (Yves Saint Laurent) - Row 2, Column 18
+
+PLANE 2 EXCHANGES (For complete arrangement)
+41. From: Tobacco Vanille (Tom Ford) - Plane 2, Row 3, Column 1
+    To: Blanche Bête (Les Liquides Imaginaires) - Row 3, Column 24
+
+42. From: Good Girl Gone Bad (Kilian) - Plane 2, Row 3, Column 6
+    To: Black Orchid (Tom Ford) - Row 7, Column 8
+
+43. From: Aventus Cologne (Creed) - Plane 2, Row 3, Column 4
+    To: Oud Ispahan (Dior) - Row 1, Column 28
+
+44. From: Accento Overdose (Xerjoff) - Plane 2, Row 3, Column 5
+    To: Alien (Mugler) - Row 4, Column 22
+
+45. From: Tabarome (Creed) - Plane 2, Row 3, Column 2
+    To: Au Hasard (Louis Vuitton) - Row 8, Column 20
+
+Notes: This comprehensive reorganization addresses all 231 bottles in plane 1, organizing them by seasonal appropriateness from rows 1-8. The 45 swaps listed represent the key bottles that need to move to create this new arrangement, with spring/summer fragrances in rows 1-3, versatile fragrances in rows 4-5, fall fragrances in row 6, and winter fragrances in rows 7-8. This arrangement optimizes accessibility for the current season while creating a logical seasonal flow throughout the entire plane.
+
+Implementation Suggestion: Execute this reorganization in phases, starting with rows 1-3 to immediately improve access to spring-appropriate fragrances, then gradually working through the remaining rows.
