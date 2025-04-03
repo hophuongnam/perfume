@@ -1123,7 +1123,7 @@ function updateInfoBoard(bottle) {
   // Add position info (like line4 in billboard)
   html += `
     <div class="position-info">
-      Plane ${bottle.userData.plane}, Row ${bottle.userData.row}, Column ${bottle.userData.column}
+      Plane ${bottle.userData.plane}, Column ${bottle.userData.column}, Row ${bottle.userData.row}
     </div>`;
 
   content.innerHTML = html;
