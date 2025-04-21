@@ -4,7 +4,9 @@
   "description": "Perfume Notion backend server",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "optimize": "node optimizeBottles.js",
+    "optimize:apply": "node optimizeBottles.js --apply"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.8",

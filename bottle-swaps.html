@@ -16,6 +16,14 @@
       --light-text: #f8f9fa;
     }
     
+    .description {
+      text-align: center;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      padding: 0 1rem;
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -316,6 +324,7 @@
 <body>
   <header>
     <h1>Perfume Bottle Swaps</h1>
+    <p class="description">This tool organizes your perfumes by seasonal appropriateness, notes, and accords. The most suitable bottles for the current season are prioritized in the front rows for easy access.</p>
     <div class="stats">
       <div class="stat-item">
         <div class="stat-value" id="total-bottles">-</div>
@@ -323,7 +332,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-value" id="spring-suitable">-</div>
-        <div class="stat-label">Spring Suitable</div>
+        <div class="stat-label">Season Suitable</div>
       </div>
       <div class="stat-item">
         <div class="stat-value" id="less-suitable">-</div>
@@ -467,8 +476,14 @@
               to: { name: '', house: '', location: '' }
             };
             
-            // Parse the "From" perfume
-            const fromMatch = line.match(/From:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            // Parse the "From" perfume - handles both "Row X, Column Y" and "Column X, Row Y" formats
+            let fromMatch = line.match(/From:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            
+            if (!fromMatch) {
+              // Try the new format: "Column X, Row Y"
+              fromMatch = line.match(/From:\s+(.*)\s+-\s+Column\s+(\d+),\s+Row\s+(\d+)/);
+            }
+            
             if (fromMatch) {
               const fullName = fromMatch[1];
               const nameMatch = fullName.match(/(.*)\s+\((.*)\)/);
@@ -480,14 +495,29 @@
                 currentSwap.from.name = fullName.trim();
               }
               
-              currentSwap.from.location = {
-                row: parseInt(fromMatch[2]),
-                column: parseInt(fromMatch[3])
-              };
+              // If using old format (Row X, Column Y)
+              if (line.match(/From:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/)) {
+                currentSwap.from.location = {
+                  row: parseInt(fromMatch[2]),
+                  column: parseInt(fromMatch[3])
+                };
+              } else {
+                // New format (Column X, Row Y)
+                currentSwap.from.location = {
+                  column: parseInt(fromMatch[2]),
+                  row: parseInt(fromMatch[3])
+                };
+              }
             }
           } else if (line.match(/^\s+To:/)) {
-            // Parse the "To" perfume
-            const toMatch = line.match(/To:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            // Parse the "To" perfume - handles both "Row X, Column Y" and "Column X, Row Y" formats
+            let toMatch = line.match(/To:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/);
+            
+            if (!toMatch) {
+              // Try the new format: "Column X, Row Y"
+              toMatch = line.match(/To:\s+(.*)\s+-\s+Column\s+(\d+),\s+Row\s+(\d+)/);
+            }
+            
             if (toMatch && currentSwap) {
               const fullName = toMatch[1];
               const nameMatch = fullName.match(/(.*)\s+\((.*)\)/);
@@ -499,10 +529,19 @@
                 currentSwap.to.name = fullName.trim();
               }
               
-              currentSwap.to.location = {
-                row: parseInt(toMatch[2]),
-                column: parseInt(toMatch[3])
-              };
+              // If using old format (Row X, Column Y)
+              if (line.match(/To:\s+(.*)\s+-\s+Row\s+(\d+),\s+Column\s+(\d+)/)) {
+                currentSwap.to.location = {
+                  row: parseInt(toMatch[2]),
+                  column: parseInt(toMatch[3])
+                };
+              } else {
+                // New format (Column X, Row Y)
+                currentSwap.to.location = {
+                  column: parseInt(toMatch[2]),
+                  row: parseInt(toMatch[3])
+                };
+              }
             }
           }
         });
@@ -568,7 +607,7 @@
                   </div>
                   <div class="perfume-name">${swap.from.name}</div>
                   <div class="perfume-house">${swap.from.house}</div>
-                  <div class="location">Row ${swap.from.location.row}, Column ${swap.from.location.column}</div>
+                  <div class="location">Column ${swap.from.location.column}, Row ${swap.from.location.row}</div>
                 </div>
                 
                 <div class="swap-arrow">
@@ -585,7 +624,7 @@
                   </div>
                   <div class="perfume-name">${swap.to.name}</div>
                   <div class="perfume-house">${swap.to.house}</div>
-                  <div class="location">Row ${swap.to.location.row}, Column ${swap.to.location.column}</div>
+                  <div class="location">Column ${swap.to.location.column}, Row ${swap.to.location.row}</div>
                 </div>
               </div>
               
@@ -638,12 +677,14 @@
           // First, get all bottles from Notion to find the correct IDs
           const bottles = await fetchAllBottles();
           
+          console.log("Executing swap:", swap);
+          
           // Find the bottles to swap based on location
           const fromBottle = findBottleByLocation(bottles, 1, swap.from.location.row, swap.from.location.column);
           const toBottle = findBottleByLocation(bottles, 1, swap.to.location.row, swap.to.location.column);
           
           if (!fromBottle || !toBottle) {
-            throw new Error('One or both bottles not found in Notion database');
+            throw new Error('One or both bottles not found in Notion database. Check browser console for details.');
           }
           
           // Perform the swap in Notion
@@ -690,11 +731,21 @@
       
       // Function to find a bottle by its location in a specific plane
       function findBottleByLocation(bottles, plane, row, column) {
-        return bottles.find(bottle => 
+        console.log(`Finding bottle in plane ${plane}, row ${row}, column ${column}`);
+        
+        const bottle = bottles.find(bottle => 
           bottle.plane === plane && 
           bottle.row === row && 
           bottle.column === column
         );
+        
+        if (bottle) {
+          console.log(`Found bottle: ${bottle.name} (${bottle.house})`);
+        } else {
+          console.log(`No bottle found at this location`);
+        }
+        
+        return bottle;
       }
       
       // Function to update a bottle's location in Notion
@@ -717,7 +768,7 @@
       
       // Function to show swap details (could be expanded in the future)
       function showSwapDetails(swap) {
-        alert(`Swap Details:\n\nFrom: ${swap.from.name} (${swap.from.house})\nTo: ${swap.to.name} (${swap.to.house})\n\nThis will move front row perfumes that are less suitable for spring/summer to the back rows, and bring more suitable perfumes to the front for easier access.`);
+        alert(`Swap Details:\n\nFrom: ${swap.from.name} (${swap.from.house})\nTo: ${swap.to.name} (${swap.to.house})\n\nThis optimized swap plan arranges bottles based on:\n1. Seasonal appropriateness\n2. Notes (suitable for current season)\n3. Accords (suitable for current season)\n\nThis organization puts the most suitable bottles in the front rows for easy access.`);
       }
       
       // Initialize
