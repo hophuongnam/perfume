@@ -53,32 +53,6 @@
       margin-bottom: 0.5rem;
     }
     
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-around;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      padding: 0.5rem;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-    }
-    
-    .stat-item {
-      text-align: center;
-      flex: 1 1 auto;
-      min-width: 100px;
-    }
-    
-    .stat-value {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-    
-    .stat-label {
-      font-size: 0.8rem;
-      opacity: 0.8;
-    }
     
     .swap-container {
       max-width: 100%;
@@ -325,24 +299,6 @@
   <header>
     <h1>Perfume Bottle Swaps</h1>
     <p class="description">This tool organizes your perfumes by seasonal appropriateness, notes, and accords. The most suitable bottles for the current season are prioritized in the front rows for easy access.</p>
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-value" id="total-bottles">-</div>
-        <div class="stat-label">Total Bottles</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="spring-suitable">-</div>
-        <div class="stat-label">Season Suitable</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="less-suitable">-</div>
-        <div class="stat-label">Less Suitable</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="misplaced">-</div>
-        <div class="stat-label">Misplaced</div>
-      </div>
-    </div>
   </header>
   
   <main class="swap-container" id="swap-list">
@@ -362,12 +318,6 @@
       const swapList = document.getElementById('swap-list');
       const loadingOverlay = document.getElementById('loading-overlay');
       const toast = document.getElementById('toast');
-      
-      // Stats elements
-      const totalBottlesEl = document.getElementById('total-bottles');
-      const springSuitableEl = document.getElementById('spring-suitable');
-      const lessSuitableEl = document.getElementById('less-suitable');
-      const misplacedEl = document.getElementById('misplaced');
       
       // State to track completed swaps - use localStorage for persistence
       let completedSwaps = new Set();
@@ -441,25 +391,15 @@
       function parseSwapsText(text) {
         const lines = text.split('\n');
         const swaps = [];
-        let stats = {
-          totalBottles: 0,
-          springSuitable: 0,
-          lessSuitable: 0,
-          misplaced: 0
-        };
-        
         let currentSwap = null;
         
         lines.forEach(line => {
-          // Parse stats
-          if (line.startsWith('Total bottles')) {
-            stats.totalBottles = parseInt(line.match(/\d+/)[0]) || 0;
-          } else if (line.startsWith('More suitable')) {
-            stats.springSuitable = parseInt(line.match(/\d+/)[0]) || 0;
-          } else if (line.startsWith('Less suitable')) {
-            stats.lessSuitable = parseInt(line.match(/\d+/)[0]) || 0;
-          } else if (line.startsWith('Misplaced bottles')) {
-            stats.misplaced = parseInt(line.match(/\d+/)[0]) || 0;
+          // Skip stats lines - we don't need them anymore
+          if (line.startsWith('Total bottles') || 
+              line.startsWith('More suitable') || 
+              line.startsWith('Less suitable') || 
+              line.startsWith('Misplaced bottles')) {
+            return;
           }
           
           // Parse swap entries
@@ -551,32 +491,9 @@
           swaps.push(currentSwap);
         }
         
-        // Update the stats in the UI
-        updateStats(stats);
-        
         return swaps;
       }
       
-      // Function to update the stats in the UI
-      function updateStats(stats) {
-        totalBottlesEl.textContent = stats.totalBottles;
-        springSuitableEl.textContent = stats.springSuitable;
-        lessSuitableEl.textContent = stats.lessSuitable;
-        misplacedEl.textContent = stats.misplaced;
-        
-        // Update completion stats
-        updateCompletionStats();
-      }
-      
-      // Function to update completion stats
-      function updateCompletionStats() {
-        // Add completion percentage to total bottles stat
-        const totalSwaps = document.querySelectorAll('.swap-card').length;
-        const completedSwapsCount = completedSwaps.size;
-        const completionPercentage = totalSwaps > 0 ? Math.round((completedSwapsCount / totalSwaps) * 100) : 0;
-        
-        totalBottlesEl.innerHTML = `${totalBottlesEl.textContent} <span style="font-size: 0.8em; color: #28a745;">(${completionPercentage}% done)</span>`;
-      }
       
       // Function to render the swap list in the UI
       function renderSwapList(swaps) {
@@ -701,15 +618,20 @@
           const swapCard = document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`);
           if (swapCard) {
             swapCard.classList.add('completed');
+            
+            // Update the swap button
             const swapButton = swapCard.querySelector('.swap-button');
             if (swapButton) {
               swapButton.textContent = 'Completed';
               swapButton.disabled = true;
             }
+            
+            // Update the status text in the header
+            const statusText = swapCard.querySelector('.swap-header > div:last-child');
+            if (statusText) {
+              statusText.textContent = 'Completed';
+            }
           }
-          
-          // Update completion stats
-          updateCompletionStats();
           
           showToast(`Swap #${swap.number} completed successfully`);
         } catch (error) {

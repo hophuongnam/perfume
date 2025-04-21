@@ -101,10 +101,13 @@ function calculateBottleScore(bottle, season) {
 
 /**
  * Calculate the minimum number of swaps required to rearrange bottles
- * based on the cycle detection method
+ * based on the cycle detection method.
+ * 
+ * The minimum number of swaps to transform one permutation into another
+ * is (n - c) where n is the number of elements and c is the number of cycles.
  */
 function calculateMinimumSwaps(currentPositions, optimalPositions) {
-  // Create position mapping for bottles
+  // Create position mapping for bottles - maps from position key to bottle index
   const positionMap = new Map();
   
   for (let i = 0; i < currentPositions.length; i++) {
@@ -116,21 +119,25 @@ function calculateMinimumSwaps(currentPositions, optimalPositions) {
   // Track visited bottles
   const visited = new Array(currentPositions.length).fill(false);
   let swaps = 0;
+  let cycles = 0;
   
   // Find cycles and calculate swaps
   for (let i = 0; i < currentPositions.length; i++) {
-    // If bottle is already in correct position or already visited
-    if (visited[i] || (
-      currentPositions[i].row === optimalPositions[i].row && 
-      currentPositions[i].column === optimalPositions[i].column
-    )) {
+    // Skip if already visited
+    if (visited[i]) continue;
+    
+    // Check if bottle is already in correct position
+    if (currentPositions[i].row === optimalPositions[i].row && 
+        currentPositions[i].column === optimalPositions[i].column) {
       visited[i] = true;
+      cycles++; // A bottle in the correct position is a cycle of size 1
       continue;
     }
     
-    // Count nodes in this cycle
+    // Start a new cycle
     let cycleSize = 0;
     let j = i;
+    let cycleComplete = false;
     
     while (!visited[j]) {
       visited[j] = true;
@@ -141,95 +148,137 @@ function calculateMinimumSwaps(currentPositions, optimalPositions) {
       const targetColumn = optimalPositions[j].column;
       const targetKey = `${targetRow}-${targetColumn}`;
       
-      // If there's no bottle at this position, break cycle
+      // If there's no bottle at this position, handle this special case
       if (!positionMap.has(targetKey)) {
+        console.warn(`Warning: No bottle found at position ${targetKey}`);
         break;
       }
       
       j = positionMap.get(targetKey);
+      
+      // If we've reached the start of the cycle, mark it complete
+      if (j === i) {
+        cycleComplete = true;
+        break;
+      }
     }
     
-    // Number of swaps needed for a cycle is cycleSize - 1
-    if (cycleSize > 0) {
+    // If we found a complete cycle, count it
+    if (cycleComplete || cycleSize > 0) {
+      cycles++;
+      // Number of swaps needed for a cycle is cycleSize - 1
       swaps += (cycleSize - 1);
     }
   }
   
+  console.log(`Found ${cycles} cycles in the permutation`);
   return swaps;
 }
 
 /**
  * Generate optimal swap plan based on current and optimal positions
+ * This implementation uses cycle detection to generate the minimum number of swaps
  */
 function generateSwapPlan(currentBottles, optimalBottles) {
-  const swaps = [];
-  const bottlesMap = new Map();
+  // First calculate the theoretical minimum number of swaps
+  const theoreticalMinimum = calculateMinimumSwaps(currentBottles, optimalBottles);
+  console.log(`Theoretical minimum swaps: ${theoreticalMinimum}`);
+
+  // Build mappings for efficient lookups
+  const currentPosToIndex = new Map(); // Maps position key to index in currentBottles
+  const optimalPosToIndex = new Map(); // Maps position key to index in optimalBottles
+  const currentIdxToPosition = new Map(); // Maps bottle index to position key
   
-  // Create mapping for current bottle positions
-  for (const bottle of currentBottles) {
-    const key = `${bottle.row}-${bottle.column}`;
-    bottlesMap.set(key, bottle);
-  }
-  
-  // Create a copy of current bottles for simulation
-  const simulatedBottles = JSON.parse(JSON.stringify(currentBottles));
-  const simulatedMap = new Map();
-  
-  // Initialize simulated map
-  for (const bottle of simulatedBottles) {
-    const key = `${bottle.row}-${bottle.column}`;
-    simulatedMap.set(key, bottle);
-  }
-  
-  // For each bottle, find its optimal position
-  for (let i = 0; i < optimalBottles.length; i++) {
-    const optimalPosition = optimalBottles[i];
-    const currentPosition = simulatedBottles[i];
+  // Initialize mappings
+  for (let i = 0; i < currentBottles.length; i++) {
+    const currBottle = currentBottles[i];
+    const optBottle = optimalBottles[i];
     
-    // If bottle is already in correct position, skip
-    if (currentPosition.row === optimalPosition.row && 
-        currentPosition.column === optimalPosition.column) {
+    const currKey = `${currBottle.row}-${currBottle.column}`;
+    const optKey = `${optBottle.row}-${optBottle.column}`;
+    
+    currentPosToIndex.set(currKey, i);
+    optimalPosToIndex.set(optKey, i);
+    currentIdxToPosition.set(i, currKey);
+  }
+  
+  // Track processed bottles
+  const processed = new Array(currentBottles.length).fill(false);
+  const swaps = [];
+  
+  // For each bottle, find and follow its cycle
+  for (let i = 0; i < currentBottles.length; i++) {
+    if (processed[i]) continue;
+    
+    // Check if bottle is already in correct position
+    const currBottle = currentBottles[i];
+    const optBottle = optimalBottles[i];
+    
+    if (currBottle.row === optBottle.row && currBottle.column === optBottle.column) {
+      processed[i] = true;
       continue;
     }
     
-    // Generate swap
-    const fromKey = `${currentPosition.row}-${currentPosition.column}`;
-    const toKey = `${optimalPosition.row}-${optimalPosition.column}`;
+    // Start a new cycle
+    let cycleStart = i;
+    let j = i;
+    const cycle = [];
     
-    // Only create swap if destination position has a bottle
-    if (simulatedMap.has(toKey)) {
-      const fromBottle = simulatedMap.get(fromKey);
-      const toBottle = simulatedMap.get(toKey);
+    // Follow the cycle
+    while (!processed[j]) {
+      cycle.push(j);
+      processed[j] = true;
       
-      // Add swap to list
-      swaps.push({
-        from: { 
-          name: fromBottle.name, 
-          house: fromBottle.house, 
-          row: fromBottle.row, 
-          column: fromBottle.column 
-        },
-        to: { 
-          name: toBottle.name, 
-          house: toBottle.house, 
-          row: toBottle.row, 
-          column: toBottle.column 
-        }
-      });
+      // Find where the bottle at index j should go in the optimal arrangement
+      const optRow = optimalBottles[j].row;
+      const optCol = optimalBottles[j].column;
+      const targetKey = `${optRow}-${optCol}`;
       
-      // Update simulated positions after this swap
-      const tempRow = fromBottle.row;
-      const tempCol = fromBottle.column;
+      // Find which bottle is currently in that position
+      if (!currentPosToIndex.has(targetKey)) {
+        // This shouldn't happen in a valid permutation, but handle it gracefully
+        console.warn(`Warning: No bottle found at position ${targetKey}`);
+        break;
+      }
       
-      fromBottle.row = toBottle.row;
-      fromBottle.column = toBottle.column;
-      toBottle.row = tempRow;
-      toBottle.column = tempCol;
+      j = currentPosToIndex.get(targetKey);
       
-      // Update simulated map
-      simulatedMap.set(`${fromBottle.row}-${fromBottle.column}`, fromBottle);
-      simulatedMap.set(`${toBottle.row}-${toBottle.column}`, toBottle);
+      // If we've reached the start of the cycle, we're done with this cycle
+      if (j === cycleStart) break;
     }
+    
+    // Generate swaps for this cycle (cycleSize - 1 swaps)
+    if (cycle.length > 1) {
+      // We want the first bottle to end up in the last position
+      // Each swap moves a bottle to where the previous bottle in the cycle should go
+      for (let k = 0; k < cycle.length - 1; k++) {
+        const fromIdx = cycle[k];
+        const toIdx = cycle[k + 1];
+        
+        const fromBottle = currentBottles[fromIdx];
+        const toBottle = currentBottles[toIdx];
+        
+        swaps.push({
+          from: { 
+            name: fromBottle.name, 
+            house: fromBottle.house, 
+            row: fromBottle.row, 
+            column: fromBottle.column 
+          },
+          to: { 
+            name: toBottle.name, 
+            house: toBottle.house, 
+            row: toBottle.row, 
+            column: toBottle.column 
+          }
+        });
+      }
+    }
+  }
+  
+  // Validate that we have the minimum number of swaps
+  if (swaps.length !== theoreticalMinimum) {
+    console.warn(`Warning: Generated ${swaps.length} swaps, but theoretical minimum is ${theoreticalMinimum}`);
   }
   
   return swaps;
@@ -281,11 +330,29 @@ function formatSwapPlan(swaps, currentSeason) {
   return output;
 }
 
+/**
+ * Validate that the swap plan uses the minimum number of swaps
+ */
+function validateSwapPlan(swaps, minimumSwaps) {
+  if (swaps.length !== minimumSwaps) {
+    return {
+      valid: false,
+      message: `Generated ${swaps.length} swaps, but calculated minimum is ${minimumSwaps}`
+    };
+  }
+  
+  return {
+    valid: true,
+    message: `Swap plan is optimal with ${swaps.length} swaps`
+  };
+}
+
 module.exports = {
   getCurrentSeason,
   calculateBottleScore,
   calculateMinimumSwaps,
   generateSwapPlan,
   formatSwapPlan,
+  validateSwapPlan,
   SEASONAL_PREFERENCES
 };

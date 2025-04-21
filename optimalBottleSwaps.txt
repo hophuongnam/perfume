@@ -1,6 +1,6 @@
 Perfume Bottle Seasonal Swaps - PLANE 1 ONLY - Spring 2025 (OPTIMIZED ARRANGEMENT)
 
-Total swaps needed: 238
+Total swaps needed: 107
 
 COLUMN-ROW PREFERENCE ORDER:
 Row 1: Most preferred/accessible (front)
@@ -12,725 +12,332 @@ Note: Location format is COLUMN-ROW (e.g., Column 30, Row 3)
 SWAP PLAN:
 
 ROW 1 SWAPS:
-1. From: Soleil Blanc (Tom Ford) - Column 30, Row 3
-   To: Santal Noir (Dior) - Column 27, Row 1
-
-2. From: Irish Leather (Memo Paris) - Column 24, Row 6
-   To: Tapis Volant (Les Liquides Imaginaires) - Column 12, Row 1
-
-3. From: Fanfare (Thameen) - Column 29, Row 3
-   To: Megamare (Orto Parisi) - Column 18, Row 1
-
-4. From: Beach Hut Woman (Amouage) - Column 20, Row 4
-   To: Vodka on the Rocks (Kilian) - Column 9, Row 1
-
-5. From: Anais Anais (Cacharel) - Column 22, Row 8
-   To: Meander (Amouage) - Column 1, Row 1
-
-6. From: Un Bois Vanille (Serge Lutens) - Column 28, Row 2
+1. From: Un Bois Vanille (Serge Lutens) - Column 28, Row 2
    To: Interlude Black Iris (Amouage) - Column 3, Row 1
 
-7. From: Shanghai Lily (Tom Ford) - Column 26, Row 2
-   To: Irish Leather (Memo Paris) - Column 12, Row 1
-
-8. From: Tubéreuse Nue (Tom Ford) - Column 20, Row 2
+2. From: Tubéreuse Nue (Tom Ford) - Column 20, Row 2
    To: Haltane (Parfums de Marly) - Column 5, Row 1
 
-9. From: Imperial Tea (Kilian) - Column 27, Row 2
-   To: Honour Man (Amouage) - Column 2, Row 1
-
-10. From: Ambre Sultan (Serge Lutens) - Column 13, Row 4
+3. From: Vodka on the Rocks (Kilian) - Column 20, Row 4
    To: Gold Man (Amouage) - Column 10, Row 1
 
-11. From: Tapis Volant (Les Liquides Imaginaires) - Column 24, Row 6
+4. From: Tapis Volant (Les Liquides Imaginaires) - Column 24, Row 6
    To: Chance Eau Tendre (Chanel) - Column 13, Row 1
 
-12. From: Musky Garden (Mancera) - Column 20, Row 3
-   To: Fleur Narcotique (Ex Nihilo) - Column 24, Row 1
+5. From: Imperial Tea (Kilian) - Column 27, Row 2
+   To: Honour Man (Amouage) - Column 2, Row 1
 
-13. From: Sartorial (Penhaligon's) - Column 22, Row 5
-   To: Santal Royal (Guerlain) - Column 29, Row 1
-
-14. From: Halfeti Leather (Penhaligon's) - Column 16, Row 5
-   To: Promise (Frederic Malle) - Column 15, Row 1
-
-15. From: Vanilla Powder (Matiere Premiere) - Column 17, Row 6
-   To: Imperial Tea (Kilian) - Column 2, Row 1
-
-16. From: Parisian Musc (Matiere Premiere) - Column 16, Row 6
-   To: Intoxicated (Kilian) - Column 23, Row 1
-
-17. From: Tonic Blanc (Thomas Kosmala) - Column 26, Row 5
-   To: Twilly d'Hermès Eau Poivrée (Hermès) - Column 19, Row 1
-
-18. From: Blue Talisman (Ex Nihilo) - Column 19, Row 5
-   To: Grand Soir (Maison Francis Kurkdjian) - Column 16, Row 1
-
-19. From: Interlude Woman (Amouage) - Column 20, Row 7
-   To: Tubéreuse Nue (Tom Ford) - Column 5, Row 1
-
-20. From: Hyde Park (Boadicea the Victorious) - Column 20, Row 6
-   To: Musky Garden (Mancera) - Column 24, Row 1
-
-21. From: Ivory Route (Xerjoff) - Column 23, Row 2
-   To: Tapis Volant (Les Liquides Imaginaires) - Column 13, Row 1
-
-22. From: Atomic Rose (Initio Parfums Prives) - Column 25, Row 5
-   To: Un Bois Vanille (Serge Lutens) - Column 3, Row 1
-
-23. From: Musk Therapy  (Initio Parfums Prives) - Column 27, Row 5
-   To: Vanilla Powder (Matiere Premiere) - Column 2, Row 1
-
-24. From: Italica (Xerjoff) - Column 22, Row 2
-   To: Santal Majuscule (Serge Lutens) - Column 26, Row 1
-
-25. From: Lira (Xerjoff) - Column 19, Row 2
-   To: Rose 31 (Le Labo) - Column 25, Row 1
-
-26. From: Philtre Ceylan (Atelier Cologne) - Column 27, Row 6
-   To: Soleil Blanc (Tom Ford) - Column 27, Row 1
-
-27. From: Escentric 05 (Escentric Molecules) - Column 15, Row 2
-   To: La Fille de Berlin (Serge Lutens) - Column 22, Row 1
-
-28. From: Fleur Narcotique (Ex Nihilo) - Column 20, Row 3
-   To: Begamask (Orto Parisi) - Column 14, Row 1
-
-29. From: Vodka on the Rocks (Kilian) - Column 20, Row 4
-   To: Ambre Sultan (Serge Lutens) - Column 10, Row 1
-
-30. From: Le Lion (Chanel) - Column 15, Row 8
+6. From: Le Lion (Chanel) - Column 15, Row 8
    To: Alexandria II (Xerjoff) - Column 4, Row 1
 
+7. From: Musky Garden (Mancera) - Column 20, Row 3
+   To: Fleur Narcotique (Ex Nihilo) - Column 24, Row 1
+
+8. From: Fleur Narcotique (Ex Nihilo) - Column 24, Row 1
+   To: Begamask (Orto Parisi) - Column 14, Row 1
+
+9. From: Halfeti Leather (Penhaligon's) - Column 16, Row 5
+   To: Promise (Frederic Malle) - Column 15, Row 1
+
+10. From: Parisian Musc (Matiere Premiere) - Column 16, Row 6
+   To: Intoxicated (Kilian) - Column 23, Row 1
+
+11. From: Tonic Blanc (Thomas Kosmala) - Column 26, Row 5
+   To: Twilly d'Hermès Eau Poivrée (Hermès) - Column 19, Row 1
+
+12. From: Blue Talisman (Ex Nihilo) - Column 19, Row 5
+   To: Grand Soir (Maison Francis Kurkdjian) - Column 16, Row 1
+
+13. From: Italica (Xerjoff) - Column 22, Row 2
+   To: Santal Majuscule (Serge Lutens) - Column 26, Row 1
+
+14. From: Lira (Xerjoff) - Column 19, Row 2
+   To: Rose 31 (Le Labo) - Column 25, Row 1
+
+15. From: Escentric 05 (Escentric Molecules) - Column 15, Row 2
+   To: La Fille de Berlin (Serge Lutens) - Column 22, Row 1
+
 ROW 2 SWAPS:
-31. From: Squid (Zoologist) - Column 12, Row 2
-   To: Fate Man (Amouage) - Column 1, Row 2
+16. From: Ursa (Tiziana Terenzi) - Column 28, Row 7
+   To: Prada Amber (Prada) - Column 29, Row 2
 
-32. From: Decas (Xerjoff) - Column 29, Row 6
-   To: Tonka Fever (Parfumerie Particulière) - Column 16, Row 2
+17. From: Encelade (Marc-Antoine Barrois) - Column 6, Row 3
+   To: Tubéreuse Nue (Tom Ford) - Column 20, Row 2
 
-33. From: Ursa (Tiziana Terenzi) - Column 28, Row 7
-   To: Torino21 (Xerjoff) - Column 18, Row 2
-
-34. From: Tony Iommi Monkey Special (Xerjoff) - Column 19, Row 6
-   To: Fate Man (Amouage) - Column 12, Row 2
-
-35. From: Musc Ravageur  (Frederic Malle) - Column 6, Row 2
-   To: Interlude Black Iris (Amouage) - Column 28, Row 2
-
-36. From: Bat (Zoologist) - Column 19, Row 7
-   To: Elixir des Merveilles (Hermès) - Column 24, Row 2
-
-37. From: Fan Your Flames (Nishane) - Column 11, Row 1
-   To: Chance (Chanel) - Column 13, Row 2
-
-38. From: Haltane (Parfums de Marly) - Column 20, Row 2
+18. From: Haltane (Parfums de Marly) - Column 5, Row 1
    To: Sunshine Woman (Amouage) - Column 30, Row 2
 
-39. From: My Pearls (The Merchant of Venice) - Column 21, Row 8
-   To: Musc Ravageur  (Frederic Malle) - Column 28, Row 2
+19. From: Gold Man (Amouage) - Column 10, Row 1
+   To: Fate Man (Amouage) - Column 1, Row 2
 
-40. From: Back to Black (Kilian) - Column 14, Row 8
-   To: Love Tuberose (Amouage) - Column 21, Row 2
-
-41. From: Gold Man (Amouage) - Column 13, Row 4
-   To: Santal Majuscule (Serge Lutens) - Column 22, Row 2
-
-42. From: Coromandel (Chanel) - Column 28, Row 5
-   To: Rose 31 (Le Labo) - Column 19, Row 2
-
-43. From: Stercus (Orto Parisi) - Column 23, Row 7
-   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 11, Row 2
-
-44. From: Babycat (Yves Saint Laurent) - Column 5, Row 4
-   To: Fan Your Flames (Nishane) - Column 13, Row 2
-
-45. From: Psychedelique (Jovoy) - Column 6, Row 1
-   To: Bat (Zoologist) - Column 24, Row 2
-
-46. From: More Than Words (Xerjoff) - Column 10, Row 5
-   To: Layton Exclusif (Parfums de Marly) - Column 7, Row 2
-
-47. From: Alexandria II (Xerjoff) - Column 15, Row 8
-   To: Haltane (Parfums de Marly) - Column 30, Row 2
-
-48. From: Richwood (Xerjoff) - Column 5, Row 2
-   To: Stercus (Orto Parisi) - Column 11, Row 2
-
-49. From: Fracas (Robert Piguet) - Column 29, Row 7
-   To: Babycat (Yves Saint Laurent) - Column 13, Row 2
-
-50. From: Torino21 (Xerjoff) - Column 28, Row 7
-   To: Honour Man (Amouage) - Column 27, Row 2
-
-51. From: Encelade (Marc-Antoine Barrois) - Column 6, Row 3
-   To: Royal Tobacco (Amouage) - Column 9, Row 2
-
-52. From: Under the Stars (Maison Martin Margiela) - Column 15, Row 5
-   To: Spirito (Meo Fusciuni) - Column 14, Row 2
-
-53. From: Russian Tea (Masque Milano) - Column 28, Row 8
-   To: Patchouli Intense (Nicolai Parfumeur Createur) - Column 10, Row 2
-
-54. From: Amber Pour Homme - Decanted (Prada) - Column 11, Row 5
-   To: Alexandria II (Xerjoff) - Column 30, Row 2
-
-55. From: Crush On Me (Unique'e Luxury) - Column 4, Row 3
-   To: Sunshine Woman (Amouage) - Column 20, Row 2
-
-56. From: Hummingbird (Zoologist) - Column 6, Row 4
-   To: Tam Dao (Dyptique) - Column 25, Row 2
-
-57. From: Beverly Hills Exclusive (Unique'e Luxury) - Column 4, Row 2
-   To: Amber Pour Homme - Decanted (Prada) - Column 30, Row 2
-
-58. From: Akdeniz (Unique'e Luxury) - Column 13, Row 8
-   To: Under the Stars (Maison Martin Margiela) - Column 14, Row 2
-
-59. From: Infusion d'Homme (Prada) - Column 6, Row 7
-   To: Hummingbird (Zoologist) - Column 25, Row 2
-
-60. From: Dent de Lait (Serge Lutens) - Column 14, Row 7
+20. From: Dent de Lait (Serge Lutens) - Column 14, Row 7
    To: Epic Man (Amouage) - Column 3, Row 2
 
+21. From: Stercus (Orto Parisi) - Column 23, Row 7
+   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 11, Row 2
+
+22. From: Decas (Xerjoff) - Column 29, Row 6
+   To: Tonka Fever (Parfumerie Particulière) - Column 16, Row 2
+
+23. From: Bat (Zoologist) - Column 19, Row 7
+   To: Elixir des Merveilles (Hermès) - Column 24, Row 2
+
+24. From: Fan Your Flames (Nishane) - Column 11, Row 1
+   To: Chance (Chanel) - Column 13, Row 2
+
+25. From: Back to Black (Kilian) - Column 14, Row 8
+   To: Love Tuberose (Amouage) - Column 21, Row 2
+
+26. From: More Than Words (Xerjoff) - Column 10, Row 5
+   To: Layton Exclusif (Parfums de Marly) - Column 7, Row 2
+
+27. From: Under the Stars (Maison Martin Margiela) - Column 15, Row 5
+   To: Spirito (Meo Fusciuni) - Column 14, Row 2
+
+28. From: Russian Tea (Masque Milano) - Column 28, Row 8
+   To: Patchouli Intense (Nicolai Parfumeur Createur) - Column 10, Row 2
+
+29. From: Hummingbird (Zoologist) - Column 6, Row 4
+   To: Tam Dao (Dyptique) - Column 25, Row 2
+
 ROW 3 SWAPS:
-61. From: Dangerous Complicity (Etat Libre d'Orange) - Column 15, Row 6
-   To: Pegasus (Parfums de Marly) - Column 7, Row 3
-
-62. From: Santal Majuscule (Serge Lutens) - Column 13, Row 4
-   To: Enclave (Amouage) - Column 11, Row 3
-
-63. From: Drakkar Noir (Guy Laroche) - Column 12, Row 6
-   To: Sintra (Memo Paris) - Column 22, Row 3
-
-64. From: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 23, Row 7
-   To: Santal Majuscule (Serge Lutens) - Column 11, Row 3
-
-65. From: Bo (Liis) - Column 21, Row 7
-   To: Lys 41 (Le Labo) - Column 26, Row 3
-
-66. From: Gyan (Bvlgari) - Column 18, Row 4
-   To: Guidance (Amouage) - Column 25, Row 3
-
-67. From: Spirito (Meo Fusciuni) - Column 15, Row 5
-   To: Gyan (Bvlgari) - Column 25, Row 3
-
-68. From: Patchouli Absolu (Tom Ford) - Column 26, Row 6
-   To: Black Phantom (Kilian) - Column 27, Row 3
-
-69. From: Tonka Fever (Parfumerie Particulière) - Column 29, Row 6
-   To: Sunshine Woman (Amouage) - Column 4, Row 3
-
-70. From: Halfeti Cedar (Penhaligon's) - Column 18, Row 5
-   To: Royal Tobacco (Amouage) - Column 6, Row 3
-
-71. From: Material (Amouage) - Column 2, Row 8
-   To: Montabaco (Ormonde Jayne) - Column 9, Row 3
-
-72. From: Fig Infusion (Essential Parfums) - Column 14, Row 3
-   To: Amyris Femme (Maison Francis Kurkdjian) - Column 21, Row 3
-
-73. From: Purpose (Amouage) - Column 3, Row 4
-   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 11, Row 3
-
-74. From: Patchouliful (Laboratorio Olfattivo) - Column 15, Row 3
-   To: Halfeti Cedar (Penhaligon's) - Column 6, Row 3
-
-75. From: Chance (Chanel) - Column 11, Row 1
-   To: Material (Amouage) - Column 9, Row 3
-
-76. From: Oud Ispahan (Dior) - Column 12, Row 8
-   To: Fiero (Xerjoff) - Column 3, Row 3
-
-77. From: Vibrato (Sospiro Perfumes) - Column 13, Row 3
-   To: Invasion Barbare (MDCI Parfums) - Column 12, Row 3
-
-78. From: Viking (Creed) - Column 11, Row 8
-   To: Purpose (Amouage) - Column 11, Row 3
-
-79. From: Royal Tobacco (Amouage) - Column 18, Row 5
-   To: Moustache (Rochas) - Column 17, Row 3
-
-80. From: Kouros (Yves Saint Laurent) - Column 29, Row 8
-   To: Vibrato (Sospiro Perfumes) - Column 12, Row 3
-
-81. From: Declaration d'Un Soir Intense (Cartier) - Column 11, Row 7
-   To: Overture Man (Amouage) - Column 1, Row 3
-
-82. From: Bois du Portugal (Creed) - Column 17, Row 7
-   To: Megamare (Orto Parisi) - Column 29, Row 3
-
-83. From: Halfeti (Penhaligon's) - Column 17, Row 5
+30. From: Halfeti (Penhaligon's) - Column 17, Row 5
    To: Antaeus (Chanel) - Column 18, Row 3
 
-84. From: Aromatics Elixir (Clinique) - Column 8, Row 2
+31. From: Bois du Portugal (Creed) - Column 17, Row 7
+   To: Megamare (Orto Parisi) - Column 29, Row 3
+
+32. From: Oud Ispahan (Dior) - Column 12, Row 8
+   To: Fiero (Xerjoff) - Column 3, Row 3
+
+33. From: Vetiver (Guerlain) - Column 5, Row 5
+   To: Encelade (Marc-Antoine Barrois) - Column 6, Row 3
+
+34. From: Archives 69 (Etat Libre d'Orange) - Column 17, Row 8
+   To: Vibrato (Sospiro Perfumes) - Column 13, Row 3
+
+35. From: Vibrato (Sospiro Perfumes) - Column 13, Row 3
+   To: Invasion Barbare (MDCI Parfums) - Column 12, Row 3
+
+36. From: Dangerous Complicity (Etat Libre d'Orange) - Column 15, Row 6
+   To: Pegasus (Parfums de Marly) - Column 7, Row 3
+
+37. From: Bo (Liis) - Column 21, Row 7
+   To: Lys 41 (Le Labo) - Column 26, Row 3
+
+38. From: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 11, Row 2
+   To: Enclave (Amouage) - Column 11, Row 3
+
+39. From: Tonka Fever (Parfumerie Particulière) - Column 16, Row 2
+   To: Crush On Me (Unique'e Luxury) - Column 4, Row 3
+
+40. From: Chance (Chanel) - Column 13, Row 2
+   To: Montabaco (Ormonde Jayne) - Column 9, Row 3
+
+41. From: Spirito (Meo Fusciuni) - Column 14, Row 2
+   To: Guidance (Amouage) - Column 25, Row 3
+
+42. From: Drakkar Noir (Guy Laroche) - Column 12, Row 6
+   To: Sintra (Memo Paris) - Column 22, Row 3
+
+43. From: Patchouli Absolu (Tom Ford) - Column 26, Row 6
+   To: Black Phantom (Kilian) - Column 27, Row 3
+
+44. From: Fig Infusion (Essential Parfums) - Column 14, Row 3
+   To: Amyris Femme (Maison Francis Kurkdjian) - Column 21, Row 3
+
+45. From: Royal Tobacco (Amouage) - Column 9, Row 2
+   To: Moustache (Rochas) - Column 17, Row 3
+
+46. From: Declaration d'Un Soir Intense (Cartier) - Column 11, Row 7
+   To: Overture Man (Amouage) - Column 1, Row 3
+
+47. From: Aromatics Elixir (Clinique) - Column 8, Row 2
    To: Silver Man (Amouage) - Column 2, Row 3
 
-85. From: Intoxicated (Kilian) - Column 16, Row 6
-   To: Halfeti (Penhaligon's) - Column 18, Row 3
-
-86. From: Lys 41 (Le Labo) - Column 21, Row 7
-   To: Intoxicated (Kilian) - Column 18, Row 3
-
-87. From: Archives 69 (Etat Libre d'Orange) - Column 17, Row 8
-   To: Invasion Barbare (MDCI Parfums) - Column 13, Row 3
-
-88. From: Wanted (Azzaro) - Column 4, Row 5
-   To: Oud Ispahan (Dior) - Column 3, Row 3
-
-89. From: Vetiver (Guerlain) - Column 5, Row 5
-   To: Patchouliful (Laboratorio Olfattivo) - Column 6, Row 3
-
-90. From: French Riviera (Mancera) - Column 6, Row 6
-   To: Kouros (Yves Saint Laurent) - Column 12, Row 3
+48. From: French Riviera (Mancera) - Column 6, Row 6
+   To: Percival (Parfums de Marly) - Column 24, Row 3
 
 ROW 4 SWAPS:
-91. From: Fiero (Xerjoff) - Column 12, Row 8
-   To: Alien (Mugler) - Column 22, Row 4
-
-92. From: Patchouli Intense (Nicolai Parfumeur Createur) - Column 28, Row 8
-   To: Tam Dao (Dyptique) - Column 6, Row 4
-
-93. From: 40 knots (Xerjoff) - Column 6, Row 8
-   To: Heritage (Guerlain) - Column 17, Row 4
-
-94. From: L’Ombre Dans L’Eau (Dyptique) - Column 19, Row 4
-   To: Blossom Love (Amouage) - Column 25, Row 4
-
-95. From: Guidance (Amouage) - Column 18, Row 4
-   To: Blossom Love (Amouage) - Column 19, Row 4
-
-96. From: Triumph Of Bacchus (Argos) - Column 21, Row 1
-   To: Portrayal Man (Amouage) - Column 2, Row 4
-
-97. From: Fall of Phaeton (Argos) - Column 11, Row 4
-   To: Ambre Sultan (Serge Lutens) - Column 20, Row 4
-
-98. From: Rose 31 (Le Labo) - Column 28, Row 5
-   To: Fiero (Xerjoff) - Column 22, Row 4
-
-99. From: Bitter Peach (Tom Ford) - Column 29, Row 4
+49. From: Antaeus (Chanel) - Column 18, Row 3
    To: Lalibela (Memo Paris) - Column 21, Row 4
 
-100. From: New York Intense (Nicolai Parfumeur Createur) - Column 2, Row 5
-   To: Fall of Phaeton (Argos) - Column 20, Row 4
-
-101. From: Aqua Fahrenheit (Dior) - Column 2, Row 6
-   To: L’Ombre Dans L’Eau (Dyptique) - Column 25, Row 4
-
-102. From: Sintra (Memo Paris) - Column 12, Row 6
-   To: New York Intense (Nicolai Parfumeur Createur) - Column 20, Row 4
-
-103. From: Lalibela (Memo Paris) - Column 29, Row 4
+50. From: Lalibela (Memo Paris) - Column 21, Row 4
    To: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 14, Row 4
 
-104. From: African Leather (Memo Paris) - Column 7, Row 8
-   To: Beach Hut Man (Amouage) - Column 28, Row 4
-
-105. From: Santal Noir (Dior) - Column 30, Row 3
-   To: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 29, Row 4
-
-106. From: La Fille de Berlin (Serge Lutens) - Column 15, Row 2
-   To: Jubilation XXV (Amouage) - Column 8, Row 4
-
-107. From: Silver Man (Amouage) - Column 8, Row 2
-   To: Santal Noir (Dior) - Column 29, Row 4
-
-108. From: Encre Noire  (Lalique) - Column 5, Row 7
-   To: Reflection Man (Amouage) - Column 1, Row 4
-
-109. From: L'Envol de Cartier (Cartier) - Column 4, Row 7
+51. From: L'Envol de Cartier (Cartier) - Column 4, Row 7
    To: Ganymede (Marc-Antoine Barrois) - Column 10, Row 4
 
-110. From: Memoir Woman (Amouage) - Column 23, Row 4
-   To: Encre Noire  (Lalique) - Column 1, Row 4
+52. From: Fiero (Xerjoff) - Column 3, Row 3
+   To: Alien (Mugler) - Column 22, Row 4
 
-111. From: Blossom Love (Amouage) - Column 18, Row 4
-   To: Sintra (Memo Paris) - Column 20, Row 4
+53. From: Prada Amber (Prada) - Column 29, Row 2
+   To: Heritage (Guerlain) - Column 17, Row 4
 
-112. From: Intense Cedrat Boise (Mancera) - Column 3, Row 8
-   To: Bitter Peach (Tom Ford) - Column 21, Row 4
+54. From: African Leather (Memo Paris) - Column 7, Row 8
+   To: Beach Hut Man (Amouage) - Column 28, Row 4
 
-113. From: Antaeus (Chanel) - Column 17, Row 5
-   To: Intense Cedrat Boise (Mancera) - Column 21, Row 4
+55. From: Sunshine Woman (Amouage) - Column 30, Row 2
+   To: L’Ombre Dans L’Eau (Dyptique) - Column 19, Row 4
 
-114. From: Fate Woman (Amouage) - Column 26, Row 4
-   To: Triumph Of Bacchus (Argos) - Column 2, Row 4
+56. From: L’Ombre Dans L’Eau (Dyptique) - Column 19, Row 4
+   To: Blossom Love (Amouage) - Column 25, Row 4
 
-115. From: Prada Amber (Prada) - Column 29, Row 2
-   To: 40 knots (Xerjoff) - Column 17, Row 4
+57. From: Blossom Love (Amouage) - Column 25, Row 4
+   To: Vodka on the Rocks (Kilian) - Column 20, Row 4
 
-116. From: Fucking Fabulous (Tom Ford) - Column 30, Row 8
-   To: Enclave (Amouage) - Column 13, Row 4
+58. From: La Fille de Berlin (Serge Lutens) - Column 22, Row 1
+   To: Jubilation XXV (Amouage) - Column 8, Row 4
 
-117. From: Sycomore (Chanel) - Column 5, Row 8
-   To: Memoir Woman (Amouage) - Column 1, Row 4
+59. From: Patchouli Intense (Nicolai Parfumeur Createur) - Column 10, Row 2
+   To: Hummingbird (Zoologist) - Column 6, Row 4
 
-118. From: Sunshine Woman (Amouage) - Column 29, Row 6
-   To: Guidance (Amouage) - Column 19, Row 4
+60. From: Silver Man (Amouage) - Column 2, Row 3
+   To: Bitter Peach (Tom Ford) - Column 29, Row 4
+
+61. From: Triumph Of Bacchus (Argos) - Column 21, Row 1
+   To: Portrayal Man (Amouage) - Column 2, Row 4
+
+62. From: Memoir Woman (Amouage) - Column 23, Row 4
+   To: Reflection Man (Amouage) - Column 1, Row 4
 
 ROW 5 SWAPS:
-119. From: Love Tuberose (Amouage) - Column 14, Row 8
-   To: EGE / ΑΙΓΑΙΟ (Nishane) - Column 14, Row 5
+63. From: Interlude Black Iris (Amouage) - Column 3, Row 1
+   To: Halfeti (Penhaligon's) - Column 17, Row 5
 
-120. From: Blanche Bête (Les Liquides Imaginaires) - Column 7, Row 4
-   To: Promise (Frederic Malle) - Column 16, Row 5
-
-121. From: Gentleman Boisée (Givenchy) - Column 26, Row 7
-   To: Love Tuberose (Amouage) - Column 14, Row 5
-
-122. From: Gentleman Givenchy (Givenchy) - Column 27, Row 8
-   To: Layton Exclusif (Parfums de Marly) - Column 10, Row 5
-
-123. From: Indian Sandalwood (Alfred Dunhill) - Column 22, Row 6
-   To: Grand Soir (Maison Francis Kurkdjian) - Column 19, Row 5
-
-124. From: Homme Sport 2021 (Dior) - Column 4, Row 6
-   To: Opium 1977 (Yves Saint Laurent) - Column 23, Row 5
-
-125. From: Meander (Amouage) - Column 22, Row 8
-   To: Hacivat (Nishane) - Column 30, Row 5
-
-126. From: Nº 5 (Rosendo Mateu) - Column 8, Row 3
-   To: Moustache (Rochas) - Column 18, Row 5
-
-127. From: Safran Colognise (Nishane) - Column 11, Row 6
+64. From: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 14, Row 4
    To: Silver Mountain Water  (Creed) - Column 9, Row 5
 
-128. From: Narciso Rodriguez for Him (Narciso Rodriguez) - Column 23, Row 8
-   To: Indian Sandalwood (Alfred Dunhill) - Column 19, Row 5
+65. From: Luna Rossa Black (Prada) - Column 24, Row 7
+   To: Opium 1977 (Yves Saint Laurent) - Column 23, Row 5
 
-129. From: Bois Impérial (Essential Parfums) - Column 10, Row 3
-   To: Gris Charnel  (BDK Parfums) - Column 7, Row 5
+66. From: Bentley for Men Intense (Bentley) - Column 16, Row 8
+   To: Vetiver (Guerlain) - Column 5, Row 5
 
-130. From: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 30, Row 3
-   To: Safran Colognise (Nishane) - Column 9, Row 5
-
-131. From: Journey Woman (Amouage) - Column 24, Row 4
-   To: Fiero (Xerjoff) - Column 28, Row 5
-
-132. From: Overture Man (Amouage) - Column 11, Row 7
-   To: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 9, Row 5
-
-133. From: Interlude Black Iris (Amouage) - Column 6, Row 2
-   To: Intense Cedrat Boise (Mancera) - Column 17, Row 5
-
-134. From: Amyris Femme (Maison Francis Kurkdjian) - Column 14, Row 3
-   To: Homme Sport 2021 (Dior) - Column 23, Row 5
-
-135. From: Luna Rossa Ocean (Prada) - Column 13, Row 7
-   To: Blanche Bête (Les Liquides Imaginaires) - Column 16, Row 5
-
-136. From: Luna Rossa Carbon (Prada) - Column 24, Row 8
-   To: Bracken Man (Amouage) - Column 3, Row 5
-
-137. From: Luna Rossa Black (Prada) - Column 24, Row 7
-   To: Amyris Femme (Maison Francis Kurkdjian) - Column 23, Row 5
-
-138. From: Search  (Amouage) - Column 30, Row 4
-   To: Nº 5 (Rosendo Mateu) - Column 18, Row 5
-
-139. From: Kutay (Unique'e Luxury) - Column 4, Row 4
-   To: Meander (Amouage) - Column 30, Row 5
-
-140. From: Epic Man (Amouage) - Column 14, Row 7
-   To: Fall of Phaeton (Argos) - Column 2, Row 5
-
-141. From: Pasha de Cartier (Cartier) - Column 4, Row 8
-   To: Vanilla Powder (Matiere Premiere) - Column 27, Row 5
-
-142. From: Fortis (Les Liquides Imaginaires) - Column 8, Row 6
-   To: Overture Man (Amouage) - Column 9, Row 5
-
-143. From: Moustache (Rochas) - Column 8, Row 3
+67. From: Honour Man (Amouage) - Column 2, Row 1
    To: L’Homme Ideal L’Intense (Guerlain) - Column 6, Row 5
 
-144. From: Journey Man (Amouage) - Column 2, Row 2
-   To: Journey Woman (Amouage) - Column 28, Row 5
+68. From: Epic Man (Amouage) - Column 3, Row 2
+   To: New York Intense (Nicolai Parfumeur Createur) - Column 2, Row 5
 
-145. From: Honour Man (Amouage) - Column 28, Row 7
-   To: Moustache (Rochas) - Column 6, Row 5
+69. From: Gentleman Boisée (Givenchy) - Column 26, Row 7
+   To: EGE / ΑΙΓΑΙΟ (Nishane) - Column 14, Row 5
 
-146. From: Montabaco (Ormonde Jayne) - Column 2, Row 8
+70. From: Luna Rossa Carbon (Prada) - Column 24, Row 8
+   To: Bracken Man (Amouage) - Column 3, Row 5
+
+71. From: Bois Impérial (Essential Parfums) - Column 10, Row 3
+   To: Gris Charnel  (BDK Parfums) - Column 7, Row 5
+
+72. From: Kutay (Unique'e Luxury) - Column 4, Row 4
+   To: Hacivat (Nishane) - Column 30, Row 5
+
+73. From: Ormonde Woman (Ormonde Jayne) - Column 19, Row 3
    To: The Uncompromising Sohan (Penhaligon's) - Column 20, Row 5
 
-147. From: Ormonde Woman (Ormonde Jayne) - Column 19, Row 3
-   To: Montabaco (Ormonde Jayne) - Column 20, Row 5
-
-148. From: Bentley for Men Intense (Bentley) - Column 16, Row 8
-   To: Patchouliful (Laboratorio Olfattivo) - Column 5, Row 5
-
 ROW 6 SWAPS:
-149. From: Hacivat (Nishane) - Column 22, Row 8
-   To: Original Vetiver (Creed) - Column 10, Row 6
-
-150. From: Ani (Nishane) - Column 27, Row 4
-   To: Beau de Jour (Tom Ford) - Column 3, Row 6
-
-151. From: Layton Exclusif (Parfums de Marly) - Column 27, Row 8
-   To: Opium 1977 (Yves Saint Laurent) - Column 4, Row 6
-
-152. From: Layton (Parfums de Marly) - Column 7, Row 1
+74. From: Oud Wood (Tom Ford) - Column 8, Row 8
    To: Platinum Egoiste (Chanel) - Column 5, Row 6
 
-153. From: Burlington 1819 (Roja Dove) - Column 1, Row 8
-   To: Guidance (Amouage) - Column 29, Row 6
+75. From: Invasion Barbare (MDCI Parfums) - Column 12, Row 3
+   To: Dangerous Complicity (Etat Libre d'Orange) - Column 15, Row 6
 
-154. From: Lyric Man (Amouage) - Column 17, Row 1
-   To: Black Phantom (Kilian) - Column 26, Row 6
+76. From: Pegasus (Parfums de Marly) - Column 7, Row 3
+   To: Tapis Volant (Les Liquides Imaginaires) - Column 24, Row 6
 
-155. From: Gris Charnel  (BDK Parfums) - Column 10, Row 3
-   To: Burlington 1819 (Roja Dove) - Column 29, Row 6
-
-156. From: Invasion Barbare (MDCI Parfums) - Column 17, Row 8
-   To: Pegasus (Parfums de Marly) - Column 15, Row 6
-
-157. From: Molecule 04 (Escentric Molecules) - Column 18, Row 8
-   To: Sicily (Mancera) - Column 23, Row 6
-
-158. From: Molecule 02 (Escentric Molecules) - Column 18, Row 7
-   To: Lyric Man (Amouage) - Column 26, Row 6
-
-159. From: Molecule 01 (Escentric Molecules) - Column 18, Row 6
-   To: Molecule 04 (Escentric Molecules) - Column 23, Row 6
-
-160. From: Habit Rouge (Guerlain) - Column 16, Row 3
-   To: Ombre Leather (Tom Ford) - Column 7, Row 6
-
-161. From: Sacred Wood (Kilian) - Column 12, Row 4
-   To: Halston Z14 (Halston) - Column 1, Row 6
-
-162. From: Beau de Jour (Tom Ford) - Column 27, Row 4
-   To: Halfeti (Penhaligon's) - Column 16, Row 6
-
-163. From: Vetiver Sensuel (Mancera) - Column 3, Row 7
-   To: New York Intense (Nicolai Parfumeur Createur) - Column 12, Row 6
-
-164. From: Ébène Fumé (Tom Ford) - Column 8, Row 1
-   To: Overture Man (Amouage) - Column 8, Row 6
-
-165. From: Pegasus (Parfums de Marly) - Column 17, Row 8
-   To: Chance Eau Tendre (Chanel) - Column 24, Row 6
-
-166. From: Terre D'Hermes Eau Intense Vetiver (Hermès) - Column 13, Row 6
-   To: Ébène Fumé (Tom Ford) - Column 8, Row 6
-
-167. From: Blenheim Bouquet (Penhaligon's) - Column 16, Row 4
-   To: Terre D'Hermes Eau Intense Vetiver (Hermès) - Column 8, Row 6
-
-168. From: Halston Z14 (Halston) - Column 12, Row 4
-   To: Blenheim Bouquet (Penhaligon's) - Column 8, Row 6
-
-169. From: Royal Oud (Creed) - Column 9, Row 8
-   To: Sacred Wood (Kilian) - Column 1, Row 6
-
-170. From: Tam Dao (Dyptique) - Column 28, Row 8
-   To: Invasion Barbare (MDCI Parfums) - Column 15, Row 6
-
-171. From: Polo (Ralph Lauren) - Column 19, Row 8
-   To: Hacivat (Nishane) - Column 10, Row 6
-
-172. From: Hawas for Him (Rasasi) - Column 2, Row 7
-   To: Gris Charnel  (BDK Parfums) - Column 29, Row 6
-
-173. From: Eau des Merveilles (Hermès) - Column 21, Row 5
-   To: Soleil Blanc (Tom Ford) - Column 27, Row 6
-
-174. From: Elixir des Merveilles (Hermès) - Column 19, Row 7
-   To: Habit Rouge (Guerlain) - Column 7, Row 6
-
-175. From: Royal Mayfair (Creed) - Column 10, Row 8
-   To: Grey Vetiver (Tom Ford) - Column 30, Row 6
-
-176. From: Royal Water (Creed) - Column 10, Row 7
+77. From: Royal Water (Creed) - Column 10, Row 7
    To: Black Opium (Yves Saint Laurent) - Column 28, Row 6
 
-177. From: Oud Wood (Tom Ford) - Column 8, Row 8
-   To: Layton (Parfums de Marly) - Column 5, Row 6
+78. From: Elixir des Merveilles (Hermès) - Column 24, Row 2
+   To: Ombre Leather (Tom Ford) - Column 7, Row 6
 
-178. From: Bade'e Al Oud Oud for Glory (Lattafa Perfumes) - Column 17, Row 2
-   To: Beau de Jour (Tom Ford) - Column 16, Row 6
+79. From: Layton Exclusif (Parfums de Marly) - Column 7, Row 2
+   To: Homme Sport 2021 (Dior) - Column 4, Row 6
+
+80. From: Hacivat (Nishane) - Column 30, Row 5
+   To: Original Vetiver (Creed) - Column 10, Row 6
+
+81. From: Ani (Nishane) - Column 27, Row 4
+   To: Beau de Jour (Tom Ford) - Column 3, Row 6
+
+82. From: Molecule 04 (Escentric Molecules) - Column 18, Row 8
+   To: Sicily (Mancera) - Column 23, Row 6
+
+83. From: Sacred Wood (Kilian) - Column 12, Row 4
+   To: Halston Z14 (Halston) - Column 1, Row 6
+
+84. From: Royal Mayfair (Creed) - Column 10, Row 8
+   To: Grey Vetiver (Tom Ford) - Column 30, Row 6
 
 ROW 7 SWAPS:
-179. From: Tuscan Leather (Tom Ford) - Column 7, Row 7
-   To: Blanche Bête (Les Liquides Imaginaires) - Column 13, Row 7
+85. From: Silver Mountain Water  (Creed) - Column 9, Row 5
+   To: Bois du Portugal (Creed) - Column 17, Row 7
 
-180. From: Ombre Leather (Tom Ford) - Column 16, Row 3
-   To: Reflection Man (Amouage) - Column 5, Row 7
+86. From: Megamare (Orto Parisi) - Column 29, Row 3
+   To: Luna Rossa Black (Prada) - Column 24, Row 7
 
-181. From: Twilly d'Hermès Eau Poivrée (Hermès) - Column 26, Row 5
-   To: Black Opium (Yves Saint Laurent) - Column 10, Row 7
+87. From: Opium 1977 (Yves Saint Laurent) - Column 23, Row 5
+   To: L'Envol de Cartier (Cartier) - Column 4, Row 7
 
-182. From: Santal Royal (Guerlain) - Column 22, Row 5
-   To: Ganymede (Marc-Antoine Barrois) - Column 4, Row 7
+88. From: Alien (Mugler) - Column 22, Row 4
+   To: Ursa (Tiziana Terenzi) - Column 28, Row 7
 
-183. From: Oud Satin Mood (Maison Francis Kurkdjian) - Column 30, Row 1
-   To: Babycat (Yves Saint Laurent) - Column 29, Row 7
+89. From: Begamask (Orto Parisi) - Column 14, Row 1
+   To: Dent de Lait (Serge Lutens) - Column 14, Row 7
 
-184. From: The Uncompromising Sohan (Penhaligon's) - Column 2, Row 8
-   To: Santal Royal (Guerlain) - Column 4, Row 7
+90. From: Promise (Frederic Malle) - Column 15, Row 1
+   To: Gentleman Boisée (Givenchy) - Column 26, Row 7
 
-185. From: Promise (Frederic Malle) - Column 7, Row 4
-   To: Love Tuberose (Amouage) - Column 26, Row 7
+91. From: EGE / ΑΙΓΑΙΟ (Nishane) - Column 14, Row 5
+   To: Bo (Liis) - Column 21, Row 7
 
-186. From: Grand Soir (Maison Francis Kurkdjian) - Column 22, Row 6
-   To: Santal Majuscule (Serge Lutens) - Column 23, Row 7
+92. From: Twilly d'Hermès Eau Poivrée (Hermès) - Column 19, Row 1
+   To: Royal Water (Creed) - Column 10, Row 7
 
-187. From: Carnal Flower (Frederic Malle) - Column 22, Row 7
-   To: New York Intense (Nicolai Parfumeur Createur) - Column 3, Row 7
-
-188. From: Opium 1977 (Yves Saint Laurent) - Column 27, Row 8
-   To: The Uncompromising Sohan (Penhaligon's) - Column 4, Row 7
-
-189. From: Black Opium (Yves Saint Laurent) - Column 26, Row 5
+93. From: Black Opium (Yves Saint Laurent) - Column 28, Row 6
    To: Black Orchid (Tom Ford) - Column 8, Row 7
 
-190. From: Chance Eau Tendre (Chanel) - Column 17, Row 8
-   To: Moustache (Rochas) - Column 28, Row 7
+94. From: Grand Soir (Maison Francis Kurkdjian) - Column 16, Row 1
+   To: Stercus (Orto Parisi) - Column 23, Row 7
 
-191. From: Coco Mademoiselle (Chanel) - Column 29, Row 5
-   To: Fall of Phaeton (Argos) - Column 14, Row 7
-
-192. From: Jubilation XXV (Amouage) - Column 15, Row 2
+95. From: Jubilation XXV (Amouage) - Column 8, Row 4
    To: Costa Azzurra (Tom Ford) - Column 30, Row 7
 
-193. From: Begamask (Orto Parisi) - Column 20, Row 3
-   To: Coco Mademoiselle (Chanel) - Column 14, Row 7
+96. From: Ombre Leather (Tom Ford) - Column 7, Row 6
+   To: Encre Noire  (Lalique) - Column 5, Row 7
 
-194. From: Megamare (Orto Parisi) - Column 17, Row 7
-   To: Amyris Femme (Maison Francis Kurkdjian) - Column 24, Row 7
-
-195. From: Himalaya  (Creed) - Column 28, Row 3
-   To: Amyris Femme (Maison Francis Kurkdjian) - Column 17, Row 7
-
-196. From: Silver Mountain Water  (Creed) - Column 11, Row 6
-   To: Himalaya  (Creed) - Column 17, Row 7
-
-197. From: Galloway (Parfums de Marly) - Column 12, Row 7
-   To: Blanche Bête (Les Liquides Imaginaires) - Column 7, Row 7
-
-198. From: Hindu Kush (Mancera) - Column 8, Row 5
-   To: Promise (Frederic Malle) - Column 26, Row 7
-
-199. From: Black Gold (Mancera) - Column 23, Row 3
-   To: New York Intense (Nicolai Parfumeur Createur) - Column 22, Row 7
-
-200. From: Delina Exclusif (Parfums de Marly) - Column 13, Row 5
-   To: Habit Rouge (Guerlain) - Column 19, Row 7
-
-201. From: Bracken Man (Amouage) - Column 24, Row 8
-   To: Hummingbird (Zoologist) - Column 6, Row 7
-
-202. From: Black Orchid (Tom Ford) - Column 26, Row 5
-   To: Intoxicated (Kilian) - Column 21, Row 7
-
-203. From: EGE / ΑΙΓΑΙΟ (Nishane) - Column 14, Row 8
-   To: Black Orchid (Tom Ford) - Column 21, Row 7
-
-204. From: Cocaïne (Franck Boclet) - Column 26, Row 8
-   To: Silver Mountain Water  (Creed) - Column 17, Row 7
-
-205. From: Alien (Mugler) - Column 12, Row 8
-   To: Chance Eau Tendre (Chanel) - Column 28, Row 7
-
-206. From: Another 13 (Le Labo) - Column 25, Row 8
+97. From: Another 13 (Le Labo) - Column 25, Row 8
    To: Seminalis (Orto Parisi) - Column 15, Row 7
 
-207. From: Seminalis (Orto Parisi) - Column 25, Row 8
-   To: Opium 1977 (Yves Saint Laurent) - Column 4, Row 7
-
-208. From: Black Phantom (Kilian) - Column 17, Row 1
-   To: EGE / ΑΙΓΑΙΟ (Nishane) - Column 21, Row 7
-
 ROW 8 SWAPS:
-209. From: H24 (Hermès) - Column 20, Row 1
-   To: Patchouliful (Laboratorio Olfattivo) - Column 16, Row 8
+98. From: Ganymede (Marc-Antoine Barrois) - Column 10, Row 4
+   To: Oud Wood (Tom Ford) - Column 8, Row 8
 
-210. From: Renaissance (Xerjoff) - Column 12, Row 5
-   To: Sicily (Mancera) - Column 18, Row 8
+99. From: Platinum Egoiste (Chanel) - Column 5, Row 6
+   To: Oud Ispahan (Dior) - Column 12, Row 8
 
-211. From: Percival (Parfums de Marly) - Column 24, Row 3
-   To: Santal Royal (Guerlain) - Column 2, Row 8
+100. From: Heritage (Guerlain) - Column 17, Row 4
+   To: African Leather (Memo Paris) - Column 7, Row 8
 
-212. From: Terre d'Hermes (Hermès) - Column 1, Row 5
-   To: Memoir Woman (Amouage) - Column 5, Row 8
+101. From: Beach Hut Man (Amouage) - Column 28, Row 4
+   To: Bentley for Men Intense (Bentley) - Column 16, Row 8
 
-213. From: Ganymede (Marc-Antoine Barrois) - Column 22, Row 5
-   To: Layton (Parfums de Marly) - Column 8, Row 8
+102. From: Fate Man (Amouage) - Column 1, Row 2
+   To: Archives 69 (Etat Libre d'Orange) - Column 17, Row 8
 
-214. From: Reflection Man (Amouage) - Column 16, Row 3
-   To: Hummingbird (Zoologist) - Column 24, Row 8
+103. From: L’Homme Ideal L’Intense (Guerlain) - Column 6, Row 5
+   To: Le Lion (Chanel) - Column 15, Row 8
 
-215. From: Original Vetiver (Creed) - Column 22, Row 8
-   To: Ganymede (Marc-Antoine Barrois) - Column 8, Row 8
+104. From: Costa Azzurra (Tom Ford) - Column 30, Row 7
+   To: Fucking Fabulous (Tom Ford) - Column 30, Row 8
 
-216. From: Grey Vetiver (Tom Ford) - Column 10, Row 8
-   To: Beach Hut Man (Amouage) - Column 7, Row 8
+105. From: Portrayal Man (Amouage) - Column 2, Row 4
+   To: Meander (Amouage) - Column 22, Row 8
 
-217. From: Green Irish Tweed (Creed) - Column 9, Row 6
-   To: Indian Sandalwood (Alfred Dunhill) - Column 23, Row 8
+106. From: Reflection Man (Amouage) - Column 1, Row 4
+   To: Luna Rossa Carbon (Prada) - Column 24, Row 8
 
-218. From: Melody Of The Sun (Mancera) - Column 27, Row 7
-   To: Silver Mountain Water  (Creed) - Column 26, Row 8
-
-219. From: Neroli Portofino (Tom Ford) - Column 28, Row 1
-   To: Ganymede (Marc-Antoine Barrois) - Column 22, Row 8
-
-220. From: Heritage (Guerlain) - Column 6, Row 8
-   To: Grey Vetiver (Tom Ford) - Column 7, Row 8
-
-221. From: Red Tobacco (Mancera) - Column 5, Row 3
+107. From: Red Tobacco (Mancera) - Column 5, Row 3
    To: Au Hasard (Louis Vuitton) - Column 20, Row 8
-
-222. From: Beach Hut Man (Amouage) - Column 10, Row 8
-   To: H24 (Hermès) - Column 16, Row 8
-
-223. From: Imagination (Louis Vuitton) - Column 24, Row 5
-   To: Grey Vetiver (Tom Ford) - Column 6, Row 8
-
-224. From: Wulóng Chá (Nishane) - Column 25, Row 6
-   To: Melody Of The Sun (Mancera) - Column 26, Row 8
-
-225. From: Portrayal Man (Amouage) - Column 21, Row 1
-   To: Neroli Portofino (Tom Ford) - Column 22, Row 8
-
-226. From: Italian Cypress (Tom Ford) - Column 1, Row 7
-   To: Purpose (Amouage) - Column 11, Row 8
-
-227. From: Costa Azzurra (Tom Ford) - Column 15, Row 2
-   To: The Uncompromising Sohan (Penhaligon's) - Column 27, Row 8
-
-228. From: L’Homme Ideal L’Intense (Guerlain) - Column 8, Row 3
-   To: Haltane (Parfums de Marly) - Column 15, Row 8
-
-229. From: Aoud Lemon Mint (Mancera) - Column 21, Row 6
-   To: Costa Azzurra (Tom Ford) - Column 27, Row 8
-
-230. From: Naxos (Xerjoff) - Column 9, Row 4
-   To: Vanilla Powder (Matiere Premiere) - Column 4, Row 8
-
-231. From: Sicily (Mancera) - Column 12, Row 5
-   To: Terre d'Hermes (Hermès) - Column 5, Row 8
-
-232. From: Enclave (Amouage) - Column 30, Row 8
-   To: L’Homme Ideal L’Intense (Guerlain) - Column 15, Row 8
-
-233. From: L’Homme (Prada) - Column 14, Row 6
-   To: Opium 1977 (Yves Saint Laurent) - Column 25, Row 8
-
-234. From: Platinum Egoiste (Chanel) - Column 7, Row 1
-   To: Reflection Man (Amouage) - Column 24, Row 8
-
-235. From: Original Santal (Creed) - Column 9, Row 7
-   To: Hacivat (Nishane) - Column 19, Row 8
-
-236. From: Au Hasard (Louis Vuitton) - Column 5, Row 3
-   To: Italian Cypress (Tom Ford) - Column 11, Row 8
-
-237. From: Jazz Club (Maison Martin Margiela) - Column 16, Row 7
-   To: Chance Eau Tendre (Chanel) - Column 12, Row 8
-
-238. From: Fate Man (Amouage) - Column 19, Row 6
-   To: Moustache (Rochas) - Column 17, Row 8
 
 Notes: This swap plan minimizes the total number of bottle movements while organizing by seasonal appropriateness, notes, and accords. The most suitable bottles for Spring are placed in rows 1-3, while less suitable bottles are moved to higher-numbered rows.

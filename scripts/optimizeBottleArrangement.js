@@ -181,11 +181,21 @@ async function optimizeBottleArrangement() {
     const minimumSwaps = bottleUtils.calculateMinimumSwaps(currentPositions, optimalPositions);
     console.log(`Minimum swaps required: ${minimumSwaps}`);
     
-    // 8. Generate swap plan
+    // 8. Generate swap plan using the cycle-based algorithm
     const swapPlan = bottleUtils.generateSwapPlan(currentPositions, optimalPositions);
     console.log(`Generated ${swapPlan.length} swaps`);
     
-    // 9. Format the swap plan with headers for rows
+    // 9. Validate that the swap plan is optimal
+    const validationResult = bottleUtils.validateSwapPlan(swapPlan, minimumSwaps);
+    console.log(`Validation: ${validationResult.message}`);
+    
+    if (!validationResult.valid) {
+      console.warn("Warning: The generated swap plan may not use the minimum number of swaps.");
+    } else {
+      console.log("✓ Swap plan is optimal - using minimum number of swaps");
+    }
+    
+    // 10. Format the swap plan with headers for rows
     let formattedSwapPlan = bottleUtils.formatSwapPlan(swapPlan, currentSeason);
     
     // Add plane information
@@ -194,10 +204,10 @@ async function optimizeBottleArrangement() {
       "Perfume Bottle Seasonal Swaps - PLANE 1 ONLY"
     );
     
-    // 10. Write the swap plan to a file
+    // 11. Write the swap plan to a file
     writeSwapPlanToFile(formattedSwapPlan);
     
-    // 11. Log the number of swaps by seasonal suitability
+    // 12. Log the number of swaps by seasonal suitability
     const suitableBottlesCount = scoredBottles.filter(b => b.score >= 30).length;
     const lessSuitableBottlesCount = scoredBottles.length - suitableBottlesCount;
     
