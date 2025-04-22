@@ -17,15 +17,28 @@ const path = require('path');
 const args = process.argv.slice(2);
 const shouldApply = args.includes('--apply');
 
+// Check for a season parameter
+let seasonParam = '';
+for (const arg of args) {
+  const seasonMatch = arg.match(/^--season=(.+)$/i);
+  if (seasonMatch) {
+    seasonParam = arg;
+    break;
+  }
+}
+
 // Paths
 const scriptPath = path.join(__dirname, 'scripts', 'optimizeBottleArrangement.js');
 const outputPath = path.join(__dirname, 'optimalBottleSwaps.txt');
 const targetPath = path.join(__dirname, 'bottleSwaps.txt');
 
 console.log('🧪 Optimizing perfume bottle arrangement...');
+if (seasonParam) {
+  console.log(`Using season: ${seasonParam.split('=')[1]}`);
+}
 
-// Run the optimization script
-exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+// Run the optimization script with season parameter if provided
+exec(`node ${scriptPath} ${seasonParam}`, (error, stdout, stderr) => {
   if (error) {
     console.error('❌ Error running optimization:', error.message);
     if (stdout) {
@@ -68,5 +81,8 @@ exec(`node ${scriptPath}`, (error, stdout, stderr) => {
   } else {
     console.log('\n💡 To apply this optimization, run with --apply:');
     console.log('   node optimizeBottles.js --apply');
+    console.log('\n💡 To specify a different season, use --season:');
+    console.log('   node optimizeBottles.js --season=Summer');
+    console.log('   node optimizeBottles.js --season=Summer --apply');
   }
 });

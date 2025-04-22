@@ -45,6 +45,24 @@ function getCurrentSeason() {
 }
 
 /**
+ * Validate and normalize a season input
+ * Returns the normalized season name if valid, or null if invalid
+ */
+function validateSeason(season) {
+  const validSeasons = ['Spring', 'Summer', 'Fall', 'Winter'];
+  
+  // Normalize input to capitalize first letter
+  if (season && typeof season === 'string') {
+    const normalizedSeason = season.charAt(0).toUpperCase() + season.slice(1).toLowerCase();
+    if (validSeasons.includes(normalizedSeason)) {
+      return normalizedSeason;
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Calculate a perfume bottle's score based on season, notes, and accords
  */
 function calculateBottleScore(bottle, season) {
@@ -372,6 +390,7 @@ function validateSwapPlan(swaps, minimumSwaps) {
 
 module.exports = {
   getCurrentSeason,
+  validateSeason,
   calculateBottleScore,
   calculateMinimumSwaps,
   generateSwapPlan,

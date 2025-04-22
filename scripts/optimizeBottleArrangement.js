@@ -4,6 +4,19 @@ const fs = require('fs');
 const path = require('path');
 const bottleUtils = require('./utils/bottleUtils');
 
+// Parse command-line arguments
+const args = process.argv.slice(2);
+let specifiedSeason = null;
+
+// Look for a season argument (e.g., --season=Summer)
+for (const arg of args) {
+  const seasonMatch = arg.match(/^--season=(.+)$/i);
+  if (seasonMatch) {
+    specifiedSeason = seasonMatch[1];
+    break;
+  }
+}
+
 /**
  * This script optimizes the arrangement of perfume bottles based on:
  * 1. Seasonal appropriateness (current season gets priority)
@@ -117,14 +130,24 @@ async function optimizeBottleArrangement() {
     const plane1Bottles = allBottles.filter(bottle => bottle.plane === 1);
     console.log(`Found ${plane1Bottles.length} bottles in plane 1`);
     
-    // 3. Determine current season
-    const currentSeason = bottleUtils.getCurrentSeason();
-    console.log(`Current season: ${currentSeason}`);
+    // 3. Determine which season to use (specified or current)
+    let targetSeason = bottleUtils.getCurrentSeason();
+    if (specifiedSeason) {
+      const validatedSeason = bottleUtils.validateSeason(specifiedSeason);
+      if (validatedSeason) {
+        targetSeason = validatedSeason;
+        console.log(`Using specified season: ${targetSeason}`);
+      } else {
+        console.warn(`Invalid season "${specifiedSeason}". Using current season: ${targetSeason}`);
+      }
+    } else {
+      console.log(`Using current season: ${targetSeason}`);
+    }
     
     // 4. Score bottles based on seasonal appropriateness, notes, and accords
     const scoredBottles = plane1Bottles.map(bottle => ({
       ...bottle,
-      score: bottleUtils.calculateBottleScore(bottle, currentSeason)
+      score: bottleUtils.calculateBottleScore(bottle, targetSeason)
     }));
     
     // 5. Sort bottles by score (descending)
@@ -224,7 +247,7 @@ async function optimizeBottleArrangement() {
     }
     
     // 10. Format the swap plan with headers for rows
-    let formattedSwapPlan = bottleUtils.formatSwapPlan(swapPlan, currentSeason);
+    let formattedSwapPlan = bottleUtils.formatSwapPlan(swapPlan, targetSeason);
     
     // Add plane information
     formattedSwapPlan = formattedSwapPlan.replace(
@@ -244,8 +267,8 @@ async function optimizeBottleArrangement() {
     const lessSuitableBottlesCount = scoredBottles.length - suitableBottlesCount;
     
     console.log(`\nSeasonal Analysis:`);
-    console.log(`${suitableBottlesCount} bottles are suitable for ${currentSeason}`);
-    console.log(`${lessSuitableBottlesCount} bottles are less suitable for ${currentSeason}`);
+    console.log(`${suitableBottlesCount} bottles are suitable for ${targetSeason}`);
+    console.log(`${lessSuitableBottlesCount} bottles are less suitable for ${targetSeason}`);
     
     // Output detailed information about the first few bottles
     console.log(`\nTop 5 Most Suitable Bottles:`);
