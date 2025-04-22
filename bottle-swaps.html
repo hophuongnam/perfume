@@ -248,6 +248,10 @@
       background-color: #dc3545;
     }
     
+    .toast.info {
+      background-color: #17a2b8;
+    }
+    
     .toast.visible {
       visibility: visible;
       opacity: 1;
@@ -319,12 +323,21 @@
       const loadingOverlay = document.getElementById('loading-overlay');
       const toast = document.getElementById('toast');
       
-      // State to track completed swaps - use localStorage for persistence
+      // State to track completed swaps and version - use localStorage for persistence
       let completedSwaps = new Set();
+      let currentSwapVersion = '';
       
       // Load completed swaps from localStorage
       function loadCompletedSwaps() {
         try {
+          // Load saved swap version
+          const savedVersion = localStorage.getItem('perfumeSwapsVersion');
+          if (savedVersion) {
+            currentSwapVersion = savedVersion;
+            console.log(`Loaded swap version: ${currentSwapVersion}`);
+          }
+          
+          // Load completed swaps
           const savedSwaps = localStorage.getItem('completedPerfumeSwaps');
           if (savedSwaps) {
             const parsedSwaps = JSON.parse(savedSwaps);
@@ -341,7 +354,8 @@
         try {
           const swapsArray = Array.from(completedSwaps);
           localStorage.setItem('completedPerfumeSwaps', JSON.stringify(swapsArray));
-          console.log(`Saved ${completedSwaps.size} completed swaps to localStorage`);
+          localStorage.setItem('perfumeSwapsVersion', currentSwapVersion);
+          console.log(`Saved ${completedSwaps.size} completed swaps for version ${currentSwapVersion}`);
         } catch (error) {
           console.error('Error saving completed swaps:', error);
         }
@@ -392,10 +406,28 @@
         const lines = text.split('\n');
         const swaps = [];
         let currentSwap = null;
+        let newSwapVersion = '';
+        
+        // Check for version tag at the beginning
+        if (lines.length > 0 && lines[0].startsWith('VERSION:')) {
+          newSwapVersion = lines[0].replace('VERSION:', '').trim();
+          console.log(`Detected swap version: ${newSwapVersion}`);
+          
+          // Reset progress if version has changed
+          if (currentSwapVersion && newSwapVersion !== currentSwapVersion) {
+            console.log(`Version changed from ${currentSwapVersion} to ${newSwapVersion}`);
+            completedSwaps.clear();
+            showToast('New swaps have been generated! Progress has been reset.', 'info');
+          }
+          
+          // Update current version
+          currentSwapVersion = newSwapVersion;
+        }
         
         lines.forEach(line => {
-          // Skip stats lines - we don't need them anymore
-          if (line.startsWith('Total bottles') || 
+          // Skip stats lines and version line
+          if (line.startsWith('VERSION:') ||
+              line.startsWith('Total bottles') || 
               line.startsWith('More suitable') || 
               line.startsWith('Less suitable') || 
               line.startsWith('Misplaced bottles')) {
@@ -611,7 +643,7 @@
           // Mark as completed
           completedSwaps.add(swap.number);
           
-          // Save to localStorage for persistence
+          // Save to localStorage for persistence with the current version
           saveCompletedSwaps();
           
           // Refresh the UI
@@ -711,6 +743,16 @@
         }
       });
       header.appendChild(resetButton);
+      
+      // Add version info to the header if available
+      if (currentSwapVersion) {
+        const versionInfo = document.createElement('div');
+        versionInfo.textContent = `Swap Version: ${currentSwapVersion}`;
+        versionInfo.style.fontSize = '0.8rem';
+        versionInfo.style.marginTop = '5px';
+        versionInfo.style.opacity = '0.7';
+        header.appendChild(versionInfo);
+      }
     });
   </script>
 </body>

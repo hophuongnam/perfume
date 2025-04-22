@@ -29,6 +29,16 @@ function writeSwapPlanToFile(swapPlan) {
 }
 
 /**
+ * Generate a unique version ID for the swap plan
+ * Uses a timestamp + random string to ensure uniqueness
+ */
+function generateSwapVersion() {
+  const timestamp = new Date().toISOString().replace(/[-:\.]/g, '').slice(0, 14); // YYYYMMDDhhmmss
+  const randomString = Math.random().toString(36).substring(2, 8);
+  return `${timestamp}-${randomString}`;
+}
+
+/**
  * Fetch all bottles from Notion database
  */
 async function fetchAllBottles() {
@@ -203,6 +213,10 @@ async function optimizeBottleArrangement() {
       "Perfume Bottle Seasonal Swaps",
       "Perfume Bottle Seasonal Swaps - PLANE 1 ONLY"
     );
+    
+    // Add version information
+    const swapVersion = generateSwapVersion();
+    formattedSwapPlan = `VERSION: ${swapVersion}\n\n${formattedSwapPlan}`;
     
     // 11. Write the swap plan to a file
     writeSwapPlanToFile(formattedSwapPlan);
