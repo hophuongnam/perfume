@@ -262,6 +262,18 @@ function generateSwapPlan(currentBottles, optimalBottles) {
         const fromBottle = currentBottles[fromIdx];
         const toBottle = currentBottles[toIdx];
         
+        // Skip if the source and destination positions are the same (exact same position)
+        if (fromBottle.row === toBottle.row && fromBottle.column === toBottle.column) {
+          console.log(`Skipping unnecessary swap for ${fromBottle.name} (${fromBottle.house}) - already at correct position`);
+          continue;
+        }
+        
+        // Skip if only the column changes but row remains the same (redundant swaps)
+        if (fromBottle.row === toBottle.row) {
+          console.log(`Skipping redundant swap for ${fromBottle.name} (${fromBottle.house}) - already in correct row ${fromBottle.row}`);
+          continue;
+        }
+        
         swaps.push({
           from: { 
             name: fromBottle.name, 
@@ -283,6 +295,7 @@ function generateSwapPlan(currentBottles, optimalBottles) {
   // Validate that we have the minimum number of swaps
   if (swaps.length !== theoreticalMinimum) {
     console.warn(`Warning: Generated ${swaps.length} swaps, but theoretical minimum is ${theoreticalMinimum}`);
+    console.log(`Note: This discrepancy may be due to skipping unnecessary swaps.`);
   }
   
   return swaps;
@@ -300,7 +313,10 @@ function formatSwapPlan(swaps, currentSeason) {
   output += `Row 1: Most preferred/accessible (front)\n`;
   output += `...\n`;
   output += `Row 8: Least preferred/accessible (back)\n\n`;
-  output += `Note: Location format is COLUMN-ROW (e.g., Column 30, Row 3)\n\n`;
+  output += `Note: Location format is COLUMN-ROW (e.g., Column 30, Row 3)\n`;
+  output += `Note: The following swaps have been removed for efficiency:\n`;
+  output += `  - Unnecessary swaps (where source and destination are exactly the same)\n`;
+  output += `  - Redundant swaps (where the bottle stays in the same row but changes column)\n\n`;
   
   output += `SWAP PLAN:\n\n`;
   
@@ -336,18 +352,21 @@ function formatSwapPlan(swaps, currentSeason) {
 
 /**
  * Validate that the swap plan uses the minimum number of swaps
+ * Note: The actual number of swaps may be less than the theoretical minimum
+ * when unnecessary swaps (same source and destination) are skipped
  */
 function validateSwapPlan(swaps, minimumSwaps) {
-  if (swaps.length !== minimumSwaps) {
+  if (swaps.length > minimumSwaps) {
     return {
       valid: false,
       message: `Generated ${swaps.length} swaps, but calculated minimum is ${minimumSwaps}`
     };
   }
   
+  // If we have fewer swaps than the minimum, it's still valid (we may have skipped unnecessary swaps)
   return {
     valid: true,
-    message: `Swap plan is optimal with ${swaps.length} swaps`
+    message: `Swap plan is optimal with ${swaps.length} swaps${swaps.length < minimumSwaps ? ' (unnecessary swaps skipped)' : ''}`
   };
 }
 

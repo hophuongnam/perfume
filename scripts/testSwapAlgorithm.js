@@ -194,17 +194,71 @@ function testComplexArrangement() {
   return validation.valid;
 }
 
+// Test case 5: Test with unnecessary swaps (same row and column)
+function testUnnecessarySwaps() {
+  console.log("\n===== Test Case 5: Unnecessary Swaps =====");
+  
+  // Current positions with identical rows/columns
+  const currentPositions = createTestBottles([
+    { row: 1, column: 1 }, // Bottle 0
+    { row: 2, column: 2 }, // Bottle 1
+    { row: 3, column: 3 }, // Bottle 2
+    { row: 4, column: 4 }  // Bottle 3
+  ]);
+  
+  // Optimal positions with one bottle that would have an unnecessary swap
+  const optimalPositions = createTestBottles([
+    { row: 2, column: 2 }, // Bottle 0 goes to position of Bottle 1
+    { row: 1, column: 1 }, // Bottle 1 goes to position of Bottle 0
+    { row: 3, column: 3 }, // Bottle 2 stays in the same position (unnecessary swap)
+    { row: 4, column: 4 }  // Bottle 3 stays in the same position (unnecessary swap)
+  ]);
+  
+  // Theoretical minimum should be 1 (for the cycle of bottles 0 and 1)
+  // plus 0 for bottles 2 and 3 that are already in correct positions
+  const minimumSwaps = bottleUtils.calculateMinimumSwaps(currentPositions, optimalPositions);
+  console.log(`Minimum swaps required (theoretical): ${minimumSwaps}`);
+  
+  const swapPlan = bottleUtils.generateSwapPlan(currentPositions, optimalPositions);
+  console.log(`Generated ${swapPlan.length} swaps (after filtering unnecessary swaps)`);
+  
+  const validation = bottleUtils.validateSwapPlan(swapPlan, minimumSwaps);
+  console.log(`Validation: ${validation.message}`);
+  
+  // Show the swaps
+  if (swapPlan.length > 0) {
+    console.log("\nSwap Details:");
+    swapPlan.forEach((swap, i) => {
+      console.log(`Swap ${i+1}: From (${swap.from.row}, ${swap.from.column}) to (${swap.to.row}, ${swap.to.column})`);
+    });
+  } else {
+    console.log("\nNo swaps needed or all were filtered out as unnecessary.");
+  }
+  
+  // Test passes if we don't have any unnecessary swaps (same row and column)
+  let hasUnnecessarySwaps = false;
+  swapPlan.forEach(swap => {
+    if (swap.from.row === swap.to.row && swap.from.column === swap.to.column) {
+      hasUnnecessarySwaps = true;
+      console.log(`Found unnecessary swap: From (${swap.from.row}, ${swap.from.column}) to (${swap.to.row}, ${swap.to.column})`);
+    }
+  });
+  
+  return !hasUnnecessarySwaps;
+}
+
 // Run all tests
 function runAllTests() {
   console.log("=== Starting Swap Algorithm Tests ===\n");
   
   let passedTests = 0;
-  let totalTests = 4;
+  let totalTests = 5;
   
   if (testSimpleSwap()) passedTests++;
   if (testCycleOfThree()) passedTests++;
   if (testMultipleCycles()) passedTests++;
   if (testComplexArrangement()) passedTests++;
+  if (testUnnecessarySwaps()) passedTests++;
   
   console.log(`\n=== Test Results: ${passedTests}/${totalTests} tests passed ===`);
   
