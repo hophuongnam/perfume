@@ -28,6 +28,16 @@ console.log('🧪 Optimizing perfume bottle arrangement...');
 exec(`node ${scriptPath}`, (error, stdout, stderr) => {
   if (error) {
     console.error('❌ Error running optimization:', error.message);
+    if (stdout) {
+      console.log('\nScript output before error:');
+      console.log(stdout);
+    }
+    
+    console.log('\n🔍 Possible issues:');
+    console.log('1. Missing bottle in your Notion database at a position referenced by the algorithm');
+    console.log('2. Inconsistent position formatting (expected format is column-row)');
+    console.log('3. Check if all bottles have valid positions in the Notion database');
+    console.log('4. Position references may be out of range (rows should be 1-8)');
     process.exit(1);
   }
   

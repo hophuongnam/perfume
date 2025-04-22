@@ -112,7 +112,8 @@ function calculateMinimumSwaps(currentPositions, optimalPositions) {
   
   for (let i = 0; i < currentPositions.length; i++) {
     const bottle = currentPositions[i];
-    const key = `${bottle.row}-${bottle.column}`;
+    // Use consistent format column-row to match the display format in bottleSwaps.txt
+    const key = `${bottle.column}-${bottle.row}`;
     positionMap.set(key, i);
   }
   
@@ -146,11 +147,12 @@ function calculateMinimumSwaps(currentPositions, optimalPositions) {
       // Find next bottle in cycle
       const targetRow = optimalPositions[j].row;
       const targetColumn = optimalPositions[j].column;
-      const targetKey = `${targetRow}-${targetColumn}`;
+      // Use consistent format column-row to match the display format in bottleSwaps.txt
+      const targetKey = `${targetColumn}-${targetRow}`;
       
       // If there's no bottle at this position, handle this special case
       if (!positionMap.has(targetKey)) {
-        console.warn(`Warning: No bottle found at position ${targetKey}`);
+        console.warn(`Warning: No bottle found at position ${targetKey} (column-row format). Check if this location exists in your Notion database.`);
         break;
       }
       
@@ -194,8 +196,9 @@ function generateSwapPlan(currentBottles, optimalBottles) {
     const currBottle = currentBottles[i];
     const optBottle = optimalBottles[i];
     
-    const currKey = `${currBottle.row}-${currBottle.column}`;
-    const optKey = `${optBottle.row}-${optBottle.column}`;
+    // Use consistent format column-row to match the display format in bottleSwaps.txt
+    const currKey = `${currBottle.column}-${currBottle.row}`;
+    const optKey = `${optBottle.column}-${optBottle.row}`;
     
     currentPosToIndex.set(currKey, i);
     optimalPosToIndex.set(optKey, i);
@@ -232,12 +235,13 @@ function generateSwapPlan(currentBottles, optimalBottles) {
       // Find where the bottle at index j should go in the optimal arrangement
       const optRow = optimalBottles[j].row;
       const optCol = optimalBottles[j].column;
-      const targetKey = `${optRow}-${optCol}`;
+      // Use consistent format column-row to match the display format in bottleSwaps.txt
+      const targetKey = `${optCol}-${optRow}`;
       
       // Find which bottle is currently in that position
       if (!currentPosToIndex.has(targetKey)) {
         // This shouldn't happen in a valid permutation, but handle it gracefully
-        console.warn(`Warning: No bottle found at position ${targetKey}`);
+        console.warn(`Warning: No bottle found at position ${targetKey} (column-row format). Check if this location exists in your Notion database.`);
         break;
       }
       

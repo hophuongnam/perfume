@@ -188,12 +188,30 @@ async function optimizeBottleArrangement() {
     
     // 7. Calculate the minimum number of swaps required
     const currentPositions = [...plane1Bottles];
-    const minimumSwaps = bottleUtils.calculateMinimumSwaps(currentPositions, optimalPositions);
-    console.log(`Minimum swaps required: ${minimumSwaps}`);
+    let minimumSwaps;
+    try {
+      minimumSwaps = bottleUtils.calculateMinimumSwaps(currentPositions, optimalPositions);
+      console.log(`Minimum swaps required: ${minimumSwaps}`);
+    } catch (error) {
+      console.error(`Error calculating minimum swaps: ${error.message}`);
+      console.log("Falling back to a direct calculation method...");
+      // Simple fallback: Bottles at wrong positions equal number of required swaps
+      minimumSwaps = currentPositions.filter((bottle, i) => 
+        bottle.row !== optimalPositions[i].row || bottle.column !== optimalPositions[i].column
+      ).length / 2; // Divide by 2 since each swap fixes 2 bottles
+      console.log(`Fallback calculation: Minimum swaps required: ${minimumSwaps}`);
+    }
     
     // 8. Generate swap plan using the cycle-based algorithm
-    const swapPlan = bottleUtils.generateSwapPlan(currentPositions, optimalPositions);
-    console.log(`Generated ${swapPlan.length} swaps`);
+    let swapPlan;
+    try {
+      swapPlan = bottleUtils.generateSwapPlan(currentPositions, optimalPositions);
+      console.log(`Generated ${swapPlan.length} swaps`);
+    } catch (error) {
+      console.error(`Error generating swap plan: ${error.message}`);
+      console.log("Please check for any missing bottles or inconsistencies in your bottle positions.");
+      process.exit(1);
+    }
     
     // 9. Validate that the swap plan is optimal
     const validationResult = bottleUtils.validateSwapPlan(swapPlan, minimumSwaps);
