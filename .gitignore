@@ -95,3 +95,4 @@ build/  (already listed in general build outputs)
 # Windows
 [Tt]humbs.db
 [Dd]esktop.ini
+.serena/
