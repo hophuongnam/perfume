@@ -264,6 +264,76 @@ app.post('/api/updateBottleSlot', async (req, res) => {
   }
 });
 
+app.post('/api/batchUpdateBottleSlots', async (req, res) => {
+  try {
+    const { swaps } = req.body;
+    if (!swaps || !Array.isArray(swaps) || swaps.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid swaps array' });
+    }
+
+    const results = [];
+    let successCount = 0;
+    let failureCount = 0;
+
+    // Process each swap
+    for (const swap of swaps) {
+      try {
+        const { fromId, toId, fromPlane, fromRow, fromColumn, toPlane, toRow, toColumn } = swap;
+        
+        if (!fromId || !toId) {
+          results.push({ success: false, error: 'Missing bottle ID', swap });
+          failureCount++;
+          continue;
+        }
+
+        // Create location strings
+        const toLocationString = `${toPlane}-${toColumn}-${toRow}`;
+        const fromLocationString = `${fromPlane}-${fromColumn}-${fromRow}`;
+        
+        // Update both bottles in parallel
+        await Promise.all([
+          notion.pages.update({
+            page_id: fromId,
+            properties: {
+              Location: {
+                rich_text: [{ text: { content: toLocationString } }]
+              }
+            }
+          }),
+          notion.pages.update({
+            page_id: toId,
+            properties: {
+              Location: {
+                rich_text: [{ text: { content: fromLocationString } }]
+              }
+            }
+          })
+        ]);
+        
+        results.push({ success: true, swap });
+        successCount++;
+      } catch (error) {
+        console.error('Error processing swap:', error, swap);
+        results.push({ success: false, error: error.message, swap });
+        failureCount++;
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      results, 
+      summary: {
+        total: swaps.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  } catch (err) {
+    console.error('/api/batchUpdateBottleSlots error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/updateBottleCap', async (req, res) => {
   try {
     const { pageId, capColor } = req.body;

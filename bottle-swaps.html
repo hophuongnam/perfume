@@ -14,6 +14,8 @@
       --pending-color: #ffc107;
       --text-color: #333;
       --light-text: #f8f9fa;
+      --batch-color: #6c5ce7;
+      --batch-light-color: rgba(108, 92, 231, 0.1);
     }
     
     .description {
@@ -77,6 +79,11 @@
       border-left: 4px solid var(--pending-color);
     }
     
+    .swap-card.selected {
+      background-color: var(--batch-light-color);
+      border-left: 4px solid var(--batch-color);
+    }
+    
     .swap-header {
       padding: 0.8rem;
       background-color: #f1f5f9;
@@ -84,6 +91,44 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+    
+    .swap-checkbox {
+      margin-right: 8px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .batch-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .progress-container {
+      margin-top: 10px;
+      width: 100%;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      height: 8px;
+      display: none;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: var(--batch-color);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .batch-status {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 5px;
+      display: none;
     }
     
     .swap-number {
@@ -303,6 +348,17 @@
   <header>
     <h1>Perfume Bottle Swaps</h1>
     <p class="description">This tool organizes your perfumes by seasonal appropriateness, notes, and accords. The most suitable bottles for the current season are prioritized in the front rows for easy access.</p>
+    
+    <div class="batch-actions">
+      <button id="select-all-btn" class="btn-secondary">Select All Pending</button>
+      <button id="deselect-all-btn" class="btn-secondary">Deselect All</button>
+      <button id="execute-batch-btn" class="btn-primary" disabled>Execute Selected Swaps (0)</button>
+    </div>
+    
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="batch-status" id="batch-status">Processing swap 0 of 0...</div>
   </header>
   
   <main class="swap-container" id="swap-list">
@@ -326,6 +382,10 @@
       // State to track completed swaps and version - use localStorage for persistence
       let completedSwaps = new Set();
       let currentSwapVersion = '';
+      let selectedSwaps = new Set();
+      let allSwapData = []; // Store all swap data for batch operations
+      let allBottlesCache = null; // Cache for bottle data to avoid repeated fetching
+      let isProcessingBatch = false;
       
       // Load completed swaps from localStorage
       function loadCompletedSwaps() {
@@ -534,6 +594,7 @@
           return;
         }
         
+        allSwapData = swaps; // Store all swap data for batch operations
         swapList.innerHTML = '';
         
         swaps.forEach(swap => {
@@ -544,6 +605,7 @@
           
           swapCard.innerHTML = `
             <div class="swap-header">
+              ${!isCompleted ? `<input type="checkbox" class="swap-checkbox" data-swap-id="${swap.number}">` : ''}
               <div class="swap-number">${swap.number}</div>
               <div>${isCompleted ? 'Completed' : 'Pending'}</div>
             </div>
@@ -619,12 +681,13 @@
       }
       
       // Function to execute a bottle swap
-      async function executeSwap(swap) {
+      async function executeSwap(swap, batchMode = false) {
         try {
-          showLoading();
+          if (!batchMode) showLoading();
           
-          // First, get all bottles from Notion to find the correct IDs
-          const bottles = await fetchAllBottles();
+          // First, get all bottles from Notion to find the correct IDs if not already cached
+          const bottles = allBottlesCache || await fetchAllBottles();
+          if (!allBottlesCache) allBottlesCache = bottles; // Cache bottles for future swaps
           
           console.log("Executing swap:", swap);
           
@@ -643,6 +706,11 @@
           // Mark as completed
           completedSwaps.add(swap.number);
           
+          // Remove from selected swaps if it was selected
+          if (selectedSwaps.has(swap.number)) {
+            selectedSwaps.delete(swap.number);
+          }
+          
           // Save to localStorage for persistence with the current version
           saveCompletedSwaps();
           
@@ -650,6 +718,11 @@
           const swapCard = document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`);
           if (swapCard) {
             swapCard.classList.add('completed');
+            swapCard.classList.remove('selected');
+            
+            // Remove checkbox
+            const checkbox = swapCard.querySelector('.swap-checkbox');
+            if (checkbox) checkbox.remove();
             
             // Update the swap button
             const swapButton = swapCard.querySelector('.swap-button');
@@ -665,12 +738,172 @@
             }
           }
           
-          showToast(`Swap #${swap.number} completed successfully`);
+          if (!batchMode) {
+            showToast(`Swap #${swap.number} completed successfully`);
+          }
+          
+          return true; // Success
         } catch (error) {
           console.error('Error executing swap:', error);
-          showToast('Failed to execute swap: ' + error.message, 'error');
+          if (!batchMode) {
+            showToast('Failed to execute swap: ' + error.message, 'error');
+          }
+          return false; // Failed
         } finally {
+          if (!batchMode) hideLoading();
+        }
+      }
+      
+      // Execute multiple swaps using the batch API endpoint
+      async function executeBatchSwaps() {
+        if (selectedSwaps.size === 0 || isProcessingBatch) return;
+        
+        isProcessingBatch = true;
+        showLoading();
+        
+        // Show progress elements
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const batchStatus = document.getElementById('batch-status');
+        progressContainer.style.display = 'block';
+        batchStatus.style.display = 'block';
+        progressBar.style.width = '10%'; // Initial progress
+        batchStatus.textContent = 'Preparing batch operation...';
+        
+        // Get all selected swaps
+        const swapNumbers = Array.from(selectedSwaps);
+        const swapsToExecute = swapNumbers.map(number => allSwapData.find(swap => swap.number === number));
+        
+        try {
+          // Fetch all bottles if not cached
+          if (!allBottlesCache) {
+            batchStatus.textContent = 'Fetching bottle data...';
+            allBottlesCache = await fetchAllBottles();
+          }
+          
+          // Format swaps for batch API
+          progressBar.style.width = '20%';
+          batchStatus.textContent = 'Processing bottle data...';
+          
+          const batchPayload = [];
+          
+          for (const swap of swapsToExecute) {
+            // Find the bottles to swap based on location
+            const fromBottle = findBottleByLocation(allBottlesCache, 1, swap.from.location.row, swap.from.location.column);
+            const toBottle = findBottleByLocation(allBottlesCache, 1, swap.to.location.row, swap.to.location.column);
+            
+            if (!fromBottle || !toBottle) {
+              console.error(`Cannot find bottles for swap #${swap.number}`);
+              continue;
+            }
+            
+            batchPayload.push({
+              fromId: fromBottle.id,
+              toId: toBottle.id,
+              fromPlane: 1,
+              fromRow: swap.from.location.row,
+              fromColumn: swap.from.location.column,
+              toPlane: 1,
+              toRow: swap.to.location.row,
+              toColumn: swap.to.location.column
+            });
+          }
+          
+          // Update progress
+          progressBar.style.width = '40%';
+          batchStatus.textContent = 'Sending batch update request...';
+          
+          // Send batch update request
+          const response = await fetch('/api/batchUpdateBottleSlots', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ swaps: batchPayload })
+          });
+          
+          progressBar.style.width = '70%';
+          batchStatus.textContent = 'Processing response...';
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to update bottles: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          // Mark completed swaps and update UI
+          progressBar.style.width = '90%';
+          batchStatus.textContent = 'Updating UI...';
+          
+          result.results.forEach((item, index) => {
+            if (item.success) {
+              const swap = swapsToExecute[index];
+              if (swap) {
+                // Mark as completed
+                completedSwaps.add(swap.number);
+                selectedSwaps.delete(swap.number);
+                
+                // Update UI
+                const swapCard = document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`);
+                if (swapCard) {
+                  swapCard.classList.add('completed');
+                  swapCard.classList.remove('selected');
+                  
+                  // Remove checkbox
+                  const checkbox = swapCard.querySelector('.swap-checkbox');
+                  if (checkbox) checkbox.remove();
+                  
+                  // Update the swap button
+                  const swapButton = swapCard.querySelector('.swap-button');
+                  if (swapButton) {
+                    swapButton.textContent = 'Completed';
+                    swapButton.disabled = true;
+                  }
+                  
+                  // Update the status text in the header
+                  const statusText = swapCard.querySelector('.swap-header > div:last-child');
+                  if (statusText) {
+                    statusText.textContent = 'Completed';
+                  }
+                }
+              }
+            }
+          });
+          
+          // Save completed swaps to localStorage
+          saveCompletedSwaps();
+          
+          // Update final progress
+          progressBar.style.width = '100%';
+          batchStatus.textContent = `Completed: ${result.summary.successful} successful, ${result.summary.failed} failed`;
+          
+          // Show completion message
+          showToast(`Batch execution complete: ${result.summary.successful} successful, ${result.summary.failed} failed`);
+          
+        } catch (error) {
+          console.error('Error in batch execution:', error);
+          showToast('Failed to execute batch: ' + error.message, 'error');
+          progressBar.style.width = '100%';
+          batchStatus.textContent = 'Error: ' + error.message;
+        } finally {
+          // Update execute button
+          updateExecuteButtonState();
+          
+          // Hide loading
           hideLoading();
+          
+          // Reset processing flag
+          isProcessingBatch = false;
+          
+          // Hide progress after a delay
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            batchStatus.style.display = 'none';
+          }, 5000);
+          
+          // Clear the bottle cache after batch operations to ensure fresh data next time
+          allBottlesCache = null;
         }
       }
       
@@ -725,9 +958,88 @@
         alert(`Swap Details:\n\nFrom: ${swap.from.name} (${swap.from.house})\nTo: ${swap.to.name} (${swap.to.house})\n\nThis optimized swap plan arranges bottles based on:\n1. Seasonal appropriateness\n2. Notes (suitable for current season)\n3. Accords (suitable for current season)\n\nThis organization puts the most suitable bottles in the front rows for easy access.`);
       }
       
+      // Toggle selection of a swap
+      function toggleSwapSelection(swapId) {
+        if (completedSwaps.has(swapId)) return; // Don't allow selecting completed swaps
+        
+        if (selectedSwaps.has(swapId)) {
+          selectedSwaps.delete(swapId);
+          document.querySelector(`.swap-card[data-swap-id="${swapId}"]`)?.classList.remove('selected');
+        } else {
+          selectedSwaps.add(swapId);
+          document.querySelector(`.swap-card[data-swap-id="${swapId}"]`)?.classList.add('selected');
+        }
+        
+        updateExecuteButtonState();
+      }
+      
+      // Update the state of the execute batch button
+      function updateExecuteButtonState() {
+        const executeButton = document.getElementById('execute-batch-btn');
+        if (executeButton) {
+          executeButton.disabled = selectedSwaps.size === 0 || isProcessingBatch;
+          executeButton.textContent = `Execute Selected Swaps (${selectedSwaps.size})`;
+        }
+      }
+      
+      // Select all pending swaps
+      function selectAllPendingSwaps() {
+        if (isProcessingBatch) return;
+        
+        // Clear current selection
+        selectedSwaps.clear();
+        
+        // Add all pending swaps
+        allSwapData.forEach(swap => {
+          if (!completedSwaps.has(swap.number)) {
+            selectedSwaps.add(swap.number);
+            document.querySelector(`.swap-card[data-swap-id="${swap.number}"]`)?.classList.add('selected');
+            document.querySelector(`.swap-checkbox[data-swap-id="${swap.number}"]`).checked = true;
+          }
+        });
+        
+        updateExecuteButtonState();
+      }
+      
+      // Deselect all swaps
+      function deselectAllSwaps() {
+        if (isProcessingBatch) return;
+        
+        // Clear current selection
+        selectedSwaps.clear();
+        
+        // Update UI
+        document.querySelectorAll('.swap-card.selected').forEach(card => {
+          card.classList.remove('selected');
+        });
+        
+        document.querySelectorAll('.swap-checkbox').forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        
+        updateExecuteButtonState();
+      }
+      
+      // Set up event delegation for checkboxes
+      function setupEventListeners() {
+        // Listen for checkbox clicks through event delegation
+        swapList.addEventListener('change', (event) => {
+          if (event.target.classList.contains('swap-checkbox')) {
+            const swapId = parseInt(event.target.dataset.swapId);
+            toggleSwapSelection(swapId);
+          }
+        });
+        
+        // Set up select/deselect/execute buttons
+        document.getElementById('select-all-btn').addEventListener('click', selectAllPendingSwaps);
+        document.getElementById('deselect-all-btn').addEventListener('click', deselectAllSwaps);
+        document.getElementById('execute-batch-btn').addEventListener('click', executeBatchSwaps);
+      }
+      
       // Initialize
       loadCompletedSwaps();
       fetchSwapsList();
+      setupEventListeners();
       
       // Add a reset button in the header
       const header = document.querySelector('header');
@@ -738,6 +1050,7 @@
       resetButton.addEventListener('click', () => {
         if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
           completedSwaps.clear();
+          selectedSwaps.clear();
           saveCompletedSwaps();
           location.reload();
         }

@@ -198,6 +198,7 @@ function calculateMinimumSwaps(currentPositions, optimalPositions) {
 /**
  * Generate optimal swap plan based on current and optimal positions
  * This implementation uses cycle detection to generate the minimum number of swaps
+ * Ensures each bottle is only swapped once
  */
 function generateSwapPlan(currentBottles, optimalBottles) {
   // First calculate the theoretical minimum number of swaps
@@ -208,6 +209,9 @@ function generateSwapPlan(currentBottles, optimalBottles) {
   const currentPosToIndex = new Map(); // Maps position key to index in currentBottles
   const optimalPosToIndex = new Map(); // Maps position key to index in optimalBottles
   const currentIdxToPosition = new Map(); // Maps bottle index to position key
+  
+  // Maps to track bottle participation in swaps
+  const swappedBottles = new Set(); // Set of bottle indexes that have been included in a swap
   
   // Initialize mappings
   for (let i = 0; i < currentBottles.length; i++) {
@@ -272,10 +276,17 @@ function generateSwapPlan(currentBottles, optimalBottles) {
     // Generate swaps for this cycle (cycleSize - 1 swaps)
     if (cycle.length > 1) {
       // We want the first bottle to end up in the last position
-      // Each swap moves a bottle to where the previous bottle in the cycle should go
+      // This requires breaking cycles into individual swaps that don't reuse bottles
+      
+      // For each pair in the cycle, create a direct swap if neither bottle has been swapped yet
       for (let k = 0; k < cycle.length - 1; k++) {
         const fromIdx = cycle[k];
         const toIdx = cycle[k + 1];
+        
+        // Skip if either bottle has already been included in a swap
+        if (swappedBottles.has(fromIdx) || swappedBottles.has(toIdx)) {
+          continue;
+        }
         
         const fromBottle = currentBottles[fromIdx];
         const toBottle = currentBottles[toIdx];
@@ -292,6 +303,7 @@ function generateSwapPlan(currentBottles, optimalBottles) {
           continue;
         }
         
+        // Add the swap and mark both bottles as swapped
         swaps.push({
           from: { 
             name: fromBottle.name, 
@@ -306,14 +318,25 @@ function generateSwapPlan(currentBottles, optimalBottles) {
             column: toBottle.column 
           }
         });
+        
+        // Mark these bottles as having been swapped
+        swappedBottles.add(fromIdx);
+        swappedBottles.add(toIdx);
       }
     }
   }
   
-  // Validate that we have the minimum number of swaps
+  // Log summary about bottles that couldn't be optimally placed
+  const unswappedCount = currentBottles.length - swappedBottles.size;
+  if (unswappedCount > 0) {
+    console.log(`Note: ${unswappedCount} bottles could not be optimally placed due to single-swap restriction.`);
+  }
+  
+  // Validate that our swap plan is reasonable
+  console.log(`Generated ${swaps.length} swaps`);
   if (swaps.length !== theoreticalMinimum) {
     console.warn(`Warning: Generated ${swaps.length} swaps, but theoretical minimum is ${theoreticalMinimum}`);
-    console.log(`Note: This discrepancy may be due to skipping unnecessary swaps.`);
+    console.log(`Note: This discrepancy is due to the single-swap restriction and skipping unnecessary swaps.`);
   }
   
   return swaps;
@@ -334,7 +357,8 @@ function formatSwapPlan(swaps, currentSeason) {
   output += `Note: Location format is COLUMN-ROW (e.g., Column 30, Row 3)\n`;
   output += `Note: The following swaps have been removed for efficiency:\n`;
   output += `  - Unnecessary swaps (where source and destination are exactly the same)\n`;
-  output += `  - Redundant swaps (where the bottle stays in the same row but changes column)\n\n`;
+  output += `  - Redundant swaps (where the bottle stays in the same row but changes column)\n`;
+  output += `Note: Each bottle appears in at most one swap to simplify the process\n\n`;
   
   output += `SWAP PLAN:\n\n`;
   
@@ -369,22 +393,39 @@ function formatSwapPlan(swaps, currentSeason) {
 }
 
 /**
- * Validate that the swap plan uses the minimum number of swaps
- * Note: The actual number of swaps may be less than the theoretical minimum
- * when unnecessary swaps (same source and destination) are skipped
+ * Validate that the swap plan is reasonable
+ * Note: The actual number of swaps will be less than the theoretical minimum
+ * due to the single-swap restriction and skipping unnecessary swaps
  */
 function validateSwapPlan(swaps, minimumSwaps) {
-  if (swaps.length > minimumSwaps) {
+  // Check for duplicated bottles in swaps
+  const bottlesInSwaps = new Set();
+  let hasDuplicates = false;
+  
+  for (const swap of swaps) {
+    const fromKey = `${swap.from.name}-${swap.from.house}`;
+    const toKey = `${swap.to.name}-${swap.to.house}`;
+    
+    if (bottlesInSwaps.has(fromKey) || bottlesInSwaps.has(toKey)) {
+      hasDuplicates = true;
+      break;
+    }
+    
+    bottlesInSwaps.add(fromKey);
+    bottlesInSwaps.add(toKey);
+  }
+  
+  if (hasDuplicates) {
     return {
       valid: false,
-      message: `Generated ${swaps.length} swaps, but calculated minimum is ${minimumSwaps}`
+      message: `Found bottles that appear in multiple swaps - single-swap restriction violated`
     };
   }
   
-  // If we have fewer swaps than the minimum, it's still valid (we may have skipped unnecessary swaps)
+  // When using the single-swap restriction, we expect fewer swaps than the theoretical minimum
   return {
     valid: true,
-    message: `Swap plan is optimal with ${swaps.length} swaps${swaps.length < minimumSwaps ? ' (unnecessary swaps skipped)' : ''}`
+    message: `Swap plan is valid with ${swaps.length} swaps${swaps.length < minimumSwaps ? ' (reduced due to single-swap restriction)' : ''}`
   };
 }
 

@@ -1,8 +1,8 @@
-VERSION: 20250422T10330-2pqzef
+VERSION: 20250422T13575-uzq3c9
 
 Perfume Bottle Seasonal Swaps - PLANE 1 ONLY - Summer 2025 (OPTIMIZED ARRANGEMENT)
 
-Total swaps needed: 87
+Total swaps needed: 50
 
 COLUMN-ROW PREFERENCE ORDER:
 Row 1: Most preferred/accessible (front)
@@ -13,276 +13,165 @@ Note: Location format is COLUMN-ROW (e.g., Column 30, Row 3)
 Note: The following swaps have been removed for efficiency:
   - Unnecessary swaps (where source and destination are exactly the same)
   - Redundant swaps (where the bottle stays in the same row but changes column)
+Note: Each bottle appears in at most one swap to simplify the process
 
 SWAP PLAN:
 
-ROW 1 SWAPS:
-1. From: Philtre Ceylan (Atelier Cologne) - Column 27, Row 6
-   To: Ambre Sultan (Serge Lutens) - Column 10, Row 1
-
-2. From: Shanghai Lily (Tom Ford) - Column 26, Row 2
-   To: Fleur Narcotique (Ex Nihilo) - Column 14, Row 1
-
-3. From: Vanilla Powder (Matiere Premiere) - Column 17, Row 6
-   To: Santal Royal (Guerlain) - Column 29, Row 1
-
 ROW 2 SWAPS:
-4. From: Fan Your Flames (Nishane) - Column 11, Row 1
-   To: Honour Man (Amouage) - Column 27, Row 2
+1. From: Infusion d'Homme (Prada) - Column 6, Row 7
+   To: Fleur Narcotique (Ex Nihilo) - Column 26, Row 2
 
-5. From: Psychedelique (Jovoy) - Column 6, Row 1
-   To: Interlude Black Iris (Amouage) - Column 28, Row 2
+2. From: Gold Man (Amouage) - Column 20, Row 4
+   To: Fracas (Robert Piguet) - Column 13, Row 2
 
-6. From: Fracas (Robert Piguet) - Column 29, Row 7
-   To: Chance (Chanel) - Column 13, Row 2
+3. From: Alexandria II (Xerjoff) - Column 28, Row 5
+   To: Rose 31 (Le Labo) - Column 19, Row 2
 
-7. From: Decas (Xerjoff) - Column 29, Row 6
-   To: Richwood (Xerjoff) - Column 5, Row 2
-
-8. From: Tony Iommi Monkey Special (Xerjoff) - Column 19, Row 6
-   To: Haltane (Parfums de Marly) - Column 20, Row 2
-
-9. From: Bat (Zoologist) - Column 19, Row 7
-   To: Love Tuberose (Amouage) - Column 21, Row 2
-
-10. From: My Pearls (The Merchant of Venice) - Column 21, Row 8
-   To: Patchouli Intense (Nicolai Parfumeur Createur) - Column 10, Row 2
-
-11. From: Back to Black (Kilian) - Column 14, Row 8
-   To: Tam Dao (Dyptique) - Column 25, Row 2
-
-12. From: Coromandel (Chanel) - Column 28, Row 5
-   To: Alexandria II (Xerjoff) - Column 30, Row 2
-
-13. From: Babycat (Yves Saint Laurent) - Column 5, Row 4
-   To: Tonka Fever (Parfumerie Particulière) - Column 16, Row 2
+4. From: Richwood (Xerjoff) - Column 29, Row 6
+   To: Spirito (Meo Fusciuni) - Column 14, Row 2
 
 ROW 3 SWAPS:
-14. From: Halfeti (Penhaligon's) - Column 17, Row 5
-   To: Megamare (Orto Parisi) - Column 29, Row 3
-
-15. From: Chance (Chanel) - Column 13, Row 2
-   To: Vibrato (Sospiro Perfumes) - Column 13, Row 3
-
-16. From: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 23, Row 7
-   To: Black Gold (Mancera) - Column 23, Row 3
-
-17. From: Gyan (Bvlgari) - Column 18, Row 4
-   To: Himalaya  (Creed) - Column 28, Row 3
-
-18. From: Santal Majuscule (Serge Lutens) - Column 22, Row 2
-   To: Antaeus (Chanel) - Column 18, Row 3
-
-19. From: Spirito (Meo Fusciuni) - Column 14, Row 2
-   To: Habit Rouge (Guerlain) - Column 16, Row 3
-
-20. From: Vetiver (Guerlain) - Column 5, Row 5
-   To: Patchouliful (Laboratorio Olfattivo) - Column 15, Row 3
-
-21. From: Oud Ispahan (Dior) - Column 12, Row 8
-   To: Percival (Parfums de Marly) - Column 24, Row 3
-
-22. From: Tonka Fever (Parfumerie Particulière) - Column 16, Row 2
+5. From: Tonka Fever (Parfumerie Particulière) - Column 5, Row 4
    To: Moustache (Rochas) - Column 17, Row 3
 
-23. From: Bois du Portugal (Creed) - Column 17, Row 7
-   To: Black Phantom (Kilian) - Column 27, Row 3
+6. From: Gyan (Bvlgari) - Column 18, Row 4
+   To: Himalaya  (Creed) - Column 28, Row 3
 
-24. From: Drakkar Noir (Guy Laroche) - Column 12, Row 6
+7. From: Santal Majuscule (Serge Lutens) - Column 22, Row 2
+   To: Antaeus (Chanel) - Column 18, Row 3
+
+8. From: Drakkar Noir (Guy Laroche) - Column 12, Row 6
    To: Begamask (Orto Parisi) - Column 20, Row 3
 
-25. From: Bo (Liis) - Column 21, Row 7
-   To: Enclave (Amouage) - Column 11, Row 3
-
-26. From: Patchouli Absolu (Tom Ford) - Column 26, Row 6
+9. From: Patchouli Absolu (Tom Ford) - Column 26, Row 6
    To: Fig Infusion (Essential Parfums) - Column 14, Row 3
 
-27. From: Wanted (Azzaro) - Column 4, Row 5
-   To: Guidance (Amouage) - Column 25, Row 3
-
-28. From: Purpose (Amouage) - Column 3, Row 4
+10. From: Purpose (Amouage) - Column 3, Row 4
    To: Pegasus (Parfums de Marly) - Column 7, Row 3
 
-29. From: Kouros (Yves Saint Laurent) - Column 29, Row 8
+11. From: Viking (Creed) - Column 11, Row 8
+   To: Halfeti (Penhaligon's) - Column 29, Row 3
+
+12. From: Kouros (Yves Saint Laurent) - Column 29, Row 8
    To: Fiero (Xerjoff) - Column 3, Row 3
 
-30. From: Declaration d'Un Soir Intense (Cartier) - Column 11, Row 7
+13. From: Declaration d'Un Soir Intense (Cartier) - Column 11, Row 7
    To: Overture Man (Amouage) - Column 1, Row 3
 
-31. From: Archives 69 (Etat Libre d'Orange) - Column 17, Row 8
+14. From: Archives 69 (Etat Libre d'Orange) - Column 17, Row 8
    To: Silver Man (Amouage) - Column 2, Row 3
 
 ROW 4 SWAPS:
-32. From: New York Intense (Nicolai Parfumeur Createur) - Column 2, Row 5
-   To: Bitter Peach (Tom Ford) - Column 29, Row 4
-
-33. From: Sintra (Memo Paris) - Column 22, Row 3
+15. From: Sintra (Memo Paris) - Column 22, Row 3
    To: L’Ombre Dans L’Eau (Dyptique) - Column 19, Row 4
 
-34. From: L'Envol de Cartier (Cartier) - Column 4, Row 7
-   To: Gyan (Bvlgari) - Column 18, Row 4
-
-35. From: Antaeus (Chanel) - Column 18, Row 3
-   To: Fall of Phaeton (Argos) - Column 11, Row 4
-
-36. From: Sunshine Woman (Amouage) - Column 15, Row 8
+16. From: Sunshine Woman (Amouage) - Column 15, Row 8
    To: Hummingbird (Zoologist) - Column 6, Row 4
 
-37. From: Silver Man (Amouage) - Column 2, Row 3
-   To: Blanche Bête (Les Liquides Imaginaires) - Column 7, Row 4
-
-38. From: African Leather (Memo Paris) - Column 7, Row 8
-   To: Alien (Mugler) - Column 22, Row 4
-
-39. From: 40 knots (Xerjoff) - Column 6, Row 8
+17. From: 40 knots (Xerjoff) - Column 6, Row 8
    To: Portrayal Man (Amouage) - Column 2, Row 4
 
-40. From: Aqua Fahrenheit (Dior) - Column 2, Row 6
+18. From: Aqua Fahrenheit (Dior) - Column 2, Row 6
    To: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 14, Row 4
 
-41. From: Fucking Fabulous (Tom Ford) - Column 30, Row 8
-   To: Jubilation XXV (Amouage) - Column 8, Row 4
-
-42. From: Santal Noir (Dior) - Column 30, Row 3
-   To: Ani (Nishane) - Column 27, Row 4
-
-43. From: Erba Pura (Xerjoff) - Column 25, Row 7
+19. From: Erba Pura (Xerjoff) - Column 25, Row 7
    To: Ganymede (Marc-Antoine Barrois) - Column 10, Row 4
 
 ROW 5 SWAPS:
-44. From: Honour Man (Amouage) - Column 27, Row 2
-   To: Halfeti (Penhaligon's) - Column 17, Row 5
+20. From: Honour Man (Amouage) - Column 11, Row 1
+   To: Coco Mademoiselle (Chanel) - Column 29, Row 5
 
-45. From: Interlude Black Iris (Amouage) - Column 28, Row 2
-   To: New York Intense (Nicolai Parfumeur Createur) - Column 2, Row 5
-
-46. From: Luna Rossa Carbon (Prada) - Column 24, Row 8
-   To: Silver Mountain Water  (Creed) - Column 9, Row 5
-
-47. From: Gentleman Boisée (Givenchy) - Column 26, Row 7
+21. From: Gentleman Boisée (Givenchy) - Column 26, Row 7
    To: Grand Soir (Maison Francis Kurkdjian) - Column 19, Row 5
 
-48. From: Journey Man (Amouage) - Column 2, Row 2
+22. From: Journey Man (Amouage) - Column 2, Row 2
    To: Vetiver (Guerlain) - Column 5, Row 5
 
-49. From: Love Tuberose (Amouage) - Column 21, Row 2
-   To: Imagination (Louis Vuitton) - Column 24, Row 5
+23. From: Interlude Black Iris (Amouage) - Column 6, Row 1
+   To: New York Intense (Nicolai Parfumeur Createur) - Column 2, Row 5
 
-50. From: Moustache (Rochas) - Column 17, Row 3
-   To: Bracken Man (Amouage) - Column 3, Row 5
-
-51. From: Montabaco (Ormonde Jayne) - Column 9, Row 3
-   To: Wanted (Azzaro) - Column 4, Row 5
-
-52. From: Blanche Bête (Les Liquides Imaginaires) - Column 7, Row 4
-   To: Gris Charnel  (BDK Parfums) - Column 7, Row 5
-
-53. From: Baccarat Rouge 540 (Maison Francis Kurkdjian) - Column 14, Row 4
-   To: L’Homme Ideal L’Intense (Guerlain) - Column 6, Row 5
-
-54. From: Meander (Amouage) - Column 22, Row 8
+24. From: Meander (Amouage) - Column 22, Row 8
    To: Eau des Merveilles (Hermès) - Column 21, Row 5
 
-55. From: Nº 5 (Rosendo Mateu) - Column 8, Row 3
+25. From: Montabaco (Ormonde Jayne) - Column 9, Row 3
+   To: Wanted (Azzaro) - Column 4, Row 5
+
+26. From: Blanche Bête (Les Liquides Imaginaires) - Column 7, Row 4
+   To: Gris Charnel  (BDK Parfums) - Column 7, Row 5
+
+27. From: Love Tuberose (Amouage) - Column 19, Row 7
+   To: Imagination (Louis Vuitton) - Column 24, Row 5
+
+28. From: Nº 5 (Rosendo Mateu) - Column 8, Row 3
    To: Delina Exclusif (Parfums de Marly) - Column 13, Row 5
 
-56. From: Luna Rossa Ocean (Prada) - Column 13, Row 7
+29. From: Safran Colognise (Nishane) - Column 11, Row 6
+   To: Hacivat (Nishane) - Column 30, Row 5
+
+30. From: Luna Rossa Ocean (Prada) - Column 13, Row 7
    To: The Uncompromising Sohan (Penhaligon's) - Column 20, Row 5
 
 ROW 6 SWAPS:
-57. From: Royal Water (Creed) - Column 10, Row 7
-   To: Philtre Ceylan (Atelier Cologne) - Column 27, Row 6
+31. From: Invasion Barbare (MDCI Parfums) - Column 12, Row 3
+   To: Santal Royal (Guerlain) - Column 17, Row 6
 
-58. From: Habit Rouge (Guerlain) - Column 16, Row 3
-   To: Sicily (Mancera) - Column 23, Row 6
-
-59. From: Pegasus (Parfums de Marly) - Column 7, Row 3
-   To: Molecule 01 (Escentric Molecules) - Column 18, Row 6
-
-60. From: Gris Charnel  (BDK Parfums) - Column 7, Row 5
-   To: Original Vetiver (Creed) - Column 10, Row 6
-
-61. From: Ani (Nishane) - Column 27, Row 4
+32. From: Lyric Man (Amouage) - Column 17, Row 1
    To: Aoud Lemon Mint (Mancera) - Column 21, Row 6
 
-62. From: Eau des Merveilles (Hermès) - Column 21, Row 5
-   To: L’Homme (Prada) - Column 14, Row 6
+33. From: Habit Rouge (Guerlain) - Column 16, Row 3
+   To: Sicily (Mancera) - Column 23, Row 6
 
-63. From: Layton Exclusif (Parfums de Marly) - Column 7, Row 2
+34. From: Layton Exclusif (Parfums de Marly) - Column 7, Row 2
    To: Green Irish Tweed (Creed) - Column 9, Row 6
 
-64. From: Layton (Parfums de Marly) - Column 7, Row 1
-   To: Wulóng Chá (Nishane) - Column 25, Row 6
-
-65. From: Burlington 1819 (Roja Dove) - Column 1, Row 8
+35. From: Burlington 1819 (Roja Dove) - Column 1, Row 8
    To: Black Opium (Yves Saint Laurent) - Column 28, Row 6
 
-66. From: Sacred Wood (Kilian) - Column 12, Row 4
-   To: H24 (Hermès) - Column 20, Row 6
-
 ROW 7 SWAPS:
-67. From: Megamare (Orto Parisi) - Column 29, Row 3
-   To: Royal Water (Creed) - Column 10, Row 7
-
-68. From: Oud Satin Mood (Maison Francis Kurkdjian) - Column 30, Row 1
-   To: Fracas (Robert Piguet) - Column 29, Row 7
-
-69. From: Silver Mountain Water  (Creed) - Column 9, Row 5
-   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 23, Row 7
-
-70. From: Black Gold (Mancera) - Column 23, Row 3
-   To: L'Envol de Cartier (Cartier) - Column 4, Row 7
-
-71. From: Himalaya  (Creed) - Column 28, Row 3
-   To: Gentleman Boisée (Givenchy) - Column 26, Row 7
-
-72. From: Santal Royal (Guerlain) - Column 29, Row 1
-   To: Infusion d'Homme (Prada) - Column 6, Row 7
-
-73. From: Bracken Man (Amouage) - Column 3, Row 5
+36. From: Bracken Man (Amouage) - Column 3, Row 5
    To: Bois du Portugal (Creed) - Column 17, Row 7
 
-74. From: Jubilation XXV (Amouage) - Column 8, Row 4
-   To: Jazz Club (Maison Martin Margiela) - Column 16, Row 7
+37. From: Oud Satin Mood (Maison Francis Kurkdjian) - Column 30, Row 1
+   To: Chance (Chanel) - Column 29, Row 7
 
-75. From: Delina Exclusif (Parfums de Marly) - Column 13, Row 5
-   To: Black Orchid (Tom Ford) - Column 8, Row 7
+38. From: Silver Mountain Water  (Creed) - Column 9, Row 5
+   To: Gentle Fluidity Silver (Maison Francis Kurkdjian) - Column 23, Row 7
 
-76. From: Promise (Frederic Malle) - Column 16, Row 5
+39. From: Black Gold (Mancera) - Column 23, Row 3
+   To: L'Envol de Cartier (Cartier) - Column 4, Row 7
+
+40. From: Megamare (Orto Parisi) - Column 17, Row 5
+   To: Bo (Liis) - Column 21, Row 7
+
+41. From: Jubilation XXV (Amouage) - Column 8, Row 4
+   To: Encre Noire  (Lalique) - Column 5, Row 7
+
+42. From: Promise (Frederic Malle) - Column 16, Row 5
    To: Galloway (Parfums de Marly) - Column 12, Row 7
 
-77. From: Chance Eau Tendre (Chanel) - Column 24, Row 6
+43. From: Chance Eau Tendre (Chanel) - Column 24, Row 6
    To: Seminalis (Orto Parisi) - Column 15, Row 7
 
 ROW 8 SWAPS:
-78. From: Reflection Man (Amouage) - Column 1, Row 4
+44. From: Melody Of The Sun (Mancera) - Column 27, Row 7
+   To: Russian Tea (Masque Milano) - Column 28, Row 8
+
+45. From: Reflection Man (Amouage) - Column 1, Row 4
    To: Luna Rossa Carbon (Prada) - Column 24, Row 8
 
-79. From: Sicily (Mancera) - Column 23, Row 6
-   To: Sunshine Woman (Amouage) - Column 15, Row 8
+46. From: L’Homme (Prada) - Column 14, Row 6
+   To: Akdeniz (Unique'e Luxury) - Column 13, Row 8
 
-80. From: Imagination (Louis Vuitton) - Column 24, Row 5
-   To: Material (Amouage) - Column 2, Row 8
-
-81. From: Fate Man (Amouage) - Column 1, Row 2
+47. From: Fate Man (Amouage) - Column 1, Row 2
    To: Oud Ispahan (Dior) - Column 12, Row 8
 
-82. From: Percival (Parfums de Marly) - Column 24, Row 3
-   To: Viking (Creed) - Column 11, Row 8
-
-83. From: Enclave (Amouage) - Column 11, Row 3
+48. From: Percival (Parfums de Marly) - Column 24, Row 3
    To: Gentleman Givenchy (Givenchy) - Column 27, Row 8
 
-84. From: Original Vetiver (Creed) - Column 10, Row 6
+49. From: Original Vetiver (Creed) - Column 10, Row 6
    To: African Leather (Memo Paris) - Column 7, Row 8
 
-85. From: Portrayal Man (Amouage) - Column 2, Row 4
-   To: Sycomore (Chanel) - Column 5, Row 8
-
-86. From: L’Homme Ideal L’Intense (Guerlain) - Column 6, Row 5
+50. From: L’Homme Ideal L’Intense (Guerlain) - Column 6, Row 5
    To: Fucking Fabulous (Tom Ford) - Column 30, Row 8
-
-87. From: Aoud Lemon Mint (Mancera) - Column 21, Row 6
-   To: Au Hasard (Louis Vuitton) - Column 20, Row 8
 
 Notes: This swap plan minimizes the total number of bottle movements while organizing by seasonal appropriateness, notes, and accords. The most suitable bottles for Summer are placed in rows 1-3, while less suitable bottles are moved to higher-numbered rows.
