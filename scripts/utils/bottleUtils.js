@@ -27,6 +27,54 @@ const SEASONAL_PREFERENCES = {
 };
 
 /**
+ * Calculate a bottle's score based on multiple seasonal preferences
+ * Uses weighted scoring where Fall > Winter > Spring > Summer
+ */
+function calculateMultiSeasonalScore(bottle) {
+  // Seasonal weights (Fall is highest priority)
+  const seasonalWeights = {
+    'Fall': 100,
+    'Winter': 75,
+    'Spring': 50,
+    'Summer': 25
+  };
+
+  let score = 0;
+
+  // Score based on bottle's season tags
+  for (const bottleSeason of bottle.seasons) {
+    if (seasonalWeights[bottleSeason]) {
+      score += seasonalWeights[bottleSeason];
+    }
+  }
+
+  // Score based on notes matching seasonal preferences
+  for (const [season, weight] of Object.entries(seasonalWeights)) {
+    const seasonNotes = SEASONAL_PREFERENCES[season].notes;
+    const allNotes = [...bottle.notes, ...bottle.topNotes, ...bottle.middleNotes, ...bottle.baseNotes];
+
+    for (const note of allNotes) {
+      if (seasonNotes.some(seasonNote => note.toLowerCase().includes(seasonNote.toLowerCase()))) {
+        score += (weight / 50); // Scale down note contributions
+      }
+    }
+  }
+
+  // Score based on accords matching seasonal preferences
+  for (const [season, weight] of Object.entries(seasonalWeights)) {
+    const seasonAccords = SEASONAL_PREFERENCES[season].accords;
+
+    for (const accord of bottle.accords) {
+      if (seasonAccords.some(seasonAccord => accord.toLowerCase().includes(seasonAccord.toLowerCase()))) {
+        score += (weight / 30); // Scale down accord contributions
+      }
+    }
+  }
+
+  return score;
+}
+
+/**
  * Determine current season based on Northern Hemisphere
  */
 function getCurrentSeason() {
@@ -433,6 +481,7 @@ module.exports = {
   getCurrentSeason,
   validateSeason,
   calculateBottleScore,
+  calculateMultiSeasonalScore,
   calculateMinimumSwaps,
   generateSwapPlan,
   formatSwapPlan,
