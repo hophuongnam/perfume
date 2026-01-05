@@ -92,18 +92,18 @@ export function createBottleFromNotion(bData) {
     const fillPercentage = getFillPercentage(bData);
     addLiquidToBottle(bottleMesh, fillPercentage, liquidColor);
 
-    // Label - use shared geometry
-    const labelTexture = createLabelTexture(name || "(No Name)", house);
-    const labelMat = new THREE.MeshStandardMaterial({
-      map: labelTexture,
-      side: THREE.DoubleSide,
-      transparent: true,
-      roughness: 0.7,
-      metalness: 0.0
-    });
-    const labelMesh = new THREE.Mesh(sharedLabelGeo, labelMat);
-    labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
-    bottleMesh.add(labelMesh);
+    // Label - removed as requested (hard to see on UI)
+    // const labelTexture = createLabelTexture(name || "(No Name)", house);
+    // const labelMat = new THREE.MeshStandardMaterial({
+    //   map: labelTexture,
+    //   side: THREE.DoubleSide,
+    //   transparent: true,
+    //   roughness: 0.7,
+    //   metalness: 0.0
+    // });
+    // const labelMesh = new THREE.Mesh(sharedLabelGeo, labelMat);
+    // labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
+    // bottleMesh.add(labelMesh);
 
     // Cap - use shared geometry
     let capMetalness = 1.0;
