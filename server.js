@@ -3,11 +3,30 @@ const path = require('path');
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
 const fetch = require('node-fetch');
-    
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
 const fs = require('fs');
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const app = express();
+
+// Notion page IDs are UUIDs (with or without dashes)
+const NOTION_ID_RE = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
+
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false // disabled — frontend uses inline scripts/styles and external CDN assets
+}));
+
+// Rate limiting for API endpoints (100 requests per 15 minutes per IP)
+app.use('/api/', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+}));
+
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
@@ -34,33 +53,31 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'perfume.html'));
 });
 
-// Serve bottle-swaps.html for swap management
-app.get('/swaps', (req, res) => {
-  res.sendFile(path.join(__dirname, 'bottle-swaps.html'));
-});
-
 // Provide config data to the frontend
 app.get('/api/config', (req, res) => {
   res.json(config);
 });
+
+// Fallback weather data used when API is unavailable
+function getFallbackWeather() {
+  return {
+    condition: 'Clear',
+    description: 'Clear sky',
+    icon: '01d',
+    temp: 22,
+    humidity: 50,
+    windSpeed: 5,
+    location: 'Hanoi, Vietnam',
+    time: new Date().toISOString()
+  };
+}
 
 // Weather API endpoint
 app.get('/api/weather', async (req, res) => {
   try {
     const apiKey = process.env.WEATHER_API_KEY || '';
     const location = process.env.DEFAULT_LOCATION || 'Hanoi,VN';
-    
-    // Fallback weather data
-    const fallbackWeather = {
-      condition: 'Clear',
-      description: 'Clear sky',
-      icon: '01d',
-      temp: 22,
-      humidity: 50,
-      windSpeed: 5,
-      location: 'Hanoi, Vietnam',
-      time: new Date().toISOString()
-    };
+    const fallbackWeather = getFallbackWeather();
     
     if (!apiKey) {
       console.log('No Weather API key configured. Using fallback data.');
@@ -114,22 +131,24 @@ app.get('/api/weather', async (req, res) => {
   } catch (err) {
     console.error('/api/weather error:', err);
     // Return fallback data with HTTP 200 to not break the UI
-    res.json({
-      error: err.message,
-      condition: 'Clear',
-      description: 'Clear sky (fallback)',
-      icon: '01d',
-      temp: 22,
-      humidity: 50,
-      windSpeed: 5,
-      location: 'Hanoi, Vietnam',
-      time: new Date().toISOString()
-    });
+    res.json({ ...getFallbackWeather(), error: 'Failed to fetch weather data' });
   }
 });
 
-// Serve static files (CSS, JS, etc.) from the same directory
-app.use(express.static(path.join(__dirname)));
+// Serve only the specific frontend files needed by the browser
+// (avoids exposing server.js, .env, scripts/, package.json, etc.)
+const allowedStaticFiles = [
+  'SceneManager.js',
+  'RackBuilder.js',
+  'BottleManager.js',
+  'UIController.js'
+];
+allowedStaticFiles.forEach(file => {
+  app.get(`/${file}`, (req, res) => {
+    res.sendFile(path.join(__dirname, file));
+  });
+});
+app.use('/lib', express.static(path.join(__dirname, 'lib')));
 
 app.get('/api/bottleCount', async (req, res) => {
   try {
@@ -150,7 +169,7 @@ app.get('/api/bottleCount', async (req, res) => {
     res.json({ total });
   } catch (err) {
     console.error('/api/bottleCount error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch bottle count' });
   }
 });
 
@@ -231,18 +250,31 @@ app.get('/api/bottles', async (req, res) => {
     res.json(allBottles);
   } catch (err) {
     console.error('/api/bottles error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch bottles' });
   }
 });
 
 app.post('/api/updateBottleSlot', async (req, res) => {
   try {
     const { pageId, plane, row, column } = req.body;
-    if (!pageId) {
-      return res.status(400).json({ error: 'Missing pageId' });
+    if (!pageId || typeof pageId !== 'string' || !NOTION_ID_RE.test(pageId)) {
+      return res.status(400).json({ error: 'Missing or invalid pageId' });
+    }
+    // Validate plane, row, column are positive integers within expected bounds
+    const planeNum = Number(plane);
+    const rowNum = Number(row);
+    const colNum = Number(column);
+    if (!Number.isInteger(planeNum) || planeNum < 1 || planeNum > 4) {
+      return res.status(400).json({ error: 'Invalid plane (must be 1-4)' });
+    }
+    if (!Number.isInteger(rowNum) || rowNum < 1 || rowNum > 8) {
+      return res.status(400).json({ error: 'Invalid row (must be 1-8)' });
+    }
+    if (!Number.isInteger(colNum) || colNum < 1 || colNum > 30) {
+      return res.status(400).json({ error: 'Invalid column (must be 1-30)' });
     }
     // Create Location string in format "x-y-z" from plane, column, row values
-    const locationString = `${plane}-${column}-${row}`;
+    const locationString = `${planeNum}-${colNum}-${rowNum}`;
     await notion.pages.update({
       page_id: pageId,
       properties: {
@@ -260,7 +292,7 @@ app.post('/api/updateBottleSlot', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('/api/updateBottleSlot error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to update bottle slot' });
   }
 });
 
@@ -279,16 +311,36 @@ app.post('/api/batchUpdateBottleSlots', async (req, res) => {
     for (const swap of swaps) {
       try {
         const { fromId, toId, fromPlane, fromRow, fromColumn, toPlane, toRow, toColumn } = swap;
-        
-        if (!fromId || !toId) {
-          results.push({ success: false, error: 'Missing bottle ID', swap });
+
+        if (!fromId || typeof fromId !== 'string' || !NOTION_ID_RE.test(fromId) ||
+            !toId || typeof toId !== 'string' || !NOTION_ID_RE.test(toId)) {
+          results.push({ success: false, error: 'Missing or invalid bottle ID', swap });
           failureCount++;
           continue;
         }
 
-        // Create location strings
-        const toLocationString = `${toPlane}-${toColumn}-${toRow}`;
-        const fromLocationString = `${fromPlane}-${fromColumn}-${fromRow}`;
+        // Validate all position values are integers in valid ranges
+        const positions = [
+          { name: 'fromPlane', val: fromPlane, min: 1, max: 4 },
+          { name: 'toPlane', val: toPlane, min: 1, max: 4 },
+          { name: 'fromRow', val: fromRow, min: 1, max: 8 },
+          { name: 'toRow', val: toRow, min: 1, max: 8 },
+          { name: 'fromColumn', val: fromColumn, min: 1, max: 30 },
+          { name: 'toColumn', val: toColumn, min: 1, max: 30 }
+        ];
+        const invalidPos = positions.find(p => {
+          const n = Number(p.val);
+          return !Number.isInteger(n) || n < p.min || n > p.max;
+        });
+        if (invalidPos) {
+          results.push({ success: false, error: `Invalid ${invalidPos.name}`, swap });
+          failureCount++;
+          continue;
+        }
+
+        // Create location strings using validated integer values
+        const toLocationString = `${Number(toPlane)}-${Number(toColumn)}-${Number(toRow)}`;
+        const fromLocationString = `${Number(fromPlane)}-${Number(fromColumn)}-${Number(fromRow)}`;
         
         // Update both bottles in parallel
         await Promise.all([
@@ -314,7 +366,7 @@ app.post('/api/batchUpdateBottleSlots', async (req, res) => {
         successCount++;
       } catch (error) {
         console.error('Error processing swap:', error, swap);
-        results.push({ success: false, error: error.message, swap });
+        results.push({ success: false, error: 'Failed to process swap', swap });
         failureCount++;
       }
     }
@@ -330,15 +382,19 @@ app.post('/api/batchUpdateBottleSlots', async (req, res) => {
     });
   } catch (err) {
     console.error('/api/batchUpdateBottleSlots error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to process bottle swaps' });
   }
 });
 
 app.post('/api/updateBottleCap', async (req, res) => {
   try {
     const { pageId, capColor } = req.body;
-    if (!pageId) {
-      return res.status(400).json({ error: 'Missing pageId' });
+    if (!pageId || typeof pageId !== 'string' || !NOTION_ID_RE.test(pageId)) {
+      return res.status(400).json({ error: 'Missing or invalid pageId' });
+    }
+    const validCapColors = ['Gold', 'Silver', 'Black', 'White', 'Brown', 'Blue', 'Red', 'Green', 'Pink', 'Purple', 'Orange', 'Clear'];
+    if (!capColor || typeof capColor !== 'string' || !validCapColors.includes(capColor)) {
+      return res.status(400).json({ error: `Invalid capColor. Must be one of: ${validCapColors.join(', ')}` });
     }
     await notion.pages.update({
       page_id: pageId,
@@ -353,7 +409,7 @@ app.post('/api/updateBottleCap', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('/api/updateBottleCap error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to update bottle cap color' });
   }
 });
 

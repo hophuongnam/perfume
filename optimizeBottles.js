@@ -9,7 +9,7 @@
  *   --apply  Apply the optimization to bottleSwaps.txt (default: only generate optimalBottleSwaps.txt)
  */
 
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,12 +17,19 @@ const path = require('path');
 const args = process.argv.slice(2);
 const shouldApply = args.includes('--apply');
 
-// Check for a season parameter
+// Check for a season parameter with strict validation
+const validSeasons = ['spring', 'summer', 'fall', 'winter'];
 let seasonParam = '';
 for (const arg of args) {
-  const seasonMatch = arg.match(/^--season=(.+)$/i);
+  const seasonMatch = arg.match(/^--season=(\w+)$/i);
   if (seasonMatch) {
-    seasonParam = arg;
+    const seasonValue = seasonMatch[1].toLowerCase();
+    if (validSeasons.includes(seasonValue)) {
+      seasonParam = `--season=${seasonMatch[1]}`;
+    } else {
+      console.error(`❌ Invalid season: "${seasonMatch[1]}". Valid seasons: ${validSeasons.join(', ')}`);
+      process.exit(1);
+    }
     break;
   }
 }
@@ -38,7 +45,11 @@ if (seasonParam) {
 }
 
 // Run the optimization script with season parameter if provided
-exec(`node ${scriptPath} ${seasonParam}`, (error, stdout, stderr) => {
+const execArgs = [scriptPath];
+if (seasonParam) {
+  execArgs.push(seasonParam);
+}
+execFile(process.execPath, execArgs, (error, stdout, stderr) => {
   if (error) {
     console.error('❌ Error running optimization:', error.message);
     if (stdout) {

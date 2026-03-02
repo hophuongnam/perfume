@@ -11,6 +11,19 @@ import { fetchAllNotionBottles, createBottleFromNotion, clickableBottles,
          updateBottleSlotOnServer, setCapColor, updateBottleCapColorOnServer,
          updateBottles } from './BottleManager.js';
 
+/**
+ * Escape HTML special characters to prevent XSS when injecting into innerHTML.
+ */
+function escapeHTML(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Shared config object
 export let config = {
   rackR1: "",
@@ -1071,49 +1084,49 @@ function updateInfoBoard(bottle) {
 
   // Build simplified HTML content to match billboard style
   let html = `
-    <div class="house-name">${data.house || 'Unknown House'}</div>
-    <div class="bottle-name">${data.name || 'No Name'}</div>
+    <div class="house-name">${escapeHTML(data.house || 'Unknown House')}</div>
+    <div class="bottle-name">${escapeHTML(data.name || 'No Name')}</div>
     <div class="separator"></div>`;
 
   // Add volume info if available
   if (data.volume) {
-    html += `<div class="info-detail">Volume: ${data.volume} ml</div>`;
+    html += `<div class="info-detail">Volume: ${escapeHTML(data.volume)} ml</div>`;
   }
-  
+
   // Start the notes section with a two-column layout
   html += `<div class="notes-container">`;
-  
+
   // Add notes breakdown if available in a two-column format
   if (data.topNotes && data.topNotes.length > 0) {
     html += `
       <div class="notes-row">
         <div class="notes-label">Top Notes:</div>
-        <div class="notes-content">${data.topNotes.join(', ')}</div>
+        <div class="notes-content">${escapeHTML(data.topNotes.join(', '))}</div>
       </div>`;
   }
-  
+
   if (data.middleNotes && data.middleNotes.length > 0) {
     html += `
       <div class="notes-row">
         <div class="notes-label">Middle Notes:</div>
-        <div class="notes-content">${data.middleNotes.join(', ')}</div>
+        <div class="notes-content">${escapeHTML(data.middleNotes.join(', '))}</div>
       </div>`;
   }
-  
+
   if (data.baseNotes && data.baseNotes.length > 0) {
     html += `
       <div class="notes-row">
         <div class="notes-label">Base Notes:</div>
-        <div class="notes-content">${data.baseNotes.join(', ')}</div>
+        <div class="notes-content">${escapeHTML(data.baseNotes.join(', '))}</div>
       </div>`;
   }
-  
+
   // Add Notes if available
   if (data.notes && data.notes.length > 0) {
     html += `
       <div class="notes-row">
         <div class="notes-label">Notes:</div>
-        <div class="notes-content">${data.notes.join(', ')}</div>
+        <div class="notes-content">${escapeHTML(data.notes.join(', '))}</div>
       </div>`;
   }
   
@@ -1966,9 +1979,9 @@ function displayLayeringSuggestionBoard() {
   // Update header with current context
   if (layeringSuggestions.length > 0 && layeringSuggestions[0].weatherContext) {
     const context = layeringSuggestions[0].weatherContext;
-    suggestionBoardHeader.innerHTML = `Perfume Layering Suggestions • ${context.condition.charAt(0).toUpperCase() + context.condition.slice(1)} • ${context.season} • ${context.timeOfDay}`;
+    suggestionBoardHeader.textContent = `Perfume Layering Suggestions \u2022 ${context.condition.charAt(0).toUpperCase() + context.condition.slice(1)} \u2022 ${context.season} \u2022 ${context.timeOfDay}`;
   } else {
-    suggestionBoardHeader.innerHTML = 'Perfume Layering Suggestions';
+    suggestionBoardHeader.textContent = 'Perfume Layering Suggestions';
   }
   
   // Update footer
@@ -1990,7 +2003,7 @@ function displayLayeringSuggestionBoard() {
     
     const titleDiv = document.createElement('div');
     titleDiv.className = 'layering-title';
-    titleDiv.innerHTML = `<strong>${data1.house || ''} ${data1.name || ''}</strong><br>+<br><strong>${data2.house || ''} ${data2.name || ''}</strong>`;
+    titleDiv.innerHTML = `<strong>${escapeHTML(data1.house || '')} ${escapeHTML(data1.name || '')}</strong><br>+<br><strong>${escapeHTML(data2.house || '')} ${escapeHTML(data2.name || '')}</strong>`;
     titleDiv.style.marginBottom = '8px';
     
     const descriptionDiv = document.createElement('div');
@@ -2011,7 +2024,7 @@ function displayLayeringSuggestionBoard() {
     const commonNotesDiv = document.createElement('div');
     commonNotesDiv.className = 'layering-common-notes';
     if (suggestion.commonNotes && suggestion.commonNotes.length > 0) {
-      commonNotesDiv.innerHTML = `<span style="font-size:12px; color:#777;">Common notes: ${suggestion.commonNotes.join(', ')}</span>`;
+      commonNotesDiv.innerHTML = `<span style="font-size:12px; color:#777;">Common notes: ${escapeHTML(suggestion.commonNotes.join(', '))}</span>`;
     }
     
     suggestionItem.appendChild(titleDiv);
@@ -2127,7 +2140,7 @@ function displaySuggestionBoard(weatherCondition, season, timeOfDay) {
   const formattedWeather = weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1);
   
   // Update header with weather, season, and time of day info
-  suggestionBoardHeader.innerHTML = `Perfume Suggestions for ${formattedWeather} Weather - ${season} Season - ${timeOfDay} Time`;
+  suggestionBoardHeader.textContent = `Perfume Suggestions for ${formattedWeather} Weather - ${season} Season - ${timeOfDay} Time`;
   
   // Create suggestion items
   suggestedBottles.forEach(item => {
