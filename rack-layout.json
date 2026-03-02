@@ -1,0 +1,18 @@
+{
+  "planes": [
+    {
+      "racks": [
+        { "rows": 4, "cols": 30 },
+        { "rows": 4, "cols": 30 }
+      ]
+    },
+    {
+      "racks": [
+        { "rows": 3, "cols": 14 },
+        { "rows": 4, "cols": 15 }
+      ]
+    }
+  ],
+  "rackGap": 1,
+  "planeGap": 2
+}

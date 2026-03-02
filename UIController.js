@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { initScene, animate, onWindowResize, camera, updateSceneWeather } from './SceneManager.js';
-import { buildAllPlanes, parseSingleRack, planeLayouts, slotOccupants } from './RackBuilder.js';
+import { buildAllPlanes, planeLayouts, slotOccupants } from './RackBuilder.js';
 import { fetchAllNotionBottles, createBottleFromNotion, clickableBottles,
          updateBottleSlotOnServer, setCapColor,
          updateBottles } from './BottleManager.js';
@@ -26,16 +26,7 @@ function escapeHTML(str) {
 
 // Shared config object
 export let config = {
-  rackR1: "",
-  rackR2: "",
-  rackR3: "",
-  rackR4: "",
-  planeP1: "",
-  planeP2: "",
-  planeP3: "",
-  planeP4: "",
-  planeVerticalOffset: "2",
-  offsetRack: "1",
+  layout: { planes: [], rackGap: 1, planeGap: 2 },
   capColorDefault: "Gold"
 };
 
@@ -214,7 +205,6 @@ export async function initApp() {
     // 1) Fetch config
     loadingManager.startStep('config');
     await fetchConfig();
-    parseRackConfigs();
     loadingManager.completeStep('config');
 
     // 2) Init Scene
@@ -285,16 +275,6 @@ async function fetchConfig() {
     }
     throw err;
   }
-}
-
-/**
- * Parse environment-based rack definitions
- */
-function parseRackConfigs() {
-  parseSingleRack("R1", config.rackR1);
-  parseSingleRack("R2", config.rackR2);
-  parseSingleRack("R3", config.rackR3);
-  parseSingleRack("R4", config.rackR4);
 }
 
 /**

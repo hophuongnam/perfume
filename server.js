@@ -31,20 +31,11 @@ app.use(express.json());
 const port = process.env.PORT || 3000;
 
 /**
- * Build a config object to send to the client
- * Contains environment variables needed by the front-end
+ * Build a config object to send to the client.
+ * Layout is read from rack-layout.json; other settings stay here.
  */
 const config = {
-  rackR1: process.env.RACK_R1 || "",
-  rackR2: process.env.RACK_R2 || "",
-  rackR3: process.env.RACK_R3 || "",
-  rackR4: process.env.RACK_R4 || "",
-  planeP1: process.env.PLANE_P1 || "",
-  planeP2: process.env.PLANE_P2 || "",
-  planeP3: process.env.PLANE_P3 || "",
-  planeP4: process.env.PLANE_P4 || "",
-  planeVerticalOffset: process.env.PLANE_VERTICAL_OFFSET || "2",
-  offsetRack: process.env.OFFSET_RACK || "1",
+  layout: JSON.parse(fs.readFileSync(path.join(__dirname, 'rack-layout.json'), 'utf-8')),
   capColorDefault: "Gold"
 };
 

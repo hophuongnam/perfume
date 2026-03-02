@@ -1,10 +1,12 @@
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * This script auto-assigns valid plane/row/column slots to Notion pages.
  *
- * 1) Parse environment variables for racks (RACK_R1..R4) => produce planeLayouts using PLANE_P1..P4
+ * 1) Read rack-layout.json to produce planeLayouts
  * 2) For each page in the Notion database (filter "Ignore?"):
  *    - Grab existing plane, row, column.
  *    - If valid and unoccupied => keep that.
@@ -18,65 +20,28 @@ const { Client } = require('@notionhq/client');
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const databaseId = process.env.NOTION_DATABASE_ID;
 
-/** Parse environment variables for RACK_R1..R4 in the form "(4,30)" => { rows, columns } */
-function parseRackDefinition(str) {
-  const match = /^\((\d+),\s*(\d+)\)$/.exec((str || "").trim());
-  if (!match) {
-    console.warn("Invalid rack definition:", str);
-    return { rows: 0, columns: 0 };
-  }
-  return {
-    rows: parseInt(match[1], 10),
-    columns: parseInt(match[2], 10)
-  };
-}
-
-const racks = {};
-["R1","R2","R3","R4"].forEach(key => {
-  const envKey = `RACK_${key}`;
-  racks[key] = process.env[envKey] ? parseRackDefinition(process.env[envKey]) : { rows:0, columns:0 };
-});
-
-/** parsePlaneDefinition e.g. "R1xR2" => ["R1","R2"] */
-function parsePlaneDefinition(str) {
-  return (str || "").split('x').map(s => s.trim());
-}
-
 /**
  * planeLayouts[planeNumber] = array of { plane, row, column }
- * We build these by stacking racks from PLANE_P1..P4 in the row dimension.
+ * Built from rack-layout.json by stacking racks in the row dimension.
  */
 const planeLayouts = {};
 
-function buildAllPlanesFromEnv() {
-  for (let planeNumber = 1; planeNumber <= 4; planeNumber++) {
-    const envKey = `PLANE_P${planeNumber}`;
-    const definition = process.env[envKey] || "";
-    if (!definition) {
-      planeLayouts[planeNumber] = [];
-      continue;
-    }
-    const rackIds = parsePlaneDefinition(definition);
-    if (!rackIds || !rackIds.length) {
-      planeLayouts[planeNumber] = [];
-      continue;
-    }
+function buildAllPlanesFromLayout() {
+  const layout = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'rack-layout.json'), 'utf-8'));
+  const planes = layout.planes || [];
 
-    const layout = [];
+  planes.forEach((planeDef, index) => {
+    const planeNumber = index + 1;
+    const rackDefs = planeDef.racks || [];
+    const slots = [];
     let rowIndexBase = 0;
-    const offsetRack = parseFloat(process.env.OFFSET_RACK || "1") || 1;
 
-    for (const rackId of rackIds) {
-      const rDef = racks[rackId] || { rows:0, columns:0 };
-      if (!rDef.rows || !rDef.columns) {
-        console.warn(`No valid definition for rackId=${rackId}`);
-        continue;
-      }
-      const { rows, columns } = rDef;
-      // Fill row+col
+    for (const rack of rackDefs) {
+      const { rows, cols } = rack;
+      if (!rows || !cols) continue;
       for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < columns; c++) {
-          layout.push({
+        for (let c = 0; c < cols; c++) {
+          slots.push({
             plane: planeNumber,
             row: rowIndexBase + r + 1,
             column: c + 1
@@ -84,13 +49,9 @@ function buildAllPlanesFromEnv() {
         }
       }
       rowIndexBase += rows;
-      // The front-end also offsets racks in the scene, but for the row count logic
-      // we only care about total rowIndexBase. The offsetRack doesn't matter for row numbering unless
-      // we truly want blank rows between racks. For now we'll skip adding extra blank rows, to keep it simpler.
-      // If you want to insert empty space for offsetRack, you could do e.g. rowIndexBase += offsetRack*X
     }
-    planeLayouts[planeNumber] = layout;
-  }
+    planeLayouts[planeNumber] = slots;
+  });
 }
 
 /** occupantMap "plane-row-col" => pageId */
@@ -110,7 +71,7 @@ let allSlots = [];
  * and update Notion.
  */
 async function main() {
-  buildAllPlanesFromEnv();
+  buildAllPlanesFromLayout();
 
   // Build a single sorted array of all possible slots in ascending (plane, row, column).
   // This helps us pick "the first free slot" easily.

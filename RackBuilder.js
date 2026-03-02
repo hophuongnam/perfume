@@ -21,30 +21,25 @@ const COLUMNS_PER_GROUP = 6;
 export const planeLayouts = {};   // planeLayouts[planeNumber] = array of slot objects
 export const slotOccupants = {}; // "plane-row-column" => bottleGroup
 
-// We'll store racks definitions from environment config
-export const racks = {};
 
 /**
- * Build all planes based on config (planeP1..planeP4), using parsePlaneDefinition() and parseSingleRack().
- * planeIndex: 1..4
+ * Build all planes from config.layout (rack-layout.json).
+ * config.layout = { planes: [{ racks: [{ rows, cols }] }], rackGap, planeGap }
  */
 export function buildAllPlanes(config) {
-  const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
-  const maxPlanes = planeKeys.length;
+  const layout = config.layout;
+  const planes = layout.planes || [];
 
-  // First ensure planeLayouts for all planes
-  for (let i = 1; i <= maxPlanes; i++) {
+  // Ensure planeLayouts entries exist
+  for (let i = 1; i <= planes.length; i++) {
     planeLayouts[i] = [];
   }
   let currentPlaneY = 0;
 
-  planeKeys.forEach((planeKey, index) => {
-    const definition = config[planeKey];
-    if (!definition) return;
-
+  planes.forEach((planeDef, index) => {
     const planeNumber = index + 1;
-    const rackIds = parsePlaneDefinition(definition);
-    if (!rackIds || !rackIds.length) return;
+    const rackDefs = planeDef.racks || [];
+    if (!rackDefs.length) return;
 
     const planeGroup = new THREE.Group();
     planeGroup.position.set(0, currentPlaneY, index * 12 * SLOT_WIDTH_DEPTH);
@@ -52,17 +47,13 @@ export function buildAllPlanes(config) {
 
     let rowIndexBase = 0;
     let rowStackOffset = 0;
-    const offsetRack = parseFloat(config.offsetRack) || 1;
+    const rackGap = layout.rackGap ?? 1;
 
-    rackIds.forEach(rackId => {
-      const rDef = racks[rackId] || { rows:0, columns:0 };
-      if (rDef.rows <= 0 || rDef.columns <= 0) {
-        console.warn("No valid definition for rackId =", rackId);
-        return;
-      }
+    rackDefs.forEach(rack => {
+      const rows = rack.rows;
+      const columns = rack.cols;
+      if (rows <= 0 || columns <= 0) return;
 
-      const rows = rDef.rows;
-      const columns = rDef.columns;
       const { group: rackGroup, rowHeights } = createSteppedRack(rows, columns, planeNumber);
       const rackDepth = rows * SLOT_WIDTH_DEPTH;
 
@@ -76,22 +67,22 @@ export function buildAllPlanes(config) {
         for (let c = 0; c < columns; c++) {
           // Calculate total width including gaps
           let totalWidth = columns * SLOT_WIDTH_DEPTH;
-          
+
           if (planeNumber === 1) {
             // Add width for gaps (one gap after every 6 columns)
             const numGaps = Math.floor((columns - 1) / COLUMNS_PER_GROUP);
             totalWidth += numGaps * gapSize;
           }
-          
+
           // Calculate how many gaps come before this column
           const gapsBefore = planeNumber === 1 ? Math.floor(c / COLUMNS_PER_GROUP) : 0;
-          
+
           // Calculate slot X position with gaps
           let slotCenterX = -(totalWidth / 2);  // Start at left edge
           slotCenterX += c * SLOT_WIDTH_DEPTH;  // Add width for all columns
           slotCenterX += gapsBefore * gapSize;  // Add width for any gaps before this column
           slotCenterX += SLOT_WIDTH_DEPTH / 2;  // Center in slot
-          
+
           const slotCenterZ = (rackDepth / 2) - r*SLOT_WIDTH_DEPTH - (SLOT_WIDTH_DEPTH / 2);
           const worldX = slotCenterX;
           const worldY = currentPlaneY + rowHeights[r];
@@ -110,39 +101,17 @@ export function buildAllPlanes(config) {
 
       rowIndexBase += rows;
       rowStackOffset += rackDepth;
-      rowStackOffset += offsetRack * rackDepth;
+      rowStackOffset += rackGap * rackDepth;
     });
 
-    const planeVerticalOffset = parseFloat(config.planeVerticalOffset) || 2;
-    currentPlaneY -= planeVerticalOffset * BOTTLE_HEIGHT;
+    const planeGap = layout.planeGap ?? 2;
+    currentPlaneY -= planeGap * BOTTLE_HEIGHT;
   });
 
   // Once planes are built, add overhead lights for each plane
   addPlaneLights();
 }
 
-/**
- * Parse a single plane definition, e.g. "R1 x R2" => ["R1","R2"]
- */
-export function parsePlaneDefinition(str) {
-  return (str || "").split('x').map(s => s.trim());
-}
-
-/**
- * Parse a single rack definition, e.g. "(5,8)" => rows=5, cols=8
- * Store in `racks` object.
- */
-export function parseSingleRack(rackId, definition) {
-  const match = /^\((\d+),(\d+)\)$/.exec((definition || "").trim());
-  if (!match) {
-    racks[rackId] = { rows: 0, columns: 0 };
-  } else {
-    racks[rackId] = {
-      rows: parseInt(match[1], 10),
-      columns: parseInt(match[2], 10)
-    };
-  }
-}
 
 /**
  * Create column label texture for rack
