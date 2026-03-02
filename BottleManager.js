@@ -19,7 +19,18 @@ const capRadius = 5;
 // Create geometries once and reuse them for all bottles
 const sharedBottleGeo = new THREE.BoxGeometry(bottleWidth, BOTTLE_HEIGHT, bottleDepth);
 const sharedCapGeo = new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 32);
-const sharedLabelGeo = new THREE.PlaneGeometry(bottleWidth, BOTTLE_HEIGHT / 2);
+
+// --- Named Constants ---
+const BOARD_OFFSET_Y = 40;
+const FLOAT_ANIMATION_FREQ = 0.002;
+const FLOAT_AMPLITUDE = 2;
+
+// Cap material properties lookup (deduplicates if/else chains)
+const CAP_MATERIAL_PROPERTIES = {
+  'Gold':   { metalness: 1.0, roughness: 0.1 },
+  'Silver': { metalness: 0.95, roughness: 0.1 },
+  'Black':  { metalness: 0.8, roughness: 0.3 },
+};
 
 /**
  * 1) Fetch all bottles from Notion
@@ -48,7 +59,7 @@ export function createBottleFromNotion(bData) {
       return;
     }
 
-    const slot = planeLayouts[plane].find(s => s.row === row && s.column === column);
+    const slot = planeLayouts[plane].find(sl => sl.row === row && sl.column === column);
     if (!slot) {
       console.warn(`No slot found for plane=${plane}, row=${row}, column=${column}`);
       return;
@@ -92,37 +103,12 @@ export function createBottleFromNotion(bData) {
     const fillPercentage = getFillPercentage(bData);
     addLiquidToBottle(bottleMesh, fillPercentage, liquidColor);
 
-    // Label - removed as requested (hard to see on UI)
-    // const labelTexture = createLabelTexture(name || "(No Name)", house);
-    // const labelMat = new THREE.MeshStandardMaterial({
-    //   map: labelTexture,
-    //   side: THREE.DoubleSide,
-    //   transparent: true,
-    //   roughness: 0.7,
-    //   metalness: 0.0
-    // });
-    // const labelMesh = new THREE.Mesh(sharedLabelGeo, labelMat);
-    // labelMesh.position.set(0, 0, bottleDepth/2 + 0.01);
-    // bottleMesh.add(labelMesh);
-
     // Cap - use shared geometry
-    let capMetalness = 1.0;
-    let capRoughness = 0.2;
-
-    if (capColor === 'Gold') {
-      capMetalness = 1.0;
-      capRoughness = 0.1;
-    } else if (capColor === 'Silver') {
-      capMetalness = 0.95;
-      capRoughness = 0.1;
-    } else if (capColor === 'Black') {
-      capMetalness = 0.8;
-      capRoughness = 0.3;
-    }
+    const capProps = CAP_MATERIAL_PROPERTIES[capColor] || { metalness: 1.0, roughness: 0.2 };
     const capMat = new THREE.MeshStandardMaterial({
       color: 0xffd700,
-      roughness: capRoughness,
-      metalness: capMetalness,
+      roughness: capProps.roughness,
+      metalness: capProps.metalness,
       envMap: envMap
     });
     if (capColor) {
@@ -193,20 +179,19 @@ export function updateBottles(activeBottle) {
         // Attach or update the floating board
         if (!bottle.userData.boardMesh) {
           const line3 = `Col: ${bottle.userData.column}, Row: ${bottle.userData.row}`;
-          const line4 = bottle.userData.noticeLine4 || "";
           bottle.userData.boardMesh = createBoardMesh(
             bottle.userData.notionData.house || "Unknown House",
             bottle.userData.notionData.name  || "No Name",
             line3,
-            line4
+            ""
           );
           bottle.add(bottle.userData.boardMesh);
-          bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + 40, 0);
+          bottle.userData.boardMesh.position.set(0, BOTTLE_HEIGHT + BOARD_OFFSET_Y, 0);
         }
         // Slight float animation
         const now = Date.now();
-        const floatOffset = Math.sin(now * 0.002) * 2;
-        bottle.userData.boardMesh.position.y = BOTTLE_HEIGHT + 40 + floatOffset;
+        const floatOffset = Math.sin(now * FLOAT_ANIMATION_FREQ) * FLOAT_AMPLITUDE;
+        bottle.userData.boardMesh.position.y = BOTTLE_HEIGHT + BOARD_OFFSET_Y + floatOffset;
         // Face the camera
         bottle.userData.boardMesh.lookAt(camera.position);
 
@@ -393,10 +378,15 @@ function getFillPercentage(bottleData) {
     if (volumeMap[bottleData.volume]) {
       fillPercentage = volumeMap[bottleData.volume];
     }
-  } else {
-    // If no volume info, add a bit of randomness to make bottles look different
-    // Between 65% and 85% full
-    fillPercentage = 0.65 + Math.random() * 0.2;
+  } else if (bottleData.id) {
+    // Deterministic fill based on bottle ID hash so fills are consistent across page loads
+    let hash = 0;
+    for (let i = 0; i < bottleData.id.length; i++) {
+      hash = ((hash << 5) - hash + bottleData.id.charCodeAt(i)) | 0;
+    }
+    // Normalize to 0..1 range, then map to 65%-85%
+    const normalized = (((hash >>> 0) % 1000) / 1000);
+    fillPercentage = 0.65 + normalized * 0.2;
   }
   
   return fillPercentage;
@@ -427,74 +417,6 @@ function addLiquidToBottle(bottleMesh, fillPercentage = 0.75, liquidColor = 0xf5
   bottleMesh.add(liquidMesh);
   
   return liquidMesh;
-}
-
-function createLabelTexture(text, houseText) {
-  const canvas  = document.createElement('canvas');
-  canvas.width  = 512;  // Increased for better resolution
-  canvas.height = 1024;
-  const ctx     = canvas.getContext('2d');
-
-  // Create elegant background with gradient
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-  gradient.addColorStop(0, "#f8f8f8");
-  gradient.addColorStop(0.5, "#ffffff");
-  gradient.addColorStop(1, "#f8f8f8");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Add decorative border
-  ctx.strokeStyle = "#d0d0d0";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
-  
-  // Add inner subtle border
-  ctx.strokeStyle = "#e0e0e0";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
-
-  // Rotate for vertical text (perfume bottles often have vertical labels)
-  ctx.save();
-  ctx.translate(0, canvas.height);
-  ctx.rotate(-Math.PI / 2);
-  
-  ctx.textAlign    = "center";
-  ctx.textBaseline = "middle";
-  
-  // Draw house name (smaller, at top)
-  ctx.font = "bold 50px 'Palatino', serif";
-  ctx.fillStyle = "#666666";
-  ctx.fillText(houseText || "Unknown House", canvas.height / 2, canvas.width / 4);
-  
-  // Decorative divider
-  ctx.strokeStyle = "#d0d0d0";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(canvas.height / 2 - 120, canvas.width / 2 - 20);
-  ctx.lineTo(canvas.height / 2 + 120, canvas.width / 2 - 20);
-  ctx.stroke();
-  
-  // Draw perfume name (larger, below divider)
-  ctx.font = "bold 70px 'Palatino', serif";
-  ctx.fillStyle = "#333333";
-  ctx.fillText(text, canvas.height / 2, canvas.width / 2 + 50);
-  
-  ctx.restore();
-
-  // Apply a subtle vignette effect for elegance
-  const radialGradient = ctx.createRadialGradient(
-    canvas.width / 2, canvas.height / 2, canvas.width / 4,
-    canvas.width / 2, canvas.height / 2, canvas.width
-  );
-  radialGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
-  radialGradient.addColorStop(1, "rgba(230, 230, 230, 0.3)");
-  ctx.fillStyle = radialGradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.needsUpdate = true;
-  return texture;
 }
 
 function createBoardMesh(house, name, line3, line4) {
@@ -662,22 +584,9 @@ export function setCapColor(bottle, colorName) {
   if (!highlightables || highlightables.length < 2) return;
   const capEntry = highlightables[1];
 
-  let metalness = 1.0;
-  let roughness = 0.2;
-
-  if (colorName === 'Gold') {
-    metalness = 1.0;
-    roughness = 0.1;
-  } else if (colorName === 'Silver') {
-    metalness = 0.95;
-    roughness = 0.1;
-  } else if (colorName === 'Black') {
-    metalness = 0.8;
-    roughness = 0.3;
-  }
-
-  capEntry.mesh.material.metalness = metalness;
-  capEntry.mesh.material.roughness = roughness;
+  const capProps = CAP_MATERIAL_PROPERTIES[colorName] || { metalness: 1.0, roughness: 0.2 };
+  capEntry.mesh.material.metalness = capProps.metalness;
+  capEntry.mesh.material.roughness = capProps.roughness;
 
   try {
     capEntry.mesh.material.color.setStyle(colorName);

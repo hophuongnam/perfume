@@ -5,14 +5,18 @@
 
 import * as THREE from 'three';
 import { scene, envMap, csm } from './SceneManager.js';
-import { RectAreaLightHelper } from 'RectAreaLightHelper';
-
 /**
  * Because original code references these as constants, define them here
  * so they can be shared easily for rack building.
 */
 export const SLOT_WIDTH_DEPTH = 15;
 export const BOTTLE_HEIGHT = 64;
+
+// --- Named Constants ---
+const WALL_THICKNESS = 0.1;
+const STEP_Y_RATIO = 0.3;
+const GAP_RATIO = 0.5;
+const COLUMNS_PER_GROUP = 6;
 
 export const planeLayouts = {};   // planeLayouts[planeNumber] = array of slot objects
 export const slotOccupants = {}; // "plane-row-column" => bottleGroup
@@ -25,12 +29,13 @@ export const racks = {};
  * planeIndex: 1..4
  */
 export function buildAllPlanes(config) {
-  // First ensure planeLayouts for planes 1..4
-  for (let i = 1; i <= 4; i++) {
+  const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
+  const maxPlanes = planeKeys.length;
+
+  // First ensure planeLayouts for all planes
+  for (let i = 1; i <= maxPlanes; i++) {
     planeLayouts[i] = [];
   }
-
-  const planeKeys = ["planeP1","planeP2","planeP3","planeP4"];
   let currentPlaneY = 0;
 
   planeKeys.forEach((planeKey, index) => {
@@ -64,8 +69,8 @@ export function buildAllPlanes(config) {
       rackGroup.position.z = -rowStackOffset;
       planeGroup.add(rackGroup);
 
-      // Define gap size for plane 1 - 50% of column width for better visibility
-      const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * 0.5 : 0;
+      // Define gap size for plane 1
+      const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * GAP_RATIO : 0;
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < columns; c++) {
@@ -74,12 +79,12 @@ export function buildAllPlanes(config) {
           
           if (planeNumber === 1) {
             // Add width for gaps (one gap after every 6 columns)
-            const numGaps = Math.floor((columns - 1) / 6);
+            const numGaps = Math.floor((columns - 1) / COLUMNS_PER_GROUP);
             totalWidth += numGaps * gapSize;
           }
           
           // Calculate how many gaps come before this column
-          const gapsBefore = planeNumber === 1 ? Math.floor(c / 6) : 0;
+          const gapsBefore = planeNumber === 1 ? Math.floor(c / COLUMNS_PER_GROUP) : 0;
           
           // Calculate slot X position with gaps
           let slotCenterX = -(totalWidth / 2);  // Start at left edge
@@ -176,18 +181,17 @@ function createColumnLabelTexture(columnNumber) {
 function createSteppedRack(numRows, numColumns, planeNumber) {
   const group = new THREE.Group();
   
-  // Gap size for plane 1 - 50% of column width
-  const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * 0.5 : 0;
-  
-  // Calculate extra width from gaps (one gap after every 6 columns)
-  const numGaps = planeNumber === 1 ? Math.floor((numColumns - 1) / 6) : 0;
+  const gapSize = planeNumber === 1 ? SLOT_WIDTH_DEPTH * GAP_RATIO : 0;
+
+  // Calculate extra width from gaps (one gap after every group of columns)
+  const numGaps = planeNumber === 1 ? Math.floor((numColumns - 1) / COLUMNS_PER_GROUP) : 0;
   const totalGapWidth = numGaps * gapSize;
   
   const totalWidth = numColumns * SLOT_WIDTH_DEPTH + totalGapWidth;
   const totalDepth = numRows * SLOT_WIDTH_DEPTH;
   const rowHeight = BOTTLE_HEIGHT / 2;
-  const wallThickness = 0.1;
-  const stepY = rowHeight * 0.3;
+  const wallThickness = WALL_THICKNESS;
+  const stepY = rowHeight * STEP_Y_RATIO;
   const baseY = wallThickness / 2;
 
   const mat = new THREE.MeshPhysicalMaterial({
@@ -228,7 +232,7 @@ function createSteppedRack(numRows, numColumns, planeNumber) {
     // vertical dividers
     for (let j = 1; j < numColumns; j++) {
       // Skip divider if this is where a gap should be (after every 6th column in plane 1)
-      const isGapPosition = planeNumber === 1 && j % 6 === 0;
+      const isGapPosition = planeNumber === 1 && j % COLUMNS_PER_GROUP === 0;
       
       if (!isGapPosition) {
         const dividerGeom = new THREE.BoxGeometry(wallThickness, rowHeight, rowDepth - 2*wallThickness);
@@ -242,7 +246,7 @@ function createSteppedRack(numRows, numColumns, planeNumber) {
         
         // Add gap offset for plane 1
         if (planeNumber === 1) {
-          const gapsBefore = Math.floor(j / 6);
+          const gapsBefore = Math.floor(j / COLUMNS_PER_GROUP);
           xPos += gapsBefore * gapSize;
         }
         
@@ -327,7 +331,7 @@ function createSteppedRack(numRows, numColumns, planeNumber) {
     
     // Add gap offset for plane 1
     if (planeNumber === 1) {
-      const gapsBefore = Math.floor(c / 6);
+      const gapsBefore = Math.floor(c / COLUMNS_PER_GROUP);
       xPos += gapsBefore * gapSize;
     }
     
@@ -371,14 +375,15 @@ function createBeveledWall(width, height, depth, bevelSize, bevelThickness) {
 function addPlaneLights() {
   // Create enhanced rect area lights for each plane
   // with additional spotlights for better shadows
-  for (let planeNum = 1; planeNum <= 4; planeNum++) {
+  const planeNums = Object.keys(planeLayouts).map(Number);
+  for (const planeNum of planeNums) {
     if (!planeLayouts[planeNum] || planeLayouts[planeNum].length === 0) continue;
     const slots = planeLayouts[planeNum];
     
-    const minX = Math.min(...slots.map(s => s.x)) - SLOT_WIDTH_DEPTH/2;
-    const maxX = Math.max(...slots.map(s => s.x)) + SLOT_WIDTH_DEPTH/2;
-    const minZ = Math.min(...slots.map(s => s.z)) - SLOT_WIDTH_DEPTH/2;
-    const maxZ = Math.max(...slots.map(s => s.z)) + SLOT_WIDTH_DEPTH/2;
+    const minX = Math.min(...slots.map(slot => slot.x)) - SLOT_WIDTH_DEPTH/2;
+    const maxX = Math.max(...slots.map(slot => slot.x)) + SLOT_WIDTH_DEPTH/2;
+    const minZ = Math.min(...slots.map(slot => slot.z)) - SLOT_WIDTH_DEPTH/2;
+    const maxZ = Math.max(...slots.map(slot => slot.z)) + SLOT_WIDTH_DEPTH/2;
     
     const planeWidth = maxX - minX;
     const planeDepth = maxZ - minZ;

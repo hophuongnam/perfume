@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { initScene, animate, onWindowResize, camera, updateSceneWeather } from './SceneManager.js';
 import { buildAllPlanes, parseSingleRack, planeLayouts, slotOccupants } from './RackBuilder.js';
 import { fetchAllNotionBottles, createBottleFromNotion, clickableBottles,
-         updateBottleSlotOnServer, setCapColor, updateBottleCapColorOnServer,
+         updateBottleSlotOnServer, setCapColor,
          updateBottles } from './BottleManager.js';
 
 /**
@@ -57,7 +57,79 @@ let suggestedBottles = []; // Track bottles suggested for the weather
 let layeringSuggestions = []; // Track perfume layering suggestions
 let suggestionActive = false; // Track if suggestion mode is active
 let layeringActive = false; // Track if layering suggestion mode is active
-const hoverIntensity = 0.15; // Brightness increase for hover effect
+
+// --- Named Constants ---
+const HOVER_INTENSITY = 0.15;
+const WEATHER_UPDATE_INTERVAL_MS = 900_000;
+const SUGGESTION_MIN_SCORE = 3;
+const MAX_SUGGESTIONS = 5;
+const MAX_LAYERING_SUGGESTIONS = 4;
+const COLOR_SOURCE = 0x00ff00;
+const COLOR_TARGET = 0x0000ff;
+const COLOR_FILTER_MATCH = 0xff0000;
+const SCORE_ACCORD_MATCH = 3;
+const SCORE_NOTES_MATCH = 2;
+const SCORE_SEASON_MATCH = 5;
+const SCORE_TIME_MATCH = 4;
+
+// --- Extracted shared helpers ---
+
+/**
+ * Parse weather condition from UI text element
+ */
+function parseWeatherFromUI() {
+  const weatherInfo = document.getElementById('weatherInfo');
+  if (!weatherInfo || !weatherInfo.textContent) return 'clear';
+
+  const weatherText = weatherInfo.textContent.toLowerCase();
+
+  if (weatherText.includes('cloud')) return 'clouds';
+  if (weatherText.includes('rain') || weatherText.includes('drizzle')) return 'rain';
+  if (weatherText.includes('snow')) return 'snow';
+  if (weatherText.includes('thunder')) return 'thunderstorm';
+  if (weatherText.includes('fog') || weatherText.includes('mist') || weatherText.includes('haze')) return 'mist';
+  if (weatherText.includes('clear')) return 'clear';
+  return 'clear';
+}
+
+/**
+ * Get the current season based on Northern Hemisphere month
+ */
+function getCurrentSeason() {
+  const month = new Date().getMonth(); // 0-11
+  if (month >= 2 && month <= 4) return 'Spring';
+  if (month >= 5 && month <= 7) return 'Summer';
+  if (month >= 8 && month <= 10) return 'Fall';
+  return 'Winter';
+}
+
+/**
+ * Reset all bottle states (colors and flying) and clear active bottle
+ */
+function resetAllBottleStates() {
+  clickableBottles.forEach(bottle => {
+    const highlightables = bottle.userData.highlightables || [];
+    highlightables.forEach(h => {
+      h.mesh.material.color.copy(h.originalColor);
+    });
+    if (bottle.userData.flying) {
+      bottle.userData.flying = false;
+    }
+  });
+  activeBottle = null;
+}
+
+/**
+ * Clear hovered bottle highlight and reset reference
+ */
+function clearHoveredBottle() {
+  if (!hoveredBottle) return;
+  const highlightables = hoveredBottle.userData.highlightables || [];
+  highlightables.forEach(h => {
+    h.mesh.material.color.copy(h.originalColor);
+  });
+  hoveredBottle = null;
+}
 
 // A minimal class from original code for a multi-step loading UI
 class LoadingManager {
@@ -147,7 +219,7 @@ export async function initApp() {
 
     // 2) Init Scene
     loadingManager.startStep('scene');
-    initScene();
+    await initScene();
     window.addEventListener('resize', onWindowResize);
     loadingManager.completeStep('scene');
 
@@ -164,8 +236,8 @@ export async function initApp() {
     // 5) Place bottles
     loadingManager.startStep('bottles');
     if (notionBottles && notionBottles.length > 0) {
-      notionBottles.forEach(bData => {
-        createBottleFromNotion(bData);
+      notionBottles.forEach(bottleData => {
+        createBottleFromNotion(bottleData);
       });
     }
     loadingManager.completeStep('bottles');
@@ -226,13 +298,16 @@ function parseRackConfigs() {
 }
 
 /**
- * Debounce utility function to limit the frequency of function calls
+ * Throttle a function to fire at most once per animation frame
  */
-function debounce(func, wait) {
-  let timeout;
+function rafThrottle(func) {
+  let rafId = null;
   return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
+    if (rafId !== null) return;
+    rafId = requestAnimationFrame(() => {
+      func.apply(this, args);
+      rafId = null;
+    });
   };
 }
 
@@ -338,8 +413,7 @@ function setupWeatherUpdates() {
   // Initial weather update
   updateWeather();
   
-  // Update weather every 15 minutes (900000 ms)
-  weatherUpdateInterval = setInterval(updateWeather, 900000);
+  weatherUpdateInterval = setInterval(updateWeather, WEATHER_UPDATE_INTERVAL_MS);
 }
 
 /**
@@ -353,9 +427,9 @@ function setupEventListeners() {
 
   canvas.addEventListener('mousedown', onCanvasMouseDown);
   
-  // Debounced mouse move handler (~60fps)
-  const debouncedMouseMove = debounce(onCanvasMouseMove, 16);
-  canvas.addEventListener('mousemove', debouncedMouseMove);
+  // Throttled mouse move handler (fires at most once per animation frame)
+  const throttledMouseMove = rafThrottle(onCanvasMouseMove);
+  canvas.addEventListener('mousemove', throttledMouseMove);
   
   canvas.addEventListener('mouseup', onCanvasMouseUp);
   window.addEventListener('keydown', onKeyDown);
@@ -421,11 +495,8 @@ function onCanvasMouseDown(event) {
   if (dragMode) {
     const intersects = raycaster.intersectObjects(clickableBottles, true);
     if (intersects.length > 0) {
-      let clickedGroup = intersects[0].object;
-      while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
-        clickedGroup = clickedGroup.parent;
-      }
-      draggingBottle = clickedGroup;
+      draggingBottle = getTopLevelBottle(intersects[0].object);
+      if (!draggingBottle) return;
 
       const dragBottleLabel = document.getElementById('dragBottleLabel');
       const dragSlotLabel = document.getElementById('dragSlotLabel');
@@ -446,10 +517,8 @@ function onCanvasMouseDown(event) {
   // Normal mode
   const intersects = raycaster.intersectObjects(clickableBottles, true);
   if (intersects.length > 0) {
-    let clickedGroup = intersects[0].object;
-    while (clickedGroup.parent && !clickableBottles.includes(clickedGroup)) {
-      clickedGroup = clickedGroup.parent;
-    }
+    const clickedGroup = getTopLevelBottle(intersects[0].object);
+    if (!clickedGroup) return;
     if (activeBottle && activeBottle !== clickedGroup) {
       activeBottle.userData.flying = false;
     }
@@ -481,7 +550,7 @@ function onCanvasMouseMove(event) {
   // Handle drag mode
   if (dragMode && draggingBottle) {
     event.preventDefault();
-    raycaster.setFromCamera(mouse, window._cameraOverride || camera);
+    raycaster.setFromCamera(mouse, camera);
 
     if (dragPlane) {
       if (raycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
@@ -524,10 +593,7 @@ function onCanvasMouseMove(event) {
   
   // Handle unhover if needed (restore original color)
   if (hoveredBottle && hoveredBottle !== newHoveredBottle) {
-    const highlightables = hoveredBottle.userData.highlightables || [];
-    highlightables.forEach(h => {
-      h.mesh.material.color.copy(h.originalColor);
-    });
+    clearHoveredBottle();
   }
   
   // Handle new hover (apply highlight color)
@@ -535,9 +601,9 @@ function onCanvasMouseMove(event) {
     const highlightables = newHoveredBottle.userData.highlightables || [];
     highlightables.forEach(h => {
       const hoverColor = h.originalColor.clone();
-      hoverColor.r = Math.min(1, hoverColor.r + hoverIntensity);
-      hoverColor.g = Math.min(1, hoverColor.g + hoverIntensity);
-      hoverColor.b = Math.min(1, hoverColor.b + hoverIntensity);
+      hoverColor.r = Math.min(1, hoverColor.r + HOVER_INTENSITY);
+      hoverColor.g = Math.min(1, hoverColor.g + HOVER_INTENSITY);
+      hoverColor.b = Math.min(1, hoverColor.b + HOVER_INTENSITY);
       h.mesh.material.color.copy(hoverColor);
     });
   }
@@ -548,13 +614,7 @@ function onCanvasMouseMove(event) {
 
 function onCanvasMouseUp(event) {
   // Reset hover state if we're ending a drag operation
-  if (hoveredBottle) {
-    const highlightables = hoveredBottle.userData.highlightables || [];
-    highlightables.forEach(h => {
-      h.mesh.material.color.copy(h.originalColor);
-    });
-    hoveredBottle = null;
-  }
+  clearHoveredBottle();
 
   // Skip if filter box visible, suggestion mode, or layering mode
   if (isFilterBoxVisible() || suggestionActive || layeringActive) return;
@@ -577,7 +637,7 @@ function onCanvasMouseUp(event) {
       const oldCol   = draggingBottle.userData.column;
       const oldKey   = `${oldPlane}-${oldRow}-${oldCol}`;
 
-      const oldSlot = planeLayouts[oldPlane].find(s => s.row === oldRow && s.column === oldCol);
+      const oldSlot = planeLayouts[oldPlane].find(slot => slot.row === oldRow && slot.column === oldCol);
       if (oldSlot) {
         occupant.position.set(oldSlot.x, oldSlot.y, oldSlot.z);
         occupant.userData.plane = oldPlane;
@@ -610,10 +670,10 @@ function onCanvasMouseUp(event) {
     }
   } else {
     // revert
-    const p = draggingBottle.userData;
-    const oldSlot = planeLayouts[p.plane].find(s => s.row === p.row && s.column === p.column);
+    const bottleData = draggingBottle.userData;
+    const oldSlot = planeLayouts[bottleData.plane].find(slot => slot.row === bottleData.row && slot.column === bottleData.column);
     if (oldSlot) {
-      draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
+      draggingBottle.position.set(oldSlot.x, bottleData.initialY, oldSlot.z);
     }
   }
 
@@ -632,13 +692,13 @@ function findNearestSlotInPlane(plane, x, z) {
   let minDist = Infinity;
   const slots = planeLayouts[plane];
   if (!slots) return null;
-  for (const s of slots) {
-    const dx = s.x - x;
-    const dz = s.z - z;
+  for (const slot of slots) {
+    const dx = slot.x - x;
+    const dz = slot.z - z;
     const distSq = dx*dx + dz*dz;
     if (distSq < minDist) {
       minDist = distSq;
-      nearest = s;
+      nearest = slot;
     }
   }
   return nearest;
@@ -647,6 +707,56 @@ function findNearestSlotInPlane(plane, x, z) {
 /**
  * KEYBOARD LOGIC
  */
+function handleDragModeKeys(key) {
+  if (key === 'escape') {
+    cancelDrag();
+  } else if (key === 'q') {
+    moveDraggingBottleToPlane(-1);
+  } else if (key === 'a') {
+    moveDraggingBottleToPlane(1);
+  }
+}
+
+function handleNormalModeKeys(key) {
+  if (key === 'escape') {
+    if (sourceBottle) revertMark(sourceBottle);
+    if (targetBottle) revertMark(targetBottle);
+    sourceBottle = null;
+    targetBottle = null;
+    hideInfoBoard();
+    if (suggestionActive) clearSuggestions();
+  } else if (key === '1') {
+    if (activeBottle && activeBottle.userData.flying) markAsSource(activeBottle);
+  } else if (key === '2') {
+    if (activeBottle && activeBottle.userData.flying) markAsTarget(activeBottle);
+  } else if (key === 's') {
+    if (sourceBottle && targetBottle) {
+      swapBottlePositions(sourceBottle, targetBottle);
+      revertMark(sourceBottle);
+      revertMark(targetBottle);
+      sourceBottle = null;
+      targetBottle = null;
+    }
+  } else if (key === '3') {
+    if (activeBottle && activeBottle.userData.flying) setCapColor(activeBottle, 'Gold');
+  } else if (key === '4') {
+    if (activeBottle && activeBottle.userData.flying) setCapColor(activeBottle, 'Silver');
+  } else if (key === '5') {
+    if (activeBottle && activeBottle.userData.flying) setCapColor(activeBottle, 'Black');
+  } else if (key === 'w') {
+    if (activeBottle && activeBottle.userData.flying) {
+      const url = activeBottle.userData.notionData.url;
+      if (url) window.open(url, '_blank');
+    }
+  } else if (key === 'x') {
+    if (suggestionActive) clearSuggestions();
+    else suggestPerfumesForWeather();
+  } else if (key === 'l') {
+    if (layeringActive) clearLayeringSuggestions();
+    else suggestPerfumeLayering();
+  }
+}
+
 function onKeyDown(e) {
   const key = e.key.toLowerCase();
   if (isFilterBoxVisible()) {
@@ -654,8 +764,8 @@ function onKeyDown(e) {
       if (lastFilterMatches.length === 1) {
         const singleMatch = lastFilterMatches[0];
         const { highlightables } = singleMatch.userData;
-        highlightables.forEach(h => {
-          h.mesh.material.color.copy(h.originalColor);
+        highlightables.forEach(entry => {
+          entry.mesh.material.color.copy(entry.originalColor);
         });
         const filterInput = document.getElementById('filterInput');
         if (filterInput) filterInput.value = '';
@@ -679,19 +789,8 @@ function onKeyDown(e) {
     dragMode = !dragMode;
     const dragIndicator = document.getElementById('dragIndicator');
     if (dragMode) {
-      // Reset hover state when entering drag mode
-      if (hoveredBottle) {
-        const highlightables = hoveredBottle.userData.highlightables || [];
-        highlightables.forEach(h => {
-          h.mesh.material.color.copy(h.originalColor);
-        });
-        hoveredBottle = null;
-      }
-      // Clear suggestions when entering drag mode
-      if (suggestionActive) {
-        clearSuggestions();
-      }
-      // Hide info board when drag mode is activated
+      clearHoveredBottle();
+      if (suggestionActive) clearSuggestions();
       hideInfoBoard();
       dragIndicator.style.display = 'block';
     } else {
@@ -702,74 +801,9 @@ function onKeyDown(e) {
     hideInfoBoard();
     toggleFilterBox();
   } else if (dragMode && draggingBottle) {
-    if (key === 'escape') {
-      cancelDrag();
-    } else if (key === 'q') {
-      moveDraggingBottleToPlane(-1);
-    } else if (key === 'a') {
-      moveDraggingBottleToPlane(1);
-    }
+    handleDragModeKeys(key);
   } else if (!dragMode) {
-    if (key === 'escape') {
-      if (sourceBottle) revertMark(sourceBottle);
-      if (targetBottle) revertMark(targetBottle);
-      sourceBottle = null;
-      targetBottle = null;
-      hideInfoBoard();
-      // Also clear suggestions if active
-      if (suggestionActive) {
-        clearSuggestions();
-      }
-    } else if (key === '1') {
-      if (activeBottle && activeBottle.userData.flying) {
-        markAsSource(activeBottle);
-      }
-    } else if (key === '2') {
-      if (activeBottle && activeBottle.userData.flying) {
-        markAsTarget(activeBottle);
-      }
-    } else if (key === 's') {
-      if (sourceBottle && targetBottle) {
-        swapBottlePositions(sourceBottle, targetBottle);
-        revertMark(sourceBottle);
-        revertMark(targetBottle);
-        sourceBottle = null;
-        targetBottle = null;
-      }
-    } else if (key === '3') {
-      if (activeBottle && activeBottle.userData.flying) {
-        setCapColor(activeBottle, 'Gold');
-      }
-    } else if (key === '4') {
-      if (activeBottle && activeBottle.userData.flying) {
-        setCapColor(activeBottle, 'Silver');
-      }
-    } else if (key === '5') {
-      if (activeBottle && activeBottle.userData.flying) {
-        setCapColor(activeBottle, 'Black');
-      }
-    } else if (key === 'w') {
-      if (activeBottle && activeBottle.userData.flying) {
-        const url = activeBottle.userData.notionData.url;
-        if (url) {
-          window.open(url, '_blank');
-        }
-      }
-    } else if (key === 'x') {
-      // Toggle suggestions mode
-      if (suggestionActive) {
-        clearSuggestions();
-      } else {
-        suggestPerfumesForWeather();
-      }
-    } else if (key === 'l') {
-      // Toggle layering suggestions mode
-      if (layeringActive) {
-        clearLayeringSuggestions();
-      } else {
-        suggestPerfumeLayering();
-      }
-    }
+    handleNormalModeKeys(key);
   }
 }
 
@@ -781,13 +815,13 @@ function onKeyUp(e) {
 }
 
 function cancelDrag() {
-  const p = draggingBottle.userData;
-  const oldPlane = p.plane;
-  const oldRow = p.row;
-  const oldCol = p.column;
-  const oldSlot = planeLayouts[`${oldPlane}`].find(s => s.row === oldRow && s.column === oldCol);
+  const bottleData = draggingBottle.userData;
+  const oldPlane = bottleData.plane;
+  const oldRow = bottleData.row;
+  const oldCol = bottleData.column;
+  const oldSlot = planeLayouts[oldPlane].find(slot => slot.row === oldRow && slot.column === oldCol);
   if (oldSlot) {
-    draggingBottle.position.set(oldSlot.x, p.initialY, oldSlot.z);
+    draggingBottle.position.set(oldSlot.x, bottleData.initialY, oldSlot.z);
     slotOccupants[`${oldPlane}-${oldRow}-${oldCol}`] = draggingBottle;
   }
   const dragBottleLabel = document.getElementById('dragBottleLabel');
@@ -800,18 +834,18 @@ function cancelDrag() {
 
 function moveDraggingBottleToPlane(delta) {
   if (!draggingBottle) return;
-  const p = draggingBottle.userData;
-  const oldPlane = (p.dragPlaneNum !== undefined) ? p.dragPlaneNum : p.plane;
+  const bottleData = draggingBottle.userData;
+  const oldPlane = (bottleData.dragPlaneNum !== undefined) ? bottleData.dragPlaneNum : bottleData.plane;
   let newPlane = oldPlane + delta;
   if (newPlane < 1) newPlane = 1;
   if (newPlane > 4) newPlane = 4;
-  p.dragPlaneNum = newPlane;
+  bottleData.dragPlaneNum = newPlane;
   const planeSlots = planeLayouts[newPlane];
   if (planeSlots && planeSlots.length > 0) {
     const planeY = planeSlots[0].y;
     dragPlane.constant = -planeY;
     draggingBottle.position.y = planeY;
-    p.initialY = planeY;
+    bottleData.initialY = planeY;
   }
   const dragPlaneMoveLabel = document.getElementById('dragPlaneMoveLabel');
   dragPlaneMoveLabel.style.display = 'block';
@@ -831,7 +865,7 @@ function markAsSource(bottle) {
   if (bottle) {
     const highlightables = bottle.userData.highlightables || [];
     highlightables.forEach(h => {
-      h.mesh.material.color.set(0x00ff00);
+      h.mesh.material.color.set(COLOR_SOURCE);
     });
   }
 }
@@ -842,7 +876,7 @@ function markAsTarget(bottle) {
   if (bottle) {
     const highlightables = bottle.userData.highlightables || [];
     highlightables.forEach(h => {
-      h.mesh.material.color.set(0x0000ff);
+      h.mesh.material.color.set(COLOR_TARGET);
     });
   }
 }
@@ -871,8 +905,8 @@ function swapBottlePositions(bottleA, bottleB) {
   const Akey = `${Aplane}-${Arow}-${Acol}`;
   const Bkey = `${Bplane}-${Brow}-${Bcol}`;
 
-  const Apos = planeLayouts[Aplane].find(s => s.row === Arow && s.column === Acol);
-  const Bpos = planeLayouts[Bplane].find(s => s.row === Brow && s.column === Bcol);
+  const Apos = planeLayouts[Aplane].find(slot => slot.row === Arow && slot.column === Acol);
+  const Bpos = planeLayouts[Bplane].find(slot => slot.row === Brow && slot.column === Bcol);
 
   if (Apos && Bpos) {
     slotOccupants[Akey] = bottleB;
@@ -908,17 +942,17 @@ function applyFilter(searchText) {
   }
   const trimmed = fold(searchText.trim());
   if (!trimmed) {
-    clickableBottles.forEach(bg => {
-      const { highlightables } = bg.userData;
+    clickableBottles.forEach(bottle => {
+      const { highlightables } = bottle.userData;
       if (!highlightables) return;
-      const isSource = (bg === sourceBottle);
-      const isTarget = (bg === targetBottle);
-      highlightables.forEach(h => {
+      const isSource = (bottle === sourceBottle);
+      const isTarget = (bottle === targetBottle);
+      highlightables.forEach(entry => {
         if (!isSource && !isTarget) {
-          h.mesh.material.color.copy(h.originalColor);
+          entry.mesh.material.color.copy(entry.originalColor);
         }
       });
-      bg.userData.flying = false;
+      bottle.userData.flying = false;
     });
     activeBottle = null;
     lastFilterMatches = [];
@@ -926,13 +960,13 @@ function applyFilter(searchText) {
   }
 
   const searchTokens = trimmed.split(/\s+/);
-  clickableBottles.forEach(bg => {
-    bg.userData.flying = false;
+  clickableBottles.forEach(bottle => {
+    bottle.userData.flying = false;
   });
 
   const matchedBottles = [];
-  clickableBottles.forEach(bg => {
-    const { notionData, highlightables } = bg.userData;
+  clickableBottles.forEach(bottle => {
+    const { notionData, highlightables } = bottle.userData;
     if (!highlightables) return;
 
     const nameTokens = fold(notionData.name || '').split(/\s+/);
@@ -975,14 +1009,14 @@ function applyFilter(searchText) {
 
     const foundAll = searchTokens.every(t => bottleTokens.includes(t));
     if (foundAll) {
-      matchedBottles.push(bg);
+      matchedBottles.push(bottle);
     }
-    const isSource = (bg === sourceBottle);
-    const isTarget = (bg === targetBottle);
+    const isSource = (bottle === sourceBottle);
+    const isTarget = (bottle === targetBottle);
     highlightables.forEach(entry => {
       if (foundAll) {
         if (!isSource && !isTarget) {
-          entry.mesh.material.color.set(0xff0000);
+          entry.mesh.material.color.set(COLOR_FILTER_MATCH);
         }
       } else {
         if (!isSource && !isTarget) {
@@ -1028,13 +1062,7 @@ function toggleFilterBox() {
   const computedDisplay = window.getComputedStyle(filterBox).display;
   if (computedDisplay === 'none') {
     // Reset hover state when opening filter box
-    if (hoveredBottle) {
-      const highlightables = hoveredBottle.userData.highlightables || [];
-      highlightables.forEach(h => {
-        h.mesh.material.color.copy(h.originalColor);
-      });
-      hoveredBottle = null;
-    }
+    clearHoveredBottle();
     
     filterBox.style.display = 'block';
     const filterInput = document.getElementById('filterInput');
@@ -1168,58 +1196,12 @@ function suggestPerfumesForWeather() {
     clearLayeringSuggestions();
   }
   
-  // Clear all bottle status (color and flying) before entering suggestion mode
-  clickableBottles.forEach(bottle => {
-    const highlightables = bottle.userData.highlightables || [];
-    highlightables.forEach(h => {
-      h.mesh.material.color.copy(h.originalColor);
-    });
-    
-    // Reset flying states for ALL bottles, including the active bottle
-    if (bottle.userData.flying) {
-      bottle.userData.flying = false;
-    }
-  });
-  
-  // Reset active bottle since we've stopped all flying bottles
-  activeBottle = null;
-  
-  // Get current weather from the weather display
-  const weatherInfo = document.getElementById('weatherInfo');
-  let weatherCondition = 'clear'; // Default
-  
-  if (weatherInfo && weatherInfo.textContent) {
-    const weatherText = weatherInfo.textContent.toLowerCase();
-    
-    if (weatherText.includes('cloud')) {
-      weatherCondition = 'clouds';
-    } else if (weatherText.includes('rain') || weatherText.includes('drizzle')) {
-      weatherCondition = 'rain';
-    } else if (weatherText.includes('snow')) {
-      weatherCondition = 'snow';
-    } else if (weatherText.includes('thunder')) {
-      weatherCondition = 'thunderstorm';
-    } else if (weatherText.includes('fog') || weatherText.includes('mist') || weatherText.includes('haze')) {
-      weatherCondition = 'mist';
-    } else if (weatherText.includes('clear')) {
-      weatherCondition = 'clear';
-    }
-  }
-  
-  // Determine current season based on Northern Hemisphere (can be customized by region)
-  const now = new Date();
-  const month = now.getMonth(); // 0-11
-  let currentSeason;
-  
-  if (month >= 2 && month <= 4) {
-    currentSeason = 'Spring';
-  } else if (month >= 5 && month <= 7) {
-    currentSeason = 'Summer';
-  } else if (month >= 8 && month <= 10) {
-    currentSeason = 'Fall';
-  } else {
-    currentSeason = 'Winter';
-  }
+  // Clear all bottle status before entering suggestion mode
+  resetAllBottleStates();
+
+  // Get current weather and season
+  const weatherCondition = parseWeatherFromUI();
+  const currentSeason = getCurrentSeason();
   
   // Determine current time of day - only Day and Night options
   const hour = now.getHours();
@@ -1290,7 +1272,7 @@ function suggestPerfumesForWeather() {
     for (const accord of bottleAccords) {
       const accordLower = accord.toLowerCase();
       if (suggestedAccords.some(sa => accordLower.includes(sa))) {
-        matchScore += 3; // Strong match with weather-appropriate accord
+        matchScore += SCORE_ACCORD_MATCH;
       }
     }
     
@@ -1299,7 +1281,7 @@ function suggestPerfumesForWeather() {
       const hasMatchingNotes = bottleNotes.some(note =>
         suggestedAccords.some(sa => note.toLowerCase().includes(sa.toLowerCase())));
       if (hasMatchingNotes) {
-        matchScore += 2; // Moderate boost for matching notes
+        matchScore += SCORE_NOTES_MATCH;
       }
     }
     
@@ -1333,20 +1315,20 @@ function suggestPerfumesForWeather() {
     
     // Season matching
     if (bottleSeasons.includes(currentSeason)) {
-      matchScore += 5; // Strong boost for matching the current season
+      matchScore += SCORE_SEASON_MATCH;
     }
     
     // Time of day matching
     for (const time of bottleTimes) {
       if (suggestedTimes.some(suggestedTime =>
           time.toLowerCase().includes(suggestedTime.toLowerCase()))) {
-        matchScore += 4; // Boost for appropriate time of day
+        matchScore += SCORE_TIME_MATCH;
         break;
       }
     }
     
     // If we have a decent match, add to suggestions
-    if (matchScore >= 3) {
+    if (matchScore >= SUGGESTION_MIN_SCORE) {
       suggestedBottles.push({
         bottle: bottle,
         score: matchScore,
@@ -1358,8 +1340,7 @@ function suggestPerfumesForWeather() {
   // Sort by score (highest first)
   suggestedBottles.sort((a, b) => b.score - a.score);
   
-  // Limit to top 5 suggestions
-  suggestedBottles = suggestedBottles.slice(0, 5);
+  suggestedBottles = suggestedBottles.slice(0, MAX_SUGGESTIONS);
   
   // Set active bottles from suggestions (map back to bottle objects)
   const suggestedBottleObjects = suggestedBottles.map(item => item.bottle);
@@ -1373,16 +1354,6 @@ function suggestPerfumesForWeather() {
   
   // Hide info board if visible
   hideInfoBoard();
-}
-
-/**
- * Placeholder for potential future customization of suggested bottles
- * Currently we don't highlight or make bottles fly per requirements
- * @param {Array} bottleObjects - Array of bottle objects
- */
-function highlightSuggestedBottles(bottleObjects) {
-  // No highlighting or flying as per requirements
-  // Function kept as placeholder for future customization options
 }
 
 /**
@@ -1424,6 +1395,154 @@ function clearSuggestions() {
   }
 }
 
+// --- Layering scoring helper functions (extracted from suggestPerfumeLayering) ---
+
+/**
+ * Collect all notes from bottle data into a single lowercase array
+ */
+function getBottleAllNotes(bottleData) {
+  return [
+    ...(bottleData.accords || []),
+    ...(bottleData.notes || []),
+    ...(bottleData.topNotes || []),
+    ...(bottleData.middleNotes || []),
+    ...(bottleData.baseNotes || [])
+  ].map(note => note.toLowerCase());
+}
+
+/**
+ * Score based on complementary note categories
+ */
+function scoreComplementaryNotes(notes1, notes2, complementaryCategories) {
+  let score = 0;
+  for (const note1 of notes1) {
+    for (const [category, complementaryList] of Object.entries(complementaryCategories)) {
+      if (note1.includes(category)) {
+        for (const note2 of notes2) {
+          if (complementaryList.some(comp => note2.includes(comp))) {
+            score += 3;
+          }
+        }
+      }
+    }
+  }
+  return score;
+}
+
+/**
+ * Score based on note overlap (some is good, too much is redundant)
+ */
+function scoreNoteOverlap(notes1, notes2) {
+  const commonNotes = notes1.filter(note =>
+    notes2.some(n2 => n2.includes(note) || note.includes(n2))
+  );
+  let score = 0;
+  if (commonNotes.length > 0 && commonNotes.length <= 3) {
+    score += 2;
+  } else if (commonNotes.length > 3) {
+    score -= (commonNotes.length - 3);
+  }
+  return { score, commonNotes };
+}
+
+/**
+ * Score based on weather-specific note pairings
+ */
+function scoreWeatherLayering(notes1, notes2, weatherCondition, weatherLayeringPreferences) {
+  let score = 0;
+  let contextualBoost = "";
+  const weatherPref = weatherLayeringPreferences[weatherCondition];
+  if (!weatherPref) return { score, contextualBoost };
+
+  // Check both directions
+  for (const [baseNotes, compNotes] of [[notes1, notes2], [notes2, notes1]]) {
+    const hasBase = baseNotes.some(note =>
+      weatherPref.baseNotes.some(wn => note.includes(wn)));
+    const hasComp = compNotes.some(note =>
+      weatherPref.complementsTo.some(wc => note.includes(wc)));
+
+    if (hasBase && hasComp) {
+      score += 8;
+      contextualBoost = weatherPref.description;
+    } else if (hasBase || hasComp) {
+      score += 4;
+      contextualBoost = weatherPref.description;
+    }
+  }
+  return { score, contextualBoost };
+}
+
+/**
+ * Score based on season-specific note preferences
+ */
+function scoreSeasonLayering(notes1, notes2, data1, data2, season, seasonLayeringPreferences) {
+  let score = 0;
+  let contextualBoost = "";
+  const seasonPref = seasonLayeringPreferences[season];
+  if (!seasonPref) return { score, contextualBoost };
+
+  const match1 = notes1.some(note => seasonPref.preferred.some(sp => note.includes(sp)));
+  const match2 = notes2.some(note => seasonPref.preferred.some(sp => note.includes(sp)));
+
+  if (match1 && match2) {
+    score += 6;
+    contextualBoost = seasonPref.description;
+  } else if (match1 || match2) {
+    score += 3;
+    contextualBoost = seasonPref.description;
+  }
+
+  if (data1.seasons && data1.seasons.includes(season)) score += 3;
+  if (data2.seasons && data2.seasons.includes(season)) score += 3;
+
+  return { score, contextualBoost };
+}
+
+/**
+ * Score based on time-of-day note preferences
+ */
+function scoreTimeOfDayLayering(notes1, notes2, timeOfDay, timeOfDayPreferences) {
+  let score = 0;
+  let contextualBoost = "";
+  const timePref = timeOfDayPreferences[timeOfDay];
+  if (!timePref) return { score, contextualBoost };
+
+  const match1 = notes1.some(note => timePref.preferred.some(tp => note.includes(tp)));
+  const match2 = notes2.some(note => timePref.preferred.some(tp => note.includes(tp)));
+
+  if (match1 && match2) {
+    score += 4;
+    contextualBoost = timePref.description;
+  } else if (match1 || match2) {
+    score += 2;
+    contextualBoost = timePref.description;
+  }
+  return { score, contextualBoost };
+}
+
+/**
+ * Score based on temperature adjustments
+ */
+function scoreTemperatureLayering(notes1, notes2, temperature) {
+  if (temperature === null) return { score: 0, contextualBoost: "" };
+  let score = 0;
+  let contextualBoost = "";
+
+  const allNotes = [...notes1, ...notes2];
+  if (temperature > 25) {
+    if (allNotes.some(note => ['fresh', 'citrus', 'light', 'aquatic', 'marine'].some(n => note.includes(n)))) {
+      score += 3;
+      contextualBoost = "Refreshing for warm temperature";
+    }
+  } else if (temperature < 15) {
+    if (allNotes.some(note => ['warm', 'spicy', 'vanilla', 'amber', 'woody'].some(n => note.includes(n)))) {
+      score += 3;
+      contextualBoost = "Warming for cool temperature";
+    }
+  }
+  return { score, contextualBoost };
+}
+
 /**
  * Suggest perfume layering combinations
  */
@@ -1434,74 +1553,29 @@ function suggestPerfumeLayering() {
     return;
   }
   
-  // Clear all bottle status (color and flying) before entering layering mode
-  clickableBottles.forEach(bottle => {
-    const highlightables = bottle.userData.highlightables || [];
-    highlightables.forEach(h => {
-      h.mesh.material.color.copy(h.originalColor);
-    });
-    
-    // Reset flying states for ALL bottles, including the active bottle
-    if (bottle.userData.flying) {
-      bottle.userData.flying = false;
-    }
-  });
-  
-  // Reset active bottle since we've stopped all flying bottles
-  activeBottle = null;
-  
+  // Clear all bottle status before entering layering mode
+  resetAllBottleStates();
+
   // Clear weather suggestions if active
   if (suggestionActive) {
     clearSuggestions();
   }
-  
-  // Get current weather from the weather display
-  const weatherInfo = document.getElementById('weatherInfo');
-  let weatherCondition = 'clear'; // Default
+
+  // Get current weather, season, and temperature
+  const weatherCondition = parseWeatherFromUI();
+  const currentSeason = getCurrentSeason();
   let currentTemperature = null;
-  
+
+  const weatherInfo = document.getElementById('weatherInfo');
   if (weatherInfo && weatherInfo.textContent) {
-    const weatherText = weatherInfo.textContent.toLowerCase();
-    
-    // Extract weather condition
-    if (weatherText.includes('cloud')) {
-      weatherCondition = 'clouds';
-    } else if (weatherText.includes('rain') || weatherText.includes('drizzle')) {
-      weatherCondition = 'rain';
-    } else if (weatherText.includes('snow')) {
-      weatherCondition = 'snow';
-    } else if (weatherText.includes('thunder')) {
-      weatherCondition = 'thunderstorm';
-    } else if (weatherText.includes('fog') || weatherText.includes('mist') || weatherText.includes('haze')) {
-      weatherCondition = 'mist';
-    } else if (weatherText.includes('clear')) {
-      weatherCondition = 'clear';
-    }
-    
-    // Try to extract temperature
-    const tempMatch = weatherText.match(/(\d+)°/);
+    const tempMatch = weatherInfo.textContent.match(/(\d+)°/);
     if (tempMatch && tempMatch[1]) {
       currentTemperature = parseInt(tempMatch[1], 10);
     }
   }
   
-  // Determine current season based on Northern Hemisphere
-  const now = new Date();
-  const month = now.getMonth(); // 0-11
-  let currentSeason;
-  
-  if (month >= 2 && month <= 4) {
-    currentSeason = 'Spring';
-  } else if (month >= 5 && month <= 7) {
-    currentSeason = 'Summer';
-  } else if (month >= 8 && month <= 10) {
-    currentSeason = 'Fall';
-  } else {
-    currentSeason = 'Winter';
-  }
-  
   // Determine current time of day
-  const hour = now.getHours();
+  const hour = new Date().getHours();
   let currentTimeOfDay;
   
   if (hour >= 6 && hour < 12) {
@@ -1651,191 +1725,61 @@ function suggestPerfumeLayering() {
     temperature: currentTemperature
   };
   
-  // Calculate layering score for each potential pair
+  // Calculate layering score for each potential pair using extracted helpers
   const pairs = [];
-  
+
   for (let i = 0; i < validBottles.length; i++) {
     for (let j = i + 1; j < validBottles.length; j++) {
       const bottle1 = validBottles[i];
       const bottle2 = validBottles[j];
       const data1 = bottle1.userData.notionData;
       const data2 = bottle2.userData.notionData;
-      
-      // Get all notes and accords for bottle 1
-      const bottle1Notes = [
-        ...(data1.accords || []),
-        ...(data1.notes || []),
-        ...(data1.topNotes || []),
-        ...(data1.middleNotes || []),
-        ...(data1.baseNotes || [])
-      ].map(note => note.toLowerCase());
-      
-      // Get all notes and accords for bottle 2
-      const bottle2Notes = [
-        ...(data2.accords || []),
-        ...(data2.notes || []),
-        ...(data2.topNotes || []),
-        ...(data2.middleNotes || []),
-        ...(data2.baseNotes || [])
-      ].map(note => note.toLowerCase());
-      
+
+      const notes1 = getBottleAllNotes(data1);
+      const notes2 = getBottleAllNotes(data2);
+
       let layeringScore = 0;
       let contextualBoost = "";
-      
-      // 1. Check for complementary notes (base scoring)
-      for (const note1 of bottle1Notes) {
-        for (const [category, complementaryList] of Object.entries(complementaryCategories)) {
-          // If bottle1 has a note in this category
-          if (note1.includes(category)) {
-            // Check if bottle2 has any complementary notes
-            for (const note2 of bottle2Notes) {
-              if (complementaryList.some(comp => note2.includes(comp))) {
-                layeringScore += 3;
-              }
-            }
-          }
-        }
-      }
-      
-      // 2. Check for overlap in notes (some overlap is good, but too much is redundant)
-      const commonNotes = bottle1Notes.filter(note =>
-        bottle2Notes.some(n2 => n2.includes(note) || note.includes(n2))
-      );
-      
-      // Some common notes are good for coherence
-      if (commonNotes.length > 0 && commonNotes.length <= 3) {
-        layeringScore += 2;
-      } else if (commonNotes.length > 3) {
-        // Too much overlap is redundant
-        layeringScore -= (commonNotes.length - 3);
-      }
-      
+
+      // 1. Complementary notes
+      layeringScore += scoreComplementaryNotes(notes1, notes2, complementaryCategories);
+
+      // 2. Note overlap
+      const overlap = scoreNoteOverlap(notes1, notes2);
+      layeringScore += overlap.score;
+
       // 3. Weather-based scoring
-      const weatherPref = weatherLayeringPreferences[weatherCondition];
-      if (weatherPref) {
-        // First bottle has weather-appropriate base notes
-        const hasWeatherBaseNotes = bottle1Notes.some(note =>
-          weatherPref.baseNotes.some(wn => note.includes(wn)));
-          
-        // Second bottle has weather-appropriate complements
-        const hasWeatherComplements = bottle2Notes.some(note =>
-          weatherPref.complementsTo.some(wc => note.includes(wc)));
-          
-        if (hasWeatherBaseNotes && hasWeatherComplements) {
-          layeringScore += 8;
-          contextualBoost = weatherPref.description;
-        } else if (hasWeatherBaseNotes || hasWeatherComplements) {
-          layeringScore += 4;
-          contextualBoost = weatherPref.description;
-        }
-        
-        // Also check the reverse combination (bottle2 base + bottle1 complements)
-        const hasReverseBaseNotes = bottle2Notes.some(note =>
-          weatherPref.baseNotes.some(wn => note.includes(wn)));
-          
-        const hasReverseComplements = bottle1Notes.some(note =>
-          weatherPref.complementsTo.some(wc => note.includes(wc)));
-          
-        if (hasReverseBaseNotes && hasReverseComplements) {
-          layeringScore += 8;
-          contextualBoost = weatherPref.description;
-        } else if (hasReverseBaseNotes || hasReverseComplements) {
-          layeringScore += 4;
-          contextualBoost = weatherPref.description;
-        }
-      }
-      
+      const weatherResult = scoreWeatherLayering(notes1, notes2, weatherCondition, weatherLayeringPreferences);
+      layeringScore += weatherResult.score;
+      if (weatherResult.contextualBoost) contextualBoost = weatherResult.contextualBoost;
+
       // 4. Season-based scoring
-      const seasonPref = seasonLayeringPreferences[currentSeason];
-      if (seasonPref) {
-        // Check if either bottle has notes preferred for this season
-        const bottle1SeasonMatch = bottle1Notes.some(note =>
-          seasonPref.preferred.some(sp => note.includes(sp)));
-          
-        const bottle2SeasonMatch = bottle2Notes.some(note =>
-          seasonPref.preferred.some(sp => note.includes(sp)));
-          
-        if (bottle1SeasonMatch && bottle2SeasonMatch) {
-          layeringScore += 6;
-          if (!contextualBoost) contextualBoost = seasonPref.description;
-        } else if (bottle1SeasonMatch || bottle2SeasonMatch) {
-          layeringScore += 3;
-          if (!contextualBoost) contextualBoost = seasonPref.description;
-        }
-        
-        // Also check against bottle data's seasons if available
-        if (data1.seasons && data1.seasons.includes(currentSeason)) {
-          layeringScore += 3;
-        }
-        
-        if (data2.seasons && data2.seasons.includes(currentSeason)) {
-          layeringScore += 3;
-        }
-      }
-      
+      const seasonResult = scoreSeasonLayering(notes1, notes2, data1, data2, currentSeason, seasonLayeringPreferences);
+      layeringScore += seasonResult.score;
+      if (!contextualBoost && seasonResult.contextualBoost) contextualBoost = seasonResult.contextualBoost;
+
       // 5. Time of day scoring
-      const timePref = timeOfDayPreferences[currentTimeOfDay];
-      if (timePref) {
-        // Check if either bottle has notes preferred for this time of day
-        const bottle1TimeMatch = bottle1Notes.some(note =>
-          timePref.preferred.some(tp => note.includes(tp)));
-          
-        const bottle2TimeMatch = bottle2Notes.some(note =>
-          timePref.preferred.some(tp => note.includes(tp)));
-          
-        if (bottle1TimeMatch && bottle2TimeMatch) {
-          layeringScore += 4;
-          if (!contextualBoost) contextualBoost = timePref.description;
-        } else if (bottle1TimeMatch || bottle2TimeMatch) {
-          layeringScore += 2;
-          if (!contextualBoost) contextualBoost = timePref.description;
-        }
+      const timeResult = scoreTimeOfDayLayering(notes1, notes2, currentTimeOfDay, timeOfDayPreferences);
+      layeringScore += timeResult.score;
+      if (!contextualBoost && timeResult.contextualBoost) contextualBoost = timeResult.contextualBoost;
+
+      // 6. Temperature adjustments
+      const tempResult = scoreTemperatureLayering(notes1, notes2, currentTemperature);
+      layeringScore += tempResult.score;
+      if (!contextualBoost && tempResult.contextualBoost) contextualBoost = tempResult.contextualBoost;
+
+      // 7. Type contrast bonus
+      if (data1.type && data2.type && data1.type !== data2.type) {
+        layeringScore += 2;
       }
-      
-      // 6. Temperature adjustments (if available)
-      if (currentTemperature !== null) {
-        // For higher temperatures, favor fresh/light combinations
-        if (currentTemperature > 25) { // Above 25°C/77°F
-          const hasFreshNotes = bottle1Notes.some(note =>
-            ['fresh', 'citrus', 'light', 'aquatic', 'marine'].some(n => note.includes(n))) ||
-            bottle2Notes.some(note =>
-            ['fresh', 'citrus', 'light', 'aquatic', 'marine'].some(n => note.includes(n)));
-            
-          if (hasFreshNotes) {
-            layeringScore += 3;
-            if (!contextualBoost) contextualBoost = "Refreshing for warm temperature";
-          }
-        }
-        // For lower temperatures, favor warm/spicy combinations
-        else if (currentTemperature < 15) { // Below 15°C/59°F
-          const hasWarmNotes = bottle1Notes.some(note =>
-            ['warm', 'spicy', 'vanilla', 'amber', 'woody'].some(n => note.includes(n))) ||
-            bottle2Notes.some(note =>
-            ['warm', 'spicy', 'vanilla', 'amber', 'woody'].some(n => note.includes(n)));
-            
-          if (hasWarmNotes) {
-            layeringScore += 3;
-            if (!contextualBoost) contextualBoost = "Warming for cool temperature";
-          }
-        }
-      }
-      
-      // 7. Adjust score based on perfume type contrast
-      if (data1.type && data2.type) {
-        // Different types often layer well (men's + women's)
-        if (data1.type !== data2.type) {
-          layeringScore += 2;
-        }
-      }
-      
-      // 8. If houses are different, slightly increase score for variety
+
+      // 8. House variety bonus
       if (data1.house && data2.house && data1.house !== data2.house) {
         layeringScore += 1;
       }
-      
-      // 9. If both have concentrations, consider them
+
+      // 9. Concentration contrast bonus
       if (data1.concentration && data2.concentration) {
-        // EDP + EDT often layer well (different evaporation rates)
         if (
           (data1.concentration.includes('Parfum') && data2.concentration.includes('Toilette')) ||
           (data1.concentration.includes('Toilette') && data2.concentration.includes('Parfum'))
@@ -1843,18 +1787,14 @@ function suggestPerfumeLayering() {
           layeringScore += 2;
         }
       }
-      
-      // The contextual boost will be stored when creating the pair object
-      
-      // Only include pairs with positive scores
+
       if (layeringScore > 0) {
-        // Create the pair object with all relevant information
         const pairObject = {
           bottle1,
           bottle2,
           score: layeringScore,
-          commonNotes: commonNotes,
-          description: generateLayeringDescription(bottle1Notes, bottle2Notes, commonNotes),
+          commonNotes: overlap.commonNotes,
+          description: generateLayeringDescription(notes1, notes2, overlap.commonNotes),
           weatherContext: {
             condition: weatherCondition,
             season: currentSeason,
@@ -1862,22 +1802,17 @@ function suggestPerfumeLayering() {
             temperature: currentTemperature
           }
         };
-        
-        // Add contextual boost if available
-        if (contextualBoost) {
-          pairObject.contextBoost = contextualBoost;
-        }
-        
+        if (contextualBoost) pairObject.contextBoost = contextualBoost;
         pairs.push(pairObject);
       }
     }
   }
-  
+
   // Sort by score (highest first)
   pairs.sort((a, b) => b.score - a.score);
-  
+
   // Store top layering suggestions
-  layeringSuggestions = pairs.slice(0, 4);
+  layeringSuggestions = pairs.slice(0, MAX_LAYERING_SUGGESTIONS);
   
   // Display layering suggestions in the board
   displayLayeringSuggestionBoard();
